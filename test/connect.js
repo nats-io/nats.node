@@ -1,4 +1,5 @@
 var NATS = require ('../'),
+    nsc = require('./support/nats_server_control'),
     spawn = require('child_process').spawn;
 
 var PORT = 1421;
@@ -10,20 +11,11 @@ describe('Basic Connectivity', function() {
 
   // Start up our own nats-server
   before(function(done) {
-    server = spawn('nats-server',['-p', PORT]);
-    var timer = setTimeout(done, 500);
-    server.on('exit', function(code) {
-      if (code !== 0) {
-	clearTimeout(timer);
-	console.log("Server exited with code: ", code);
-	done(new Error("Can't find the nats-server (e.g. gem install nats)"));
-      }
-    });
+    server = nsc.start_server(PORT, done);
   });
 
   // Shutdown our server after we are done
   after(function(){
-    server.on('exit', function(){});
     server.kill();
   });
 
