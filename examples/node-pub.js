@@ -10,7 +10,7 @@ var subject = process.argv[2];
 var msg = process.argv[3] || '';
 
 if (subject == undefined) {
-  console.log('Usage: node-pub <subject> <msg> [-s server]');
+  console.log('Usage: node-pub <subject> <msg>');
   process.exit();
 }
 
@@ -18,4 +18,5 @@ NATS.publish(subject, msg, function() {
   console.log("Published [" + subject + "] : '" + msg + "'");
   NATS.close();
 });
+
 
