@@ -1,0 +1,20 @@
+{
+  "name": "nats",
+  "description": "Node client for NATS, a lightweight messaging system",
+  "version": "0.2.0",
+  "repository": {
+    "type" : "git",
+    "url"  : ""
+  },
+  "author": "Derek Collison <derek.collison@gmail.com>",
+  "keywords": ["messaging", "pubsub", "publish", "subscribe", "queue", "distributed queueing"],
+  "dependencies": { },
+  "devDependencies": {
+    "should": ">= 0.0.1",
+    "mocha": "*"
+  },
+  "main": "index",
+  "license" : "MIT",
+  "scripts": { "test": "make test" },
+  "engines": { "node": ">= 0.4.x < 0.7.0" }
+}
