@@ -1,6 +1,5 @@
 var NATS = require ('../'),
-    nsc = require('./support/nats_server_control'),
-    spawn = require('child_process').spawn;
+    nsc = require('./support/nats_server_control');
 
 var PORT = 1421;
 var uri = 'nats://localhost:' + PORT;
