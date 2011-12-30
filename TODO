@@ -1,7 +1,7 @@
-1. simple tests (Mocha)
-2. subscribe with timeout? auto-unsubscribe?
-3. Mocha tests
-4. Reconnect logic
-5. Metrics
-6. Make tests wait on server startup, not blind timeout.
+1. [DONE] subscribe with timeout? auto-unsubscribe?
+2. [IN PROGRESS] Mocha tests
+3. Reconnect logic
+4. Metrics
+5. [DONE]Make tests wait on server startup, not blind timeout.
+6. Fix what is attached to client/connection (e.g. config, info, etc)
 
