@@ -13,8 +13,12 @@ exports.start_server = function(port, opt_flags, done) {
     done = opt_flags;
     opt_flags = null;
   }
-  // FIXME, add in other flags.
-  var server = spawn(SERVER, ['-p', port]);
+  var flags = ['-p', port];
+
+  if (opt_flags != undefined) {
+    flags = flags.concat(opt_flags);
+  }
+  var server = spawn(SERVER, flags);
 
   var start   = new Date();
   var wait    = 0;
