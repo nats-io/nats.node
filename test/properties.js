@@ -38,6 +38,46 @@ describe('Connection Properties', function() {
     nc.request.should.be.a('function');
   });
 
+  it('should have an options hash with proper fields', function() {
+    nc.should.have.property('options');
+    nc.options.should.have.property('uri');
+    nc.options.should.have.property('url');
+    nc.options.should.have.property('verbose');
+    nc.options.should.have.property('pedantic');
+    nc.options.should.have.property('reconnect');
+    nc.options.should.have.property('maxReconnectAttempts');
+    nc.options.should.have.property('reconnectTimeWait');
+  });
+
+  it('should have an parsed url', function() {
+    nc.should.have.property('url');
+    nc.url.should.be.a('object');
+    nc.url.should.have.property('protocol');
+    nc.url.should.have.property('host');
+    nc.url.should.have.property('port');
+  });
+
   nc.close();
+
+  it('should allow options to be overridden', function() {
+    var options = {
+      'url'       : 'nats://localhost:22421',
+      'verbose'   : true,
+      'pedantic'  : true,
+      'reconnect' : false,
+      'maxReconnectAttempts' : 22,
+      'reconnectTimeWait' : 11
+    };
+
+    nc = NATS.connect(options);
+    nc.on('error', function() {}); // Eat error
+
+    nc.options.url.should.equal('nats://localhost:22421');
+    nc.options.verbose.should.equal(true);
+    nc.options.pedantic.should.equal(true);
+    nc.options.reconnect.should.equal(false);
+    nc.options.maxReconnectAttempts.should.equal(22);
+    nc.options.reconnectTimeWait.should.equal(11);
+  });
 
 });
