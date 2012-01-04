@@ -78,6 +78,7 @@ describe('Connection Properties', function() {
     nc.options.reconnect.should.equal(false);
     nc.options.maxReconnectAttempts.should.equal(22);
     nc.options.reconnectTimeWait.should.equal(11);
+    nc.close();
   });
 
 });
