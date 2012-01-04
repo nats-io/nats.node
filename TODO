@@ -4,4 +4,4 @@
 4. Metrics
 5. [DONE]Make tests wait on server startup, not blind timeout.
 6. Fix what is attached to client/connection (e.g. config, info, etc)
-
+7. Make sure don't throw strings but Errors.
