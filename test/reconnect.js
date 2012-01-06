@@ -69,7 +69,7 @@ describe('Reconnect functionality', function() {
     });
     nc.on('reconnecting', function(client) {
       var elapsed = new Date() - startTime;
-      elapsed.should.be.within(WAIT, 2*WAIT);
+      elapsed.should.be.within(WAIT, 5*WAIT);
       startTime = new Date();
       numAttempts += 1;
     });
