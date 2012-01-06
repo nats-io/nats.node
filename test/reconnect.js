@@ -17,7 +17,7 @@ describe('Reconnect functionality', function() {
   });
 
   // Shutdown our server after we are done
-  after(function(){
+  after(function() {
     server.kill();
   });
 
@@ -30,13 +30,13 @@ describe('Reconnect functionality', function() {
     nc.on('reconnecting', function(client) {
       done(new Error('Reconnecting improperly called'));
     });
-    nc.on('disconnected', function() {
+    nc.on('close', function() {
       nc.close();
       server = nsc.start_server(PORT, done);
     });
   });
 
-  it('should emit a reconnecting event after proper delay', function(done) {
+  it('should emit a disconnect and a reconnecting event after proper delay', function(done) {
     var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':WAIT});
     var startTime;
     nc.should.exist;
@@ -50,8 +50,12 @@ describe('Reconnect functionality', function() {
       nc.close();
       server = nsc.start_server(PORT, done);
     });
-    nc.on('disconnected', function() {
-      done(new Error('Disconnect improperly called'));
+    nc.on('disconnect', function() {
+      var elapsed = new Date() - startTime;
+      elapsed.should.be.within(0, 100);
+    });
+    nc.on('close', function() {
+      done(new Error('Close event improperly called'));
     });
   });
 
@@ -69,10 +73,54 @@ describe('Reconnect functionality', function() {
       startTime = new Date();
       numAttempts += 1;
     });
-    nc.on('disconnected', function() {
+    nc.on('close', function() {
       numAttempts.should.equal(ATTEMPTS);
       nc.close();
+      server = nsc.start_server(PORT, done);
+    });
+  });
+
+  it('should succesfully reconnect to new server', function(done) {
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
+    // Kill server after first successful contact
+    nc.flush(function() {
+      server.kill();
+      server = null;
+    });
+    nc.on('reconnecting', function(client) {
+      // restart server and make sure next flush works ok
+      if (server == null) {
+        server = nsc.start_server(PORT)
+      }
+    });
+    nc.on('reconnect', function() {
+      nc.flush(function() {
+        nc.close();
+        done();
+      });
+    });
+  });
+
+  it('should succesfully reconnect to new server with subscriptions', function(done) {
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
+    // Kill server after first successful contact
+    nc.flush(function() {
+      server.kill();
+      server = null;
+    });
+    nc.subscribe('foo', function() {
+      nc.close();
       done();
+    });
+    nc.on('reconnecting', function(client) {
+      // restart server and make sure next flush works ok
+      if (server == null) {
+        console.log("RESTARTING SERVER!");
+        server = nsc.start_server(PORT)
+      }
+    });
+    nc.on('reconnect', function() {
+      nc.publish('foo');
     });
   });
 
