@@ -24,10 +24,13 @@ describe('Basics', function() {
     nc.close();
   });
 
-  it('should do basic publish', function() {
+  it('should do basic publish', function(done) {
     var nc = NATS.connect(PORT);
     nc.publish('foo');
-    nc.close();
+    nc.flush(function() {
+      nc.close();
+      done();
+    });
   });
 
   it('should fire a callback for subscription', function(done) {

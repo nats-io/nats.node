@@ -46,13 +46,13 @@ describe('Reconnect functionality', function() {
     });
     nc.on('reconnecting', function(client) {
       var elapsed = new Date() - startTime;
-      elapsed.should.be.within(WAIT, 2*WAIT);
+      elapsed.should.be.within(WAIT, 5*WAIT);
       nc.close();
       server = nsc.start_server(PORT, done);
     });
     nc.on('disconnect', function() {
       var elapsed = new Date() - startTime;
-      elapsed.should.be.within(0, 100);
+      elapsed.should.be.within(0, 5*WAIT);
     });
     nc.on('close', function() {
       done(new Error('Close event improperly called'));
