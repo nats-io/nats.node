@@ -93,10 +93,6 @@ var sid = nats.subscribe('foo', function() {
   received += 1;
 });
 
-nats.timeout(sid, timeout_ms, function() {
-  timeout_recvd = true;
-});
-
 // Timeout unless a certain number of messages have been received
 nats.timeout(sid, timeout_ms, expected, function() {
   timeout_recvd = true;
