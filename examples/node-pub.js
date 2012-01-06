@@ -16,7 +16,7 @@ if (subject == undefined) {
 
 nats.publish(subject, msg, function() {
   console.log("Published [" + subject + "] : '" + msg + "'");
-  nats.close();
+  process.exit();
 });
 
 
