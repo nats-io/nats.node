@@ -54,9 +54,6 @@ describe('Reconnect functionality', function() {
       var elapsed = new Date() - startTime;
       elapsed.should.be.within(0, 5*WAIT);
     });
-    nc.on('close', function() {
-      done(new Error('Close event improperly called'));
-    });
   });
 
   it('should emit multiple reconnecting events and fail after maxReconnectAttempts', function(done) {
