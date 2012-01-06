@@ -24,7 +24,7 @@ exports.start_server = function(port, opt_flags, done) {
   var start   = new Date();
   var wait    = 0;
   var maxWait = 5 * 1000; // 5 secs
-  var delta   = 250;
+  var delta   = 50;
   var socket;
   var timer;
 
@@ -66,7 +66,7 @@ exports.start_server = function(port, opt_flags, done) {
 
     // Wait for next try..
     socket.on('error', function(error) {
-      finish(new Error("Error connecting to server on port: " + port));
+//      finish(new Error("Problem connecting to server on port: " + port + " (" + error + ")"));
     });
 
   }, delta);
