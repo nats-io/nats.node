@@ -25,6 +25,7 @@ describe('Authorization', function() {
     nc.on('error', function(err) {
       err.should.exist;
       /Authorization/.exec(err).should.exist;
+      nc.close();
       done();
     });
   });
