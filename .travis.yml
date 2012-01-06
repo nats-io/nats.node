@@ -1,10 +1,8 @@
 language: node_js
 
-rvm:
-  - 1.9.3
-
 node_js:
   - 0.4
 
-before_install: gem install nats --pre
+before_script:
+  - sudo gem install nats --pre
 
