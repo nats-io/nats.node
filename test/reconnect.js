@@ -115,7 +115,6 @@ describe('Reconnect functionality', function() {
     nc.on('reconnecting', function(client) {
       // restart server and make sure next flush works ok
       if (server == null) {
-        console.log("RESTARTING SERVER!");
         server = nsc.start_server(PORT)
       }
     });
