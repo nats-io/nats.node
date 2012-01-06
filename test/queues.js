@@ -67,7 +67,7 @@ describe('Queues', function() {
     for (var i=0; i<numSubscribers; i++) {
       received[i] = 0;
       nc.subscribe('foo.bar', {'queue':'spreadtest' }, function(index) {
-	return function() { received[index] += 1; }
+        return function() { received[index] += 1; }
       }(i));
     }
 
@@ -75,7 +75,7 @@ describe('Queues', function() {
 
     nc.flush(function() {
       for (var i=0; i<numSubscribers; i++) {
-	Math.abs(received[i]-avg).should.be.below(allowedVariance);
+        Math.abs(received[i]-avg).should.be.below(allowedVariance);
       }
       nc.close();
       done();

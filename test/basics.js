@@ -95,8 +95,8 @@ describe('Basics', function() {
     nc.subscribe('*', function() {
       received += 1;
       if (received == expected) {
-	nc.close();
-	done();
+        nc.close();
+        done();
       }
     });
     nc.publish('foo.baz'); // miss
@@ -114,8 +114,8 @@ describe('Basics', function() {
     nc.subscribe('foo.bar.*', function() {
       received += 1;
       if (received == expected) {
-	nc.close();
-	done();
+        nc.close();
+        done();
       }
     });
     nc.publish('foo.baz'); // miss
@@ -133,8 +133,8 @@ describe('Basics', function() {
     nc.subscribe('foo.>', function() {
       received += 1;
       if (received == expected) {
-	nc.close();
-	done();
+        nc.close();
+        done();
       }
     });
     nc.publish('foo.baz');

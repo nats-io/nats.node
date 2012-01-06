@@ -132,7 +132,7 @@ describe('Max responses and Auto-unsub', function() {
     // Create 5 helpers
     for (var i=0; i<5; i++) {
       nc.subscribe('help', function(msg, reply) {
-	nc.publish(reply, 'I can help!');
+        nc.publish(reply, 'I can help!');
       });
     }
 
@@ -140,9 +140,9 @@ describe('Max responses and Auto-unsub', function() {
       received += 1;
 
       nc.flush(function() {
-	received.should.equal(1);
-	nc.close();
-	done();
+        received.should.equal(1);
+        nc.close();
+        done();
       });
 
     });
