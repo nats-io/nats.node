@@ -16,12 +16,15 @@ describe('Basics', function() {
     server.kill();
   });
 
-  it('should do basic subscribe and unsubscribe', function() {
+  it('should do basic subscribe and unsubscribe', function(done) {
     var nc = NATS.connect(PORT);
     var sid = nc.subscribe('foo');
     sid.should.exist;
     nc.unsubscribe(sid);
-    nc.close();
+    nc.flush(function() {
+      nc.close();
+      done();
+    });
   });
 
   it('should do basic publish', function(done) {
