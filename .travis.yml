@@ -5,4 +5,5 @@ node_js:
 
 before_script:
   - sudo gem install nats --pre
+  - which nats-server
 
