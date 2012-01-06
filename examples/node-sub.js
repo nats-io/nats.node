@@ -7,16 +7,14 @@ nats.on('error', function(exception) {
 });
 
 var subject = process.argv[2];
-var msg = process.argv[3] || '';
 
 if (subject == undefined) {
-  console.log('Usage: node-pub <subject> [msg]');
+  console.log('Usage: node-sub <subject>');
   process.exit();
 }
 
-nats.publish(subject, msg, function() {
-  console.log("Published [" + subject + "] : '" + msg + "'");
-  nats.close();
+console.log('Listening on [' + subject + ']');
+
+nats.subscribe(subject, function(msg) {
+  console.log("Received '" + msg + "'");
 });
-
-
