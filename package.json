@@ -6,6 +6,7 @@
     "type" : "git",
     "url"  : "git@github.com:derekcollison/node_nats.git"
   },
+  "homepage" : "https://github.com/derekcollison/node_nats",
   "author": "Derek Collison <derek.collison@gmail.com>",
   "keywords": ["messaging", "pubsub", "publish", "subscribe", "queue", "distributed queueing"],
   "dependencies": { },
