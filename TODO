@@ -5,3 +5,4 @@
 5. [DONE]Make tests wait on server startup, not blind timeout.
 6. Fix what is attached to client/connection (e.g. config, info, etc)
 7. Make sure don't throw strings but Errors.
+8. Check for exception raise in subscription callbacks.
