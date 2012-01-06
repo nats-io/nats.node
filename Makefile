@@ -5,7 +5,7 @@ test:
 	  --require should \
 	  --reporter list \
 	  --slow 250 \
-	  --timeout 5000 \
+	  --timeout 10000 \
 	  $(TESTS)
 
 .PHONY: test
