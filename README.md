@@ -1,6 +1,8 @@
 # Node_Nats
 
-A Node.js client for NATS.
+A Node.js client for the [NATS messaging system](https://github.com/derekcollison/nats).
+
+[![Build Status](https://secure.travis-ci.org/derekcollison/node_nats.png)](http://travis-ci.org/derekcollison/node_nats)
 
 ## Installation
 
