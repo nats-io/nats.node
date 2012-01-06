@@ -1,10 +1,10 @@
 {
   "name": "nats",
-  "description": "Node client for NATS, a lightweight messaging system",
+  "description": "Node.js client for NATS, a lightweight messaging system",
   "version": "0.2.0",
   "repository": {
     "type" : "git",
-    "url"  : ""
+    "url"  : "git@github.com:derekcollison/node_nats.git"
   },
   "author": "Derek Collison <derek.collison@gmail.com>",
   "keywords": ["messaging", "pubsub", "publish", "subscribe", "queue", "distributed queueing"],

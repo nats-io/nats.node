@@ -5,7 +5,7 @@ A Node.js client for NATS.
 ## Installation
 
 ```bash
-npm install nats (Coming soon)
+npm install nats
 ```
 
 ## Basic Usage
