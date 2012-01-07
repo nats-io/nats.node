@@ -24,32 +24,37 @@ exports.start_server = function(port, opt_flags, done) {
   var start   = new Date();
   var wait    = 0;
   var maxWait = 5 * 1000; // 5 secs
-  var delta   = 50;
+  var delta   = 250;
   var socket;
   var timer;
 
   var resetSocket = function() {
-    if (socket) {
+    if (socket !== undefined) {
       socket.removeAllListeners();
       socket.destroy();
-      socket = null;
+      socket = undefined;
     }
   }
 
   var finish = function(err) {
     resetSocket();
-    if (timer) { clearInterval(timer); }
-    if (done) { done(err); }
+    if (timer !== undefined) {
+      clearInterval(timer);
+      timer = undefined;
+    }
+    if (done) {
+      done(err);
+    }
   };
 
   // Test for when socket is bound.
   timer = setInterval(function() {
+    resetSocket();
+
     wait = new Date() - start;
     if (wait > maxWait) {
       finish(new Error("Can't connect to server on port: " + port));
     }
-
-    resetSocket();
 
     // Try to connect to the correct port.
     socket = net.createConnection(port);
