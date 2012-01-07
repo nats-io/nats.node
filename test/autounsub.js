@@ -26,7 +26,6 @@ describe('Max responses and Auto-unsub', function() {
     nc.subscribe('foo', {'max':WANT}, function() {
       received += 1;
     });
-
     for (var i=0; i<SEND; i++) {
       nc.publish('foo');
     }
@@ -46,11 +45,9 @@ describe('Max responses and Auto-unsub', function() {
     var sid = nc.subscribe('foo', function() {
       received += 1;
     });
-
     for (var i=0; i<SEND; i++) {
       nc.publish('foo');
     }
-
     nc.unsubscribe(sid, WANT);
 
     nc.flush(function() {
@@ -138,13 +135,11 @@ describe('Max responses and Auto-unsub', function() {
 
     nc.request('help', null, {'max':1}, function() {
       received += 1;
-
       nc.flush(function() {
         received.should.equal(1);
         nc.close();
         done();
       });
-
     });
 
   });
