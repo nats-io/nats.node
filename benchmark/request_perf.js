@@ -1,0 +1,39 @@
+
+var nc1 = require('nats').connect();
+var nc2 = require('nats').connect();
+
+///////////////////////////////////////
+// Request Performance
+///////////////////////////////////////
+
+var start;
+var loop = 10000;
+var hash = 1000;
+var received = 0;
+
+console.log('Request Performance Test');
+
+nc1.on('connect', function(){
+
+  var start = new Date();
+
+  nc1.subscribe('request.test', function(msg, reply) {
+    nc1.publish(reply, 'ok');
+  });
+
+  for (var i=0; i<loop; i++) {
+    nc2.request('request.test', 'help', function() {
+      received += 1;
+      if (received === loop) {
+	var stop = new Date();
+	var rps = parseInt(loop/((stop-start)/1000));
+	console.log('\n' + rps + ' request-responses/sec');
+	var lat = parseInt(((stop-start)*1000)/loop);
+	console.log('Avg roundtrip latency: ' + lat + ' microseconds');
+	process.exit();
+      } else if (received % hash === 0) {
+	process.stdout.write('+');
+      }
+    });
+  }
+});
