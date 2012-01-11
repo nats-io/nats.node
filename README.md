@@ -88,7 +88,9 @@ nats.publish('foo', 'You done?', function() {
 });
 
 // Flush connection to server, callback fires when all messages have been processed.
-nats.flush(function() { });
+nats.flush(function() {
+  console.log('All clear!');
+});
 
 // Timeouts for subscriptions
 var sid = nats.subscribe('foo', function() {
@@ -97,7 +99,7 @@ var sid = nats.subscribe('foo', function() {
 
 // Timeout unless a certain number of messages have been received
 nats.timeout(sid, timeout_ms, expected, function() {
-  timeout_recvd = true;
+  timeout = true;
 });
 
 // Auto-unsubscribe after MAX_WANTED messages received
