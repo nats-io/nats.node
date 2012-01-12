@@ -76,6 +76,14 @@ exports.start_server = function(port, opt_flags, done) {
 
   }, delta);
 
+  // Other way to catch another server running.
+  server.on('exit', function(code, sig) {
+    if (code !== null && code !== 0) {
+      console.log("EXIT: " + code);
+      finish(new Error("Server exited with bad code, already running?"));
+    }
+  });
+
   // Server does not exist..
   server.stderr.on('data', function(data) {
     if (/^execvp\(\)/.test(data)) {
