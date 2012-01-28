@@ -144,4 +144,29 @@ describe('Max responses and Auto-unsub', function() {
 
   });
 
+  it('should not leak subscriptions when using max', function(done) {
+    var nc = NATS.connect(PORT);
+    var received = 0;
+
+    nc.subscribe('help', function(msg, reply) {
+      nc.publish(reply, 'I can help!');
+    });
+
+    // Create 5 requests
+    for (var i=0; i<5; i++) {
+      nc.request('help', null, {'max':1}, function() {
+	received += 1;
+      });
+    }
+    nc.flush(function() {
+      setTimeout(function() {
+	received.should.equal(5);
+	Object.keys(nc.subs).length.should.equal(1);
+	nc.close();
+	done();
+      }, 100);
+    });
+
+  });
+
 });
