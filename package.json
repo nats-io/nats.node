@@ -1,7 +1,7 @@
 {
   "name": "nats",
   "description": "Node.js client for NATS, a lightweight messaging system",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "repository": {
     "type" : "git",
     "url"  : "git@github.com:derekcollison/node_nats.git"
