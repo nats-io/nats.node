@@ -111,13 +111,11 @@ describe('Basics', function() {
     });
 
     var sub = nc.request('foo', initMsg, function(reply) {
-      if (0 == received) {
-        setTimeout(function() {
-          received.should.equal(expected);
-          nc.close();
-          done();
-        }, 0);
-      }
+      setTimeout(function() {
+        received.should.equal(expected);
+        nc.close();
+        done();
+      }, 0);
 
       received += 1;
       nc.unsubscribe(sub);
