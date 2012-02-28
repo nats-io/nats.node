@@ -94,6 +94,34 @@ describe('Basics', function() {
 
   });
 
+  it('should return a sub id for requests', function(done) {
+    var nc = NATS.connect(PORT);
+    var initMsg = 'Hello World';
+    var replyMsg = 'Hello Back!';
+    var expected = 1;
+    var received = 0;
+
+    // Add two subscribers. We will only receive a reply from one.
+    nc.subscribe('foo', function(msg, reply) {
+      nc.publish(reply, replyMsg);
+    });
+
+    nc.subscribe('foo', function(msg, reply) {
+      nc.publish(reply, replyMsg);
+    });
+
+    var sub = nc.request('foo', initMsg, function(reply) {
+      received += 1;
+      nc.unsubscribe(sub);
+
+      setTimeout(function() {
+        received.should.equal(expected);
+        nc.close();
+        done();
+      }, 0);
+    });
+  });
+
   it('should do single partial wildcard subscriptions correctly', function(done) {
     var nc = NATS.connect(PORT);
     var expected = 3;
