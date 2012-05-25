@@ -120,4 +120,34 @@ describe('Reconnect functionality', function() {
     });
   });
 
+  it('should succesfully reconnect to new server with queue subscriptions correctly', function(done) {
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
+    // Kill server after first successful contact
+    nc.flush(function() {
+      server.kill();
+      server = null;
+    });
+    var received = 0;
+    // Multiple subscribers
+    for (var i=0; i<5; i++) {
+      nc.subscribe('foo', {'queue':'myReconnectQueue'}, function() { received += 1; });
+    }
+    nc.on('reconnecting', function(client) {
+      // restart server and make sure next flush works ok
+      if (server == null) {
+        server = nsc.start_server(PORT)
+      }
+    });
+    nc.on('reconnect', function() {
+      nc.publish('foo', function() {
+	received.should.equal(1);
+	nc.close();
+	done();
+      });
+    });
+  });
+
+
 });
+
+
