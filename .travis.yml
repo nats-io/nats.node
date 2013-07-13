@@ -5,7 +5,7 @@ node_js:
   - 0.10
 
 before_script:
-  - gem install nats
+  - gem install nats --pre
   - which nats-server
   - nats-server -v
 
