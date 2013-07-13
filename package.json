@@ -1,7 +1,7 @@
 {
   "name": "nats",
   "description": "Node.js client for NATS, a lightweight messaging system",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "repository": {
     "type" : "git",
     "url"  : "git@github.com:derekcollison/node_nats.git"
@@ -17,5 +17,5 @@
   "main": "index",
   "license" : "MIT",
   "scripts": { "test": "make test" },
-  "engines": { "node": ">= 0.4.x < 0.7.0" }
+  "engines": { "node": ">= 0.4.x <= 0.10.x" }
 }
