@@ -1,11 +1,11 @@
 language: node_js
 
 node_js:
-  - 0.4
-  - 0.6
+  - 0.8
+  - 0.10
 
 before_script:
-  - sudo gem install nats
+  - gem install nats
   - which nats-server
   - nats-server -v
 
