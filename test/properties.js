@@ -8,11 +8,11 @@ describe('Base Properties', function() {
   });
 
   it('should have a connect function', function() {
-    NATS.connect.should.be.a('function');
+    NATS.connect.should.be.a.Function
   });
 
   it('should have a createInbox function', function() {
-    NATS.createInbox.should.be.a('function');
+    NATS.createInbox.should.be.a.Function;
   });
 
 });
@@ -23,19 +23,19 @@ describe('Connection Properties', function() {
   nc.should.exist;
 
   it('should have a publish function', function() {
-    nc.publish.should.be.a('function');
+    nc.publish.should.be.a.Function;
   });
 
   it('should have a subscribe function', function() {
-    nc.subscribe.should.be.a('function');
+    nc.subscribe.should.be.a.Function;
   });
 
   it('should have an unsubscribe function', function() {
-    nc.unsubscribe.should.be.a('function');
+    nc.unsubscribe.should.be.a.Function;
   });
 
   it('should have a request function', function() {
-    nc.request.should.be.a('function');
+    nc.request.should.be.a.Function;
   });
 
   it('should have an options hash with proper fields', function() {
@@ -51,7 +51,7 @@ describe('Connection Properties', function() {
 
   it('should have an parsed url', function() {
     nc.should.have.property('url');
-    nc.url.should.be.a('object');
+    nc.url.should.be.a.Oobject;
     nc.url.should.have.property('protocol');
     nc.url.should.have.property('host');
     nc.url.should.have.property('port');
