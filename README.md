@@ -65,7 +65,7 @@ nats.subscribe('foo.>', function(msg, reply, subject) {
 
 ```
 
-## Queues Groups
+## Queue Groups
 
 ```javascript
 // All subscriptions with the same queue name will form a queue group.
