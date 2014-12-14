@@ -1,8 +1,8 @@
-# Node_Nats
+# NATS - Node.js Client
 
-A Node.js client for the [NATS messaging system](https://github.com/derekcollison/nats).
+A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
-[![Build Status](https://secure.travis-ci.org/derekcollison/node_nats.png)](http://travis-ci.org/derekcollison/node_nats)
+[![Build Status](https://secure.travis-ci.org/derekcollison/node_nats.png)](http://travis-ci.org/derekcollison/node_nats) [![npm version](https://badge.fury.io/js/nats.svg)](http://badge.fury.io/js/nats)
 
 ## Installation
 
@@ -122,7 +122,7 @@ See examples and benchmarks for more information..
 
 (The MIT License)
 
-Copyright (c) 2011-2013 Derek Collison
+Copyright (c) 2011-2014 Derek Collison
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
