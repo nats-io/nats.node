@@ -147,7 +147,6 @@ describe('Reconnect functionality', function() {
     });
   });
 
-
 });
 
 

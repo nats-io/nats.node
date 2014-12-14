@@ -7,6 +7,11 @@ describe('Base Properties', function() {
     NATS.version.should.match(/[0-9]+\.[0-9]+\.[0-9]+/);
   });
 
+  it ('should have the same version as package.json', function() {
+    var pkg = require('../package.json');
+    NATS.version.should.equal(pkg.version)
+  });
+
   it('should have a connect function', function() {
     NATS.connect.should.be.a.Function
   });
