@@ -5,7 +5,7 @@ var nats = require('nats').connect();
 // Publish Performance
 ///////////////////////////////////////
 
-var loop = 100000;
+var loop = 500000;
 var hash = 2500;
 
 console.log('Publish Performance Test');
