@@ -1,6 +1,6 @@
 1. [IN PROGRESS] Mocha tests
-2. Metrics
+2. Metrics/Stats
 3. Check for exception raise in subscription callbacks.
 4. [FIXED] Check for Request/Subscribe leak (#issue 30 on NATS)
 5. Fast producer
-6. Reconnects/Clustered mode
+6. Clustered mode

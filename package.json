@@ -1,21 +1,36 @@
 {
   "name": "nats",
   "description": "Node.js client for NATS, a lightweight messaging system",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "repository": {
-    "type" : "git",
-    "url"  : "git@github.com:derekcollison/node_nats.git"
+    "type": "git",
+    "url": "git@github.com:derekcollison/node-nats.git"
   },
-  "homepage" : "https://github.com/derekcollison/node_nats",
+  "homepage": "https://nats.io",
   "author": "Derek Collison <derek.collison@gmail.com>",
-  "keywords": ["messaging", "pubsub", "publish", "subscribe", "queue", "distributed queueing"],
-  "dependencies": { },
+  "keywords": [
+    "messaging",
+    "pubsub",
+    "publish",
+    "subscribe",
+    "queue",
+    "distributed queueing"
+  ],
+  "dependencies": {},
   "devDependencies": {
-    "should": ">= 0.0.1",
-    "mocha": "*"
+    "coveralls": "^2.11.2",
+    "istanbul": "^0.3.5",
+    "jshint": "^2.5.10",
+    "mocha": "*",
+    "mocha-lcov-reporter": "^0.0.1",
+    "should": ">= 3.0.0"
   },
   "main": "index",
-  "license" : "MIT",
-  "scripts": { "test": "make test" },
-  "engines": { "node": ">= 0.4.x <= 0.10.x" }
+  "license": "MIT",
+  "scripts": {
+    "test": "make test-coveralls"
+  },
+  "engines": {
+    "node": ">= 0.8.x <= 0.10.x"
+  }
 }

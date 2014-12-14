@@ -1,14 +1,22 @@
 
 var NATS = require ('../');
 
+// Ignore - Expected an assignment or function call and instead saw an expression.
+// jshint -W030
+
 describe('Base Properties', function() {
 
   it('should have a version property', function() {
     NATS.version.should.match(/[0-9]+\.[0-9]+\.[0-9]+/);
   });
 
+  it ('should have the same version as package.json', function() {
+    var pkg = require('../package.json');
+    NATS.version.should.equal(pkg.version);
+  });
+
   it('should have a connect function', function() {
-    NATS.connect.should.be.a.Function
+    NATS.connect.should.be.a.Function;
   });
 
   it('should have a createInbox function', function() {
@@ -51,7 +59,7 @@ describe('Connection Properties', function() {
 
   it('should have an parsed url', function() {
     nc.should.have.property('url');
-    nc.url.should.be.a.Oobject;
+    nc.url.should.be.an.Object;
     nc.url.should.have.property('protocol');
     nc.url.should.have.property('host');
     nc.url.should.have.property('port');

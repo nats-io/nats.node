@@ -1,5 +1,6 @@
 var NATS = require ('../'),
-    nsc = require('./support/nats_server_control');
+    nsc = require('./support/nats_server_control'),
+    should = require('should');
 
 var PORT = 1421;
 var uri = 'nats://localhost:' + PORT;
@@ -23,7 +24,7 @@ describe('Reconnect functionality', function() {
 
   it('should not emit a reconnecting event if suppressed', function(done) {
     var nc = NATS.connect({'port':PORT, 'reconnect':false});
-    nc.should.exist;
+    should.exist(nc);
     nc.on('connect', function() {
       server.kill();
     });
@@ -39,7 +40,7 @@ describe('Reconnect functionality', function() {
   it('should emit a disconnect and a reconnecting event after proper delay', function(done) {
     var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':WAIT});
     var startTime;
-    nc.should.exist;
+    should.exist(nc);
     nc.on('connect', function() {
       server.kill();
       startTime = new Date();
@@ -86,8 +87,8 @@ describe('Reconnect functionality', function() {
     });
     nc.on('reconnecting', function(client) {
       // restart server and make sure next flush works ok
-      if (server == null) {
-        server = nsc.start_server(PORT)
+      if (server === null) {
+        server = nsc.start_server(PORT);
       }
     });
     nc.on('reconnect', function() {
@@ -111,8 +112,8 @@ describe('Reconnect functionality', function() {
     });
     nc.on('reconnecting', function(client) {
       // restart server and make sure next flush works ok
-      if (server == null) {
-        server = nsc.start_server(PORT)
+      if (server === null) {
+        server = nsc.start_server(PORT);
       }
     });
     nc.on('reconnect', function() {
@@ -129,13 +130,14 @@ describe('Reconnect functionality', function() {
     });
     var received = 0;
     // Multiple subscribers
+    cb = function() { received += 1; };
     for (var i=0; i<5; i++) {
-      nc.subscribe('foo', {'queue':'myReconnectQueue'}, function() { received += 1; });
+      nc.subscribe('foo', {'queue':'myReconnectQueue'}, cb);
     }
     nc.on('reconnecting', function(client) {
       // restart server and make sure next flush works ok
-      if (server == null) {
-        server = nsc.start_server(PORT)
+      if (server === null) {
+        server = nsc.start_server(PORT);
       }
     });
     nc.on('reconnect', function() {
@@ -146,7 +148,6 @@ describe('Reconnect functionality', function() {
       });
     });
   });
-
 
 });
 

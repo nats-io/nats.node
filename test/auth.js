@@ -1,5 +1,6 @@
 var NATS = require ('../'),
-    nsc = require('./support/nats_server_control');
+    nsc = require('./support/nats_server_control'),
+    should = require('should');
 
 var PORT = 1422;
 var flags = ['--user', 'derek', '--pass', 'foobar'];
@@ -23,8 +24,8 @@ describe('Authorization', function() {
   it('should fail to connect with no credentials ', function(done) {
     var nc = NATS.connect(PORT);
     nc.on('error', function(err) {
-      err.should.exist;
-      /Authorization/.exec(err).should.exist;
+      should.exist(err);
+      should.exist(/Authorization/.exec(err));
       nc.close();
       done();
     });

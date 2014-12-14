@@ -2,7 +2,7 @@
 
 A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
-[![Build Status](https://secure.travis-ci.org/derekcollison/node-nats.png)](http://travis-ci.org/derekcollison/node-nats) [![npm version](https://badge.fury.io/js/nats.svg)](http://badge.fury.io/js/nats)
+[![Build Status](https://secure.travis-ci.org/derekcollison/node-nats.png)](http://travis-ci.org/derekcollison/node-nats) [![npm version](https://badge.fury.io/js/nats.svg)](http://badge.fury.io/js/nats)[![Coverage Status](https://img.shields.io/coveralls/derekcollison/node-nats.svg)](https://coveralls.io/r/derekcollison/node-nats?branch=master
 
 ## Installation
 
@@ -57,8 +57,9 @@ nats.subscribe('foo.bar.*', function(msg, reply, subject) {
   console.log('Msg received on [' + subject + '] : ' + msg);
 });
 
-// ">" matches any length of the tail of a subject, and can only be the last token
-// E.g. 'foo.>' will match 'foo.bar', 'foo.bar.baz', 'foo.foo.bar.bax.22'
+// ">" matches any length of the tail of a subject, and can only be
+// the last token E.g. 'foo.>' will match 'foo.bar', 'foo.bar.baz',
+// 'foo.foo.bar.bax.22'
 nats.subscribe('foo.>', function(msg, reply, subject) {
   console.log('Msg received on [' + subject + '] : ' + msg);
 });
@@ -69,8 +70,8 @@ nats.subscribe('foo.>', function(msg, reply, subject) {
 
 ```javascript
 // All subscriptions with the same queue name will form a queue group.
-// Each message will be delivered to only one subscriber per queue group, queuing semantics.
-// You can have as many queue groups as you wish.
+// Each message will be delivered to only one subscriber per queue group,
+// queuing semantics. You can have as many queue groups as you wish.
 // Normal subscribers will continue to work as expected.
 nats.subscribe('foo', {'queue':'job.workers'}, function() {
   received += 1;
@@ -87,7 +88,8 @@ nats.publish('foo', 'You done?', function() {
   console.log('msg processed!');
 });
 
-// Flush connection to server, callback fires when all messages have been processed.
+// Flush connection to server, callback fires when all messages have
+// been processed.
 nats.flush(function() {
   console.log('All clear!');
 });

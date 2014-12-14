@@ -24,7 +24,7 @@ describe('Timeout and max received events for subscriptions', function() {
       var sid = nc.subscribe('foo');
       nc.timeout(sid, 50, 1, function() {
         var elapsed = new Date() - startTime;
-        elapsed.should.be.within(50, 75);
+        elapsed.should.be.within(45, 75);
         done();
       });
     });
