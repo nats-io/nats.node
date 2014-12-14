@@ -1,6 +1,9 @@
 
 var NATS = require ('../');
 
+// Ignore - Expected an assignment or function call and instead saw an expression.
+// jshint -W030
+
 describe('Base Properties', function() {
 
   it('should have a version property', function() {
@@ -13,11 +16,11 @@ describe('Base Properties', function() {
   });
 
   it('should have a connect function', function() {
-    should.be.a.Function(NATS.connect);
+    NATS.connect.should.be.a.Function;
   });
 
   it('should have a createInbox function', function() {
-    should.be.a.Function(NATS.createInbox);
+    NATS.createInbox.should.be.a.Function;
   });
 
 });
@@ -25,22 +28,22 @@ describe('Base Properties', function() {
 describe('Connection Properties', function() {
 
   var nc = NATS.connect();
-  should.exist(nc);
+  nc.should.exist;
 
   it('should have a publish function', function() {
-    should.be.a.Function(nc.publish);
+    nc.publish.should.be.a.Function;
   });
 
   it('should have a subscribe function', function() {
-    should.be.a.Function(nc.subscribe);
+    nc.subscribe.should.be.a.Function;
   });
 
   it('should have an unsubscribe function', function() {
-    should.be.a.Function(nc.unsubscribe);
+    nc.unsubscribe.should.be.a.Function;
   });
 
   it('should have a request function', function() {
-    should.be.a.Function(nc.request);
+    nc.request.should.be.a.Function;
   });
 
   it('should have an options hash with proper fields', function() {
@@ -56,7 +59,7 @@ describe('Connection Properties', function() {
 
   it('should have an parsed url', function() {
     nc.should.have.property('url');
-    should.be.a.Oobject(nc.url);
+    nc.url.should.be.an.Object;
     nc.url.should.have.property('protocol');
     nc.url.should.have.property('host');
     nc.url.should.have.property('port');

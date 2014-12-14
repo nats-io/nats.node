@@ -1,5 +1,6 @@
 var NATS = require ('../'),
-    nsc = require('./support/nats_server_control');
+    nsc = require('./support/nats_server_control'),
+    should = require('should');
 
 describe('Basics', function() {
 
