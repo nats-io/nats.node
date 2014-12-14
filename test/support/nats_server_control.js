@@ -6,7 +6,7 @@ var SERVER = 'nats-server';
 var DEFAULT_PORT = 4222;
 
 exports.start_server = function(port, opt_flags, done) {
-  if (port == undefined) {
+  if (port === undefined) {
     port = DEFAULT_PORT;
   }
   if (typeof opt_flags == 'function') {
@@ -15,7 +15,7 @@ exports.start_server = function(port, opt_flags, done) {
   }
   var flags = ['-p', port];
 
-  if (opt_flags != undefined) {
+  if (opt_flags !== undefined) {
     flags = flags.concat(opt_flags);
   }
 
@@ -34,7 +34,7 @@ exports.start_server = function(port, opt_flags, done) {
       socket.destroy();
       socket = undefined;
     }
-  }
+  };
 
   var finish = function(err) {
     resetSocket();
@@ -61,7 +61,7 @@ exports.start_server = function(port, opt_flags, done) {
 
     // Success
     socket.on('connect', function() {
-      if (server.pid == null) {
+      if (server.pid === null) {
         // We connected but not to our server..
         finish(new Error("Server already running on port: " + port));
       } else {
@@ -93,10 +93,10 @@ exports.start_server = function(port, opt_flags, done) {
   });
 
   return server;
-}
+};
 
 exports.stop_server = function(server) {
-  if (server != undefined) {
+  if (server !== undefined) {
     server.kill();
   }
-}
+};

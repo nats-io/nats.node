@@ -9,15 +9,15 @@ describe('Base Properties', function() {
 
   it ('should have the same version as package.json', function() {
     var pkg = require('../package.json');
-    NATS.version.should.equal(pkg.version)
+    NATS.version.should.equal(pkg.version);
   });
 
   it('should have a connect function', function() {
-    NATS.connect.should.be.a.Function
+    should.be.a.Function(NATS.connect);
   });
 
   it('should have a createInbox function', function() {
-    NATS.createInbox.should.be.a.Function;
+    should.be.a.Function(NATS.createInbox);
   });
 
 });
@@ -25,22 +25,22 @@ describe('Base Properties', function() {
 describe('Connection Properties', function() {
 
   var nc = NATS.connect();
-  nc.should.exist;
+  should.exist(nc);
 
   it('should have a publish function', function() {
-    nc.publish.should.be.a.Function;
+    should.be.a.Function(nc.publish);
   });
 
   it('should have a subscribe function', function() {
-    nc.subscribe.should.be.a.Function;
+    should.be.a.Function(nc.subscribe);
   });
 
   it('should have an unsubscribe function', function() {
-    nc.unsubscribe.should.be.a.Function;
+    should.be.a.Function(nc.unsubscribe);
   });
 
   it('should have a request function', function() {
-    nc.request.should.be.a.Function;
+    should.be.a.Function(nc.request);
   });
 
   it('should have an options hash with proper fields', function() {
@@ -56,7 +56,7 @@ describe('Connection Properties', function() {
 
   it('should have an parsed url', function() {
     nc.should.have.property('url');
-    nc.url.should.be.a.Oobject;
+    should.be.a.Oobject(nc.url);
     nc.url.should.have.property('protocol');
     nc.url.should.have.property('host');
     nc.url.should.have.property('port');

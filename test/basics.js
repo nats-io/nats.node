@@ -19,7 +19,7 @@ describe('Basics', function() {
   it('should do basic subscribe and unsubscribe', function(done) {
     var nc = NATS.connect(PORT);
     var sid = nc.subscribe('foo');
-    sid.should.exist;
+    should.exist(sid);
     nc.unsubscribe(sid);
     nc.flush(function() {
       nc.close();
@@ -49,7 +49,7 @@ describe('Basics', function() {
     var nc = NATS.connect(PORT);
     var data = 'Hello World';
     nc.subscribe('foo', function(msg) {
-      msg.should.exist;
+      should.exist(msg);
       msg.should.equal(data);
       nc.close();
       done();
@@ -62,9 +62,9 @@ describe('Basics', function() {
     var data = 'Hello World';
     var inbox = nc.createInbox();
     nc.subscribe('foo', function(msg, reply) {
-      msg.should.exist;
+      should.exist(msg);
       msg.should.equal(data);
-      reply.should.exist;
+      should.exist(reply);
       reply.should.equal(inbox);
       nc.close();
       done();
@@ -78,15 +78,15 @@ describe('Basics', function() {
     var replyMsg = 'Hello Back!';
 
     nc.subscribe('foo', function(msg, reply) {
-      msg.should.exist;
+      should.exist(msg);
       msg.should.equal(initMsg);
-      reply.should.exist;
+      should.exist(reply);
       reply.should.match(/_INBOX\.*/);
       nc.publish(reply, replyMsg);
     });
 
     nc.request('foo', initMsg, function(reply) {
-      reply.should.exist;
+      should.exist(reply);
       reply.should.equal(replyMsg);
       nc.close();
       done();
@@ -183,7 +183,7 @@ describe('Basics', function() {
     var nc = NATS.connect(PORT);
     var subject = 'foo.bar.baz';
     nc.subscribe('*.*.*', function(msg, reply, subj) {
-      subj.should.exist;
+      should.exist(subj);
       subj.should.equal(subject);
       nc.close();
       done();
