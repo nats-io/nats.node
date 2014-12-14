@@ -28,7 +28,7 @@
   "main": "index",
   "license": "MIT",
   "scripts": {
-    "test": "make test"
+    "test": "make test-coveralls"
   },
   "engines": {
     "node": ">= 0.8.x <= 0.10.x"
