@@ -123,6 +123,7 @@ describe('Max responses and Auto-unsub', function() {
   });
 
   it('should only receive N msgs in request mode with multiple helpers', function(done) {
+    /* jshint loopfunc: true */
     var nc = NATS.connect(PORT);
     var received = 0;
 
@@ -145,6 +146,7 @@ describe('Max responses and Auto-unsub', function() {
   });
 
   it('should not leak subscriptions when using max', function(done) {
+    /* jshint loopfunc: true */
     var nc = NATS.connect(PORT);
     var received = 0;
 

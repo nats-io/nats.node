@@ -1,5 +1,6 @@
 var NATS = require ('../'),
-    nsc = require('./support/nats_server_control');
+    nsc = require('./support/nats_server_control'),
+    should = require('should');
 
 var PORT = 1421;
 var uri = 'nats://localhost:' + PORT;
@@ -21,20 +22,20 @@ describe('Basic Connectivity', function() {
 
   it('should perform basic connect with port', function(){
     var nc = NATS.connect(PORT);
-    nc.should.exist;
+    should.exist(nc);
     nc.close();
   });
 
   it('should perform basic connect with uri', function(){
     var nc = NATS.connect(uri);
-    nc.should.exist;
+    should.exist(nc);
     nc.close();
   });
 
   it('should perform basic connect with options arg', function(){
     var options = { 'uri' : uri };
     var nc = NATS.connect(options);
-    nc.should.exist;
+    should.exist(nc);
     nc.close();
   });
 

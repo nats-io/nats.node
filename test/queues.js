@@ -32,8 +32,9 @@ describe('Queues', function() {
   it('should deliver a message to only one member of a queue group', function(done) {
     var nc = NATS.connect(PORT);
     var received = 0;
+    cb = function() { received += 1; };
     for (var i=0; i<5; i++) {
-      nc.subscribe('foo', {'queue':'myqueue'}, function() { received += 1; });
+      nc.subscribe('foo', {'queue':'myqueue'}, cb);
     }
     nc.publish('foo', function() {
       received.should.equal(1);
@@ -57,6 +58,7 @@ describe('Queues', function() {
   });
 
   it('should spread messages out equally (given random)', function(done) {
+    /* jshint loopfunc: true */
     var nc = NATS.connect(PORT);
     var total = 5000;
     var numSubscribers = 10;
@@ -67,11 +69,11 @@ describe('Queues', function() {
     for (var i=0; i<numSubscribers; i++) {
       received[i] = 0;
       nc.subscribe('foo.bar', {'queue':'spreadtest' }, function(index) {
-        return function() { received[index] += 1; }
+        return function() { received[index] += 1; };
       }(i));
     }
 
-    for (var i=0; i<total; i++) { nc.publish('foo.bar', 'ok'); }
+    for (i=0; i<total; i++) { nc.publish('foo.bar', 'ok'); }
 
     nc.flush(function() {
       for (var i=0; i<numSubscribers; i++) {
