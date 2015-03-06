@@ -8,7 +8,7 @@ var uri = 'nats://localhost:' + PORT;
 var WAIT = 20;
 var ATTEMPTS = 4;
 
-describe('Reconnect functionality', function() {
+describe.skip('Reconnect functionality', function() {
 
   var server;
 
@@ -142,13 +142,11 @@ describe('Reconnect functionality', function() {
     });
     nc.on('reconnect', function() {
       nc.publish('foo', function() {
-	received.should.equal(1);
-	nc.close();
-	done();
+        received.should.equal(1);
+        nc.close();
+        done();
       });
     });
   });
 
 });
-
-

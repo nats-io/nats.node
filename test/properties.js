@@ -58,11 +58,9 @@ describe('Connection Properties', function() {
   });
 
   it('should have an parsed url', function() {
-    nc.should.have.property('url');
-    nc.url.should.be.an.Object;
-    nc.url.should.have.property('protocol');
-    nc.url.should.have.property('host');
-    nc.url.should.have.property('port');
+    nc.should.have.property('servers');
+    nc.servers.should.be.an.Array;
+    nc.servers.length.should.equal(1);
   });
 
   nc.close();

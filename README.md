@@ -79,6 +79,18 @@ nats.subscribe('foo', {'queue':'job.workers'}, function() {
 
 ```
 
+## Clustered Usage
+
+```javascript
+var options = {};
+options.url = [
+  'nats://user1:pass1@server1',
+  'nats://user1:pass1@server2:4243'
+];
+
+var nats = require('nats').connect(options);
+```
+
 ## Advanced Usage
 
 ```javascript
@@ -143,4 +155,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
-

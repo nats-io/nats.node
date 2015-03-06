@@ -2,7 +2,7 @@
 var spawn = require('child_process').spawn;
 var net = require('net');
 
-var SERVER = 'nats-server';
+var SERVER = 'nats-server'; // FIXME, use gnatsd
 var DEFAULT_PORT = 4222;
 
 exports.start_server = function(port, opt_flags, done) {
