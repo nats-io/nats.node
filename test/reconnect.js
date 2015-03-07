@@ -8,7 +8,7 @@ var uri = 'nats://localhost:' + PORT;
 var WAIT = 20;
 var ATTEMPTS = 4;
 
-describe.skip('Reconnect functionality', function() {
+describe('Reconnect functionality', function() {
 
   var server;
 
