@@ -2,6 +2,7 @@
 
 A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
+[![License MIT](https://img.shields.io/npm/l/express.svg)](http://opensource.org/licenses/MIT)
 [![Build Status](https://secure.travis-ci.org/derekcollison/node-nats.png)](http://travis-ci.org/derekcollison/node-nats) [![npm version](https://badge.fury.io/js/nats.svg)](http://badge.fury.io/js/nats)[![Coverage Status](https://img.shields.io/coveralls/derekcollison/node-nats.svg)](https://coveralls.io/r/derekcollison/node-nats?branch=master)
 
 ## Installation
@@ -124,7 +125,7 @@ See examples and benchmarks for more information..
 
 (The MIT License)
 
-Copyright (c) 2011-2014 Derek Collison
+Copyright (c) 2011-2015 Derek Collison
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
