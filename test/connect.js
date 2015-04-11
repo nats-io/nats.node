@@ -19,7 +19,6 @@ describe('Basic Connectivity', function() {
     server.kill();
   });
 
-
   it('should perform basic connect with port', function(){
     var nc = NATS.connect(PORT);
     should.exist(nc);

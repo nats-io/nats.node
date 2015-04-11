@@ -142,13 +142,11 @@ describe('Reconnect functionality', function() {
     });
     nc.on('reconnect', function() {
       nc.publish('foo', function() {
-	received.should.equal(1);
-	nc.close();
-	done();
+        received.should.equal(1);
+        nc.close();
+        done();
       });
     });
   });
 
 });
-
-

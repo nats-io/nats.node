@@ -5,7 +5,7 @@ var NATS = require ('../'),
 var PORT = 1422;
 var flags = ['--user', 'derek', '--pass', 'foobar'];
 var authUrl = 'nats://derek:foobar@localhost:' + PORT;
-var noAuthUrl = 'nats://localhost:' + PORT;
+var wrongAuthUrl = 'nats://wronuser:wrongpass@localhost:' + PORT;
 
 describe('Authorization', function() {
 
@@ -34,14 +34,21 @@ describe('Authorization', function() {
   it('should connect with proper credentials in url', function(done) {
     var nc = NATS.connect(authUrl);
     nc.on('connect', function(nc) {
-      setTimeout(done, 100);
+      nc.close();
+      done();
+    });
+    nc.on('error', function(err) {
+      done(err);
     });
   });
 
-  it('should connect with proper credentials as options', function(done) {
-    var nc = NATS.connect({'url':noAuthUrl, 'user':'derek', 'pass':'foobar'});
-    nc.on('connect', function(nc) {
-      setTimeout(done, 100);
+  it('should fail to connect with wrong credentials', function(done) {
+    var nc = NATS.connect({'url':wrongAuthUrl});
+    nc.on('error', function(err) {
+      should.exist(err);
+      should.exist(/Authorization/.exec(err));
+      nc.close();
+      done();
     });
   });
 
