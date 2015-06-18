@@ -87,11 +87,29 @@ describe('Cluster', function() {
     });
   });
 
-  it('should not randomly connect to servers if NoRandomize is set', function(done) {
+  it('should not randomly connect to servers if noRandomize is set', function(done) {
     var conns = [];
     var s1Count = 0;
     for (var i=0; i<100; i++) {
       var nc = NATS.connect({'noRandomize': true, 'servers':[s1Url, s2Url]});
+      conns.push(nc);
+      var nurl = url.format(nc.url);
+      if (nurl == s1Url) {
+	s1Count++;
+      }
+    }
+    for (i=0; i<100; i++) {
+      conns[i].close();
+    }
+    s1Count.should == 100;
+    done();
+  });
+
+  it('should not randomly connect to servers if dontRandomize is set', function(done) {
+    var conns = [];
+    var s1Count = 0;
+    for (var i=0; i<100; i++) {
+      var nc = NATS.connect({'dontRandomize': true, 'servers':[s1Url, s2Url]});
       conns.push(nc);
       var nurl = url.format(nc.url);
       if (nurl == s1Url) {
