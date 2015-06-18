@@ -18,10 +18,11 @@ describe('UTF8', function() {
 
   it('should do publish and subscribe with UTF8 payloads', function(done) {
     var nc = NATS.connect(PORT);
+    // ½ + ¼ = ¾: 9 characters, 12 bytes
     var data = '\u00bd + \u00bc = \u00be';
     data.length.should.equal(9);
-
     Buffer.byteLength(data).should.equal(12);
+
     nc.subscribe('utf8', function(msg) {
       msg.should.equal(data);
       done();

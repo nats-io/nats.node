@@ -149,6 +149,31 @@ describe('Reconnect functionality', function() {
     });
   });
 
+  it('should properly resync with inbound buffer non-nil', function(done) {
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
+
+    // Send lots of data to ourselves
+    nc.on('connect', function() {
+      var sid = nc.subscribe('foo', function() {
+	// Kill server on first message, inbound should still be full.
+	server.kill();
+	nc.unsubscribe(sid);
+        server = nsc.start_server(PORT);
+      });
+      b = new Buffer(4096).toString();
+      for (var i=0; i<1000; i++) {
+	nc.publish("foo", b);
+      }
+    });
+
+    nc.on('reconnect', function() {
+      nc.flush(function() {
+	nc.close();
+	done();
+      });
+    });
+  });
+
 });
 
 

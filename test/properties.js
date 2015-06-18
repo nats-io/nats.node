@@ -48,7 +48,6 @@ describe('Connection Properties', function() {
 
   it('should have an options hash with proper fields', function() {
     nc.should.have.property('options');
-    nc.options.should.have.property('uri');
     nc.options.should.have.property('url');
     nc.options.should.have.property('verbose');
     nc.options.should.have.property('pedantic');
