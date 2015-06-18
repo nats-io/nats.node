@@ -84,7 +84,7 @@ nats.subscribe('foo', {'queue':'job.workers'}, function() {
 ```javascript
 var nats = require('nats');
 
-var servers = ["nats://nats.io:4222", nats://nats.io:5222", "nats://nats.io:6222"];
+var servers = ['nats://nats.io:4222', 'nats://nats.io:5222', 'nats://nats.io:6222'];
 
 // Randomly connect to a server in the cluster group.
 var nc = nats.connect({'servers': servers});
