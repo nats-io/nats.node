@@ -2,7 +2,8 @@
 
 A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
-[![Build Status](https://secure.travis-ci.org/derekcollison/node-nats.png)](http://travis-ci.org/derekcollison/node-nats) [![npm version](https://badge.fury.io/js/nats.svg)](http://badge.fury.io/js/nats)[![Coverage Status](https://img.shields.io/coveralls/derekcollison/node-nats.svg)](https://coveralls.io/r/derekcollison/node-nats?branch=coveralls)
+[![License MIT](https://img.shields.io/npm/l/express.svg)](http://opensource.org/licenses/MIT)
+[![Build Status](https://secure.travis-ci.org/nats-io/node-nats.png)](http://travis-ci.org/nats-io/node-nats) [![npm version](https://badge.fury.io/js/nats.svg)](http://badge.fury.io/js/nats)[![Coverage Status](https://coveralls.io/repos/nats-io/node-nats/badge.svg)](https://coveralls.io/r/nats-io/node-nats?branch=master)
 
 ## Installation
 
@@ -78,6 +79,23 @@ nats.subscribe('foo', {'queue':'job.workers'}, function() {
 });
 
 ```
+## Clustered Usage
+
+```javascript
+var nats = require('nats');
+
+var servers = ['nats://nats.io:4222', 'nats://nats.io:5222', 'nats://nats.io:6222'];
+
+// Randomly connect to a server in the cluster group.
+var nc = nats.connect({'servers': servers});
+
+// currentServer is the URL of the connected server.
+console.log("Connected to " + nc.currentServer.host);
+
+// Preserve order when connecting to servers.
+nc = nats.connect({'dontRandomize': true, 'servers':servers});
+
+```
 
 ## Advanced Usage
 
@@ -124,6 +142,7 @@ See examples and benchmarks for more information..
 
 (The MIT License)
 
+Copyright (c) 2015 Apcera Inc.<br/>
 Copyright (c) 2011-2014 Derek Collison
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
