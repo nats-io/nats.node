@@ -1,13 +1,13 @@
 {
   "name": "nats",
-  "description": "Node.js client for NATS, a lightweight messaging system",
-  "version": "0.2.9",
+  "description": "Node.js client for NATS, a lightweight, high-performance messaging system",
+  "version": "0.3.0",
   "repository": {
     "type": "git",
     "url": "git@github.com:nats-io/node-nats.git"
   },
   "homepage": "https://nats.io",
-  "author": "Derek Collison <derek.collison@gmail.com>",
+  "author": "Derek Collison <derek@apcera.com>",
   "keywords": [
     "messaging",
     "pubsub",
