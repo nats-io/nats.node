@@ -1,6 +1,6 @@
 
-var nc1 = require('nats').connect();
-var nc2 = require('nats').connect();
+var nc1 = require('../lib/nats').connect();
+var nc2 = require('../lib/nats').connect();
 
 ///////////////////////////////////////
 // Publish/Subscribe Performance

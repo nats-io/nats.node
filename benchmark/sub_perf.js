@@ -1,12 +1,12 @@
 
-var nats = require('nats').connect();
+var nats = require('../lib/nats').connect();
 
 ///////////////////////////////////////
 // Subscribe Performance
 ///////////////////////////////////////
 
 var start;
-var loop = 100000;
+var loop = 500000;
 var hash = 2500;
 var received = 0;
 
