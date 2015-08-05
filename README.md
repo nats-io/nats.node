@@ -134,6 +134,13 @@ var nc2 = nats.connect();
 nc1.subscribe('foo');
 nc2.publish('foo');
 
+// Encodings
+
+// By default messages received will be decoded using UTF8. To change that,
+// set the encoding option on the connection.
+
+nc = nats.connect({'servers':servers, 'encoding': 'ascii'});
+
 ```
 
 See examples and benchmarks for more information..

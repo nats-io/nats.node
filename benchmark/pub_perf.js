@@ -1,5 +1,5 @@
 
-var nats = require('nats').connect();
+var nats = require('../lib/nats').connect();
 
 ///////////////////////////////////////
 // Publish Performance
