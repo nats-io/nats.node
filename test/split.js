@@ -47,7 +47,6 @@ describe('Split Messages', function() {
     var expected = 10000;
 
     var sid = nc.subscribe('foo', function(msg) {
-//      console.log("msg is " + msg);
       msg.should.equal(data);
       msg.length.should.equal(data.length);
       received += 1;
