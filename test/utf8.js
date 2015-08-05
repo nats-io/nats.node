@@ -16,7 +16,7 @@ describe('UTF8', function() {
     server.kill();
   });
 
-  it('should do publish and subscribe with UTF8 payloads', function(done) {
+  it('should do publish and subscribe with UTF8 payloads by default', function(done) {
     var nc = NATS.connect(PORT);
     // ½ + ¼ = ¾: 9 characters, 12 bytes
     var data = '\u00bd + \u00bc = \u00be';
@@ -25,10 +25,47 @@ describe('UTF8', function() {
 
     nc.subscribe('utf8', function(msg) {
       msg.should.equal(data);
+      nc.close();
       done();
     });
 
     nc.publish('utf8', data);
+  });
+
+  it('should allow encoding override with the encoding option', function(done) {
+    var nc = NATS.connect({'url': 'nats://localhost:' + PORT, 'encoding': 'ascii'});
+    // ½ + ¼ = ¾: 9 characters, 12 bytes
+    var utf8_data = '\u00bd + \u00bc = \u00be';
+    var plain_data = "Hello World";
+
+    nc.subscribe('utf8', function(msg) {
+      // Should be all 12 bytes..
+      msg.length.should.equal(12);
+      // Should not be a proper utf8 string.
+      msg.should.not.equal(utf8_data);
+    });
+
+    nc.subscribe('plain', function(msg) {
+      msg.should.equal(plain_data);
+      done();
+    });
+
+    nc.publish('utf8', utf8_data);
+    nc.publish('plain', plain_data);
+  });
+
+  it('should not allow unsupported encodings', function(done) {
+    try {
+      var nc = NATS.connect({'url': 'nats://localhost:' + PORT, 'encoding': 'foobar'});
+      done("No error thrown, wanted Invalid Encoding Exception");
+    } catch(err) {
+      if (err.toString().indexOf("Invalid Encoding") < 0) {
+	console.log("err is " + err);
+	done("Bad Error, wanted Invalid Encoding");
+      } else {
+	done();
+      }
+    }
   });
 
 });
