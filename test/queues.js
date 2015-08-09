@@ -1,5 +1,10 @@
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+'use strict';
+
 var NATS = require ('../'),
-nsc = require('./support/nats_server_control');
+    nsc = require('./support/nats_server_control'),
+    should = require('should');
 
 describe('Queues', function() {
 
@@ -23,6 +28,7 @@ describe('Queues', function() {
       received += 1;
     });
     nc.publish('foo', function() {
+      should.exists(received);
       received.should.equal(1);
       nc.close();
       done();
@@ -32,7 +38,7 @@ describe('Queues', function() {
   it('should deliver a message to only one member of a queue group', function(done) {
     var nc = NATS.connect(PORT);
     var received = 0;
-    cb = function() { received += 1; };
+    var cb = function cb() { received += 1; };
     for (var i=0; i<5; i++) {
       nc.subscribe('foo', {'queue':'myqueue'}, cb);
     }
