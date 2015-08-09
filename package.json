@@ -29,10 +29,12 @@
   "contributors": [],
   "main": "./index.js",
   "scripts": {
-    "lint": "jshint --reporter node_modules/jshint-stylish lib/*.js test/*.js examples/*.js",
+    "lint": "jshint --reporter node_modules/jshint-stylish lib/*.js test/*.js test/support/*.js examples/*.js",
     "depcheck": "dependency-check . lib/*",
     "depcheck:unused": "dependency-check ./package.json --unused --no-dev lib/*",
-    "test": "make test-coveralls"
+    "test:unit": "mkdir -p reports/ && NODE_ENV=test multi='spec=- xunit=reports/mocha-xunit.xml' istanbul cover _mocha -- -R mocha-multi --timeout 10000 --slow 750 && istanbul check-coverage",
+    "test": "npm run depcheck && npm run depcheck:unused && npm run lint && npm run test:unit",
+    "coveralls": "cat ./reports/coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
   },
   "engines": {
     "node": ">= 0.10.x"
