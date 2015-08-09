@@ -1,10 +1,14 @@
-var NATS = require ('../'),
-    nsc = require('./support/nats_server_control');
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+'use strict';
 
-var PORT = 1421;
+var NATS = require ('../'),
+    nsc = require('./support/nats_server_control'),
+    should = require('should');
 
 describe('Max responses and Auto-unsub', function() {
 
+  var PORT = 1421;
   var server;
 
   // Start up our own nats-server
@@ -30,6 +34,7 @@ describe('Max responses and Auto-unsub', function() {
       nc.publish('foo');
     }
     nc.flush(function() {
+      should.exists(received);
       received.should.equal(WANT);
       nc.close();
       done();
@@ -51,6 +56,7 @@ describe('Max responses and Auto-unsub', function() {
     nc.unsubscribe(sid, WANT);
 
     nc.flush(function() {
+      should.exists(received);
       received.should.equal(WANT);
       nc.close();
       done();
@@ -71,6 +77,7 @@ describe('Max responses and Auto-unsub', function() {
 
     nc.flush(function() {
       nc.unsubscribe(sid);
+      should.exists(received);
       received.should.equal(1);
       nc.close();
       done();
@@ -93,6 +100,7 @@ describe('Max responses and Auto-unsub', function() {
     }
 
     nc.flush(function() {
+      should.exists(received);
       received.should.equal(1);
       nc.close();
       done();
@@ -116,6 +124,7 @@ describe('Max responses and Auto-unsub', function() {
     }
 
     nc.flush(function() {
+      should.exists(received);
       received.should.equal(WANT);
       nc.close();
       done();
@@ -137,6 +146,7 @@ describe('Max responses and Auto-unsub', function() {
     nc.request('help', null, {'max':1}, function() {
       received += 1;
       nc.flush(function() {
+        should.exists(received);
         received.should.equal(1);
         nc.close();
         done();
