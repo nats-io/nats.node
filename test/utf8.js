@@ -1,5 +1,10 @@
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+'use strict';
+
 var NATS = require ('../'),
-    nsc = require('./support/nats_server_control');
+    nsc = require('./support/nats_server_control'),
+    should = require('should');
 
 describe('UTF8', function() {
 
@@ -24,6 +29,7 @@ describe('UTF8', function() {
     Buffer.byteLength(data).should.equal(12);
 
     nc.subscribe('utf8', function(msg) {
+      should.exists(msg);
       msg.should.equal(data);
       nc.close();
       done();
@@ -36,7 +42,7 @@ describe('UTF8', function() {
     var nc = NATS.connect({'url': 'nats://localhost:' + PORT, 'encoding': 'ascii'});
     // ½ + ¼ = ¾: 9 characters, 12 bytes
     var utf8_data = '\u00bd + \u00bc = \u00be';
-    var plain_data = "Hello World";
+    var plain_data = 'Hello World';
 
     nc.subscribe('utf8', function(msg) {
       // Should be all 12 bytes..
@@ -56,14 +62,13 @@ describe('UTF8', function() {
 
   it('should not allow unsupported encodings', function(done) {
     try {
-      var nc = NATS.connect({'url': 'nats://localhost:' + PORT, 'encoding': 'foobar'});
-      done("No error thrown, wanted Invalid Encoding Exception");
+      NATS.connect({'url': 'nats://localhost:' + PORT, 'encoding': 'foobar'});
+      done('No error thrown, wanted Invalid Encoding Exception');
     } catch(err) {
-      if (err.toString().indexOf("Invalid Encoding") < 0) {
-	console.log("err is " + err);
-	done("Bad Error, wanted Invalid Encoding");
+      if (err.toString().indexOf('Invalid Encoding') < 0) {
+        done('Bad Error, wanted Invalid Encoding');
       } else {
-	done();
+        done();
       }
     }
   });
