@@ -1,36 +1,49 @@
 {
   "name": "nats",
-  "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "version": "0.4.0",
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:nats-io/node-nats.git"
-  },
-  "homepage": "https://nats.io",
-  "author": "Derek Collison <derek@apcera.com>",
+  "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
+    "nats",
     "messaging",
     "pubsub",
     "publish",
     "subscribe",
     "queue",
-    "distributed queueing"
+    "distributed",
+    "queueing"
   ],
-  "dependencies": {},
-  "devDependencies": {
-    "coveralls": "^2.11.2",
-    "istanbul": "^0.3.5",
-    "jshint": "^2.5.10",
-    "mocha": "*",
-    "mocha-lcov-reporter": "^0.0.2",
-    "should": ">= 7.0.0"
+  "homepage": "https://nats.io",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:nats-io/node-nats.git"
   },
-  "main": "index",
+  "bugs": {
+    "url": "https://github.com/nats-io/node-nats/issues"
+  },
   "license": "MIT",
+  "private": false,
+  "author": {
+    "name": "Derek Collison",
+    "email": "derek@apcera.com"
+  },
+  "contributors": [],
+  "main": "./index.js",
   "scripts": {
     "test": "make test-coveralls"
   },
   "engines": {
-    "node": ">= 0.10.x <= 0.12.x"
+    "node": ">= 0.10.x"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jshint": "2.8.x",
+    "jshint-stylish": "2.0.x",
+    "mocha": "2.2.x",
+    "mocha-multi": "0.7.x",
+    "mocha-lcov-reporter": "^0.0.2",
+    "dependency-check": "2.5.x",
+    "istanbul": "^0.3.17",
+    "coveralls": "^2.11.2",
+    "should": ">= 7.0.0"
   }
 }
