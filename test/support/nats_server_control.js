@@ -4,7 +4,7 @@
 var spawn = require('child_process').spawn;
 var net = require('net');
 
-var SERVER = 'nats-server';
+var SERVER = 'gnatsd';
 var DEFAULT_PORT = 4222;
 
 exports.start_server = function(port, opt_flags, done) {
@@ -73,16 +73,15 @@ exports.start_server = function(port, opt_flags, done) {
 
     // Wait for next try..
     socket.on('error', function(/*error*/) {
-//      finish(new Error("Problem connecting to server on port: " + port + " (" + error + ")"));
+      // finish(new Error("Problem connecting to server on port: " + port + " (" + error + ")"));
     });
 
   }, delta);
 
   // Other way to catch another server running.
-  server.on('exit', function(code/*, sig*/) {
-    if (code !== null && code !== 0) {
-      console.log('EXIT: ' + code);
-      finish(new Error('Server exited with bad code, already running?'));
+  server.on('exit', function(code, signal) {
+    if (code === 1) {
+      finish(new Error('Server exited with bad code, already running? (' + code + ' / ' + signal + ')'));
     }
   });
 
@@ -90,7 +89,7 @@ exports.start_server = function(port, opt_flags, done) {
   server.stderr.on('data', function(data) {
     if (/^execvp\(\)/.test(data)) {
       clearInterval(timer);
-      finish(new Error('Can\'t find the ' + SERVER + ' (e.g. gem install nats)'));
+      finish(new Error('Can\'t find the ' + SERVER));
     }
   });
 
