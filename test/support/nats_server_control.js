@@ -1,3 +1,5 @@
+/* jslint node: true */
+'use strict';
 
 var spawn = require('child_process').spawn;
 var net = require('net');
@@ -15,7 +17,7 @@ exports.start_server = function(port, opt_flags, done) {
   }
   var flags = ['-p', port];
 
-  if (opt_flags !== undefined) {
+  if (!opt_flags) {
     flags = flags.concat(opt_flags);
   }
 
@@ -53,7 +55,7 @@ exports.start_server = function(port, opt_flags, done) {
 
     wait = new Date() - start;
     if (wait > maxWait) {
-      finish(new Error("Can't connect to server on port: " + port));
+      finish(new Error('Can\'t connect to server on port: ' + port));
     }
 
     // Try to connect to the correct port.
@@ -63,24 +65,23 @@ exports.start_server = function(port, opt_flags, done) {
     socket.on('connect', function() {
       if (server.pid === null) {
         // We connected but not to our server..
-        finish(new Error("Server already running on port: " + port));
-      } else {
+        finish(new Error('Server already running on port: ' + port)); } else {
         finish();
       }
     });
 
     // Wait for next try..
-    socket.on('error', function(error) {
+    socket.on('error', function(/*error*/) {
 //      finish(new Error("Problem connecting to server on port: " + port + " (" + error + ")"));
     });
 
   }, delta);
 
   // Other way to catch another server running.
-  server.on('exit', function(code, sig) {
+  server.on('exit', function(code/*, sig*/) {
     if (code !== null && code !== 0) {
-      console.log("EXIT: " + code);
-      finish(new Error("Server exited with bad code, already running?"));
+      console.log('EXIT: ' + code);
+      finish(new Error('Server exited with bad code, already running?'));
     }
   });
 
@@ -88,7 +89,7 @@ exports.start_server = function(port, opt_flags, done) {
   server.stderr.on('data', function(data) {
     if (/^execvp\(\)/.test(data)) {
       clearInterval(timer);
-      finish(new Error("Can't find the " + SERVER + " (e.g. gem install nats)"));
+      finish(new Error('Can\'t find the ' + SERVER + ' (e.g. gem install nats)'));
     }
   });
 
