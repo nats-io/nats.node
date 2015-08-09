@@ -29,7 +29,7 @@
   "contributors": [],
   "main": "./index.js",
   "scripts": {
-    "lint": "jshint --reporter node_modules/jshint-stylish lib/*.js test/*.js",
+    "lint": "jshint --reporter node_modules/jshint-stylish lib/*.js test/*.js examples/*.js",
     "depcheck": "dependency-check . lib/*",
     "depcheck:unused": "dependency-check ./package.json --unused --no-dev lib/*",
     "test": "make test-coveralls"
