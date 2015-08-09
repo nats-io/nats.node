@@ -24,9 +24,11 @@ describe('Cluster', function() {
 
   // Start up our own nats-server
   before(function(done) {
-    s1 = nsc.start_server(PORT1);
-    s2 = nsc.start_server(PORT2);
-    done();
+    s1 = nsc.start_server(PORT1, function() {
+      s2 = nsc.start_server(PORT2, function() {
+        done();
+      });
+    });
   });
 
   // Shutdown our server
