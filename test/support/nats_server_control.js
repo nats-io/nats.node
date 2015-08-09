@@ -17,7 +17,7 @@ exports.start_server = function(port, opt_flags, done) {
   }
   var flags = ['-p', port];
 
-  if (!opt_flags) {
+  if (opt_flags) {
     flags = flags.concat(opt_flags);
   }
 
@@ -65,7 +65,8 @@ exports.start_server = function(port, opt_flags, done) {
     socket.on('connect', function() {
       if (server.pid === null) {
         // We connected but not to our server..
-        finish(new Error('Server already running on port: ' + port)); } else {
+        finish(new Error('Server already running on port: ' + port));
+      } else {
         finish();
       }
     });
