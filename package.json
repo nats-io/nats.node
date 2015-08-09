@@ -29,6 +29,7 @@
   "contributors": [],
   "main": "./index.js",
   "scripts": {
+    "lint": "jshint --reporter node_modules/jshint-stylish lib/*.js test/*.js",
     "test": "make test-coveralls"
   },
   "engines": {
