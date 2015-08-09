@@ -1,14 +1,17 @@
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+'use strict';
+
 var NATS = require ('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
-var PORT = 1422;
-var flags = ['--user', 'derek', '--pass', 'foobar'];
-var authUrl = 'nats://derek:foobar@localhost:' + PORT;
-var noAuthUrl = 'nats://localhost:' + PORT;
-
 describe('Authorization', function() {
 
+  var PORT = 1422;
+  var flags = ['--user', 'derek', '--pass', 'foobar'];
+  var authUrl = 'nats://derek:foobar@localhost:' + PORT;
+  var noAuthUrl = 'nats://localhost:' + PORT;
   var server;
 
   // Start up our own nats-server
@@ -33,14 +36,14 @@ describe('Authorization', function() {
 
   it('should connect with proper credentials in url', function(done) {
     var nc = NATS.connect(authUrl);
-    nc.on('connect', function(nc) {
+    nc.on('connect', function(/*nc*/) {
       setTimeout(done, 100);
     });
   });
 
   it('should connect with proper credentials as options', function(done) {
     var nc = NATS.connect({'url':noAuthUrl, 'user':'derek', 'pass':'foobar'});
-    nc.on('connect', function(nc) {
+    nc.on('connect', function(/*nc*/) {
       setTimeout(done, 100);
     });
   });
