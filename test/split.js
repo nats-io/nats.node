@@ -1,8 +1,13 @@
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+'use strict';
+
 var NATS = require ('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Split Messages', function() {
+
   var PORT = 1428;
   var server;
 
@@ -23,13 +28,14 @@ describe('Split Messages', function() {
     var received = 0;
     var expected = 10000;
 
-    var sid = nc.subscribe('foo', function(msg) {
+    nc.subscribe('foo', function(msg) {
+      should.exists(msg);
       msg.should.equal(data);
       msg.length.should.equal(data.length);
       received += 1;
       if (received == expected) {
-	nc.close();
-	done();
+        nc.close();
+        done();
       }
     });
 
@@ -46,12 +52,12 @@ describe('Split Messages', function() {
     var received = 0;
     var expected = 10000;
 
-    var sid = nc.subscribe('foo', function(msg) {
+    nc.subscribe('foo', function(msg) {
       msg.should.equal(data);
       msg.length.should.equal(data.length);
       received += 1;
       if (received == expected) {
-	done();
+        done();
       }
     });
 
