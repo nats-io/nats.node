@@ -8,7 +8,7 @@ var NATS = require ('../'),
 
 describe('Basic Connectivity', function() {
 
-  var PORT = 1421;
+  var PORT = 1424;
   var uri = 'nats://localhost:' + PORT;
   var server;
 

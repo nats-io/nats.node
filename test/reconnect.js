@@ -8,7 +8,7 @@ var NATS = require ('../'),
 
 describe('Reconnect functionality', function() {
 
-  var PORT = 1421;
+  var PORT = 1426;
   var WAIT = 20;
   var ATTEMPTS = 4;
   var server;

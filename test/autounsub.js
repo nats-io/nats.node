@@ -8,7 +8,7 @@ var NATS = require ('../'),
 
 describe('Max responses and Auto-unsub', function() {
 
-  var PORT = 1421;
+  var PORT = 1422;
   var server;
 
   // Start up our own nats-server

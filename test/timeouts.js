@@ -6,7 +6,7 @@ var NATS = require ('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
-var PORT = 1421;
+var PORT = 1428;
 
 describe('Timeout and max received events for subscriptions', function() {
 

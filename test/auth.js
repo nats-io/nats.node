@@ -8,7 +8,7 @@ var NATS = require ('../'),
 
 describe('Authorization', function() {
 
-  var PORT = 1422;
+  var PORT = 1421;
   var flags = ['--user', 'derek', '--pass', 'foobar'];
   var authUrl = 'nats://derek:foobar@localhost:' + PORT;
   var noAuthUrl = 'nats://localhost:' + PORT;

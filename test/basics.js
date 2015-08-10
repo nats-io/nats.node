@@ -8,7 +8,7 @@ var NATS = require ('../'),
 
 describe('Basics', function() {
 
-  var PORT = 1421;
+  var PORT = 1423;
   var server;
 
   // Start up our own nats-server
