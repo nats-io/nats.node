@@ -1,12 +1,15 @@
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+'use strict';
+
 var NATS = require ('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
-var PORT = 1421;
-var uri = 'nats://localhost:' + PORT;
-
 describe('Basic Connectivity', function() {
 
+  var PORT = 1424;
+  var uri = 'nats://localhost:' + PORT;
   var server;
 
   // Start up our own nats-server

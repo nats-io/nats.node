@@ -1,11 +1,12 @@
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+/* jshint -W030 */
+'use strict';
+
 var NATS = require ('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should'),
-    url    = require('url'),
-    util = require('util');
-
-// Ignore - Expected an assignment or function call and instead saw an expression.
-// jshint -W030
+    url    = require('url');
 
 describe('Cluster', function() {
 
@@ -15,8 +16,8 @@ describe('Cluster', function() {
   var PORT1 = 15621;
   var PORT2 = 15622;
 
-  var s1Url = "nats://localhost:" + PORT1;
-  var s2Url = "nats://localhost:" + PORT2;
+  var s1Url = 'nats://localhost:' + PORT1;
+  var s2Url = 'nats://localhost:' + PORT2;
 
   var s1;
   var s2;
@@ -24,7 +25,9 @@ describe('Cluster', function() {
   // Start up our own nats-server
   before(function(done) {
     s1 = nsc.start_server(PORT1, function() {
-      s2 = nsc.start_server(PORT2, done);
+      s2 = nsc.start_server(PORT2, function() {
+        done();
+      });
     });
   });
 
@@ -36,6 +39,7 @@ describe('Cluster', function() {
 
   it('should accept servers options', function(done) {
     var nc = NATS.connect({'servers':[s1Url, s2Url]});
+    should.exists(nc);
     nc.should.have.property('options');
     nc.options.should.have.property('servers');
     nc.should.have.property('servers');
@@ -55,18 +59,18 @@ describe('Cluster', function() {
       conns.push(nc);
       var nurl = url.format(nc.url);
       if (nurl == s1Url) {
-	s1Count++;
+        s1Count++;
       }
     }
     for (i=0; i<100; i++) {
       conns[i].close();
     }
-    s1Count.should.be.within(40, 60);
+    s1Count.should.be.within(35, 65);
     done();
   });
 
   it('should connect to first valid server', function(done) {
-    var nc = NATS.connect({'servers':["nats://localhost:" + 21022, s1Url, s2Url]});
+    var nc = NATS.connect({'servers':['nats://localhost:' + 21022, s1Url, s2Url]});
     nc.on('error', function(err) {
       done(err);
     });
@@ -77,13 +81,13 @@ describe('Cluster', function() {
   });
 
   it('should emit error if no servers are available', function(done) {
-    var nc = NATS.connect({'servers':["nats://localhost:" + 21022, "nats://localhost:" + 21023]});
-    nc.on('error', function(err) {
+    var nc = NATS.connect({'servers':['nats://localhost:' + 21022, 'nats://localhost:' + 21023]});
+    nc.on('error', function(/*err*/) {
       done();
     });
-    nc.on('reconnecting', function(err) {
+    nc.on('reconnecting', function(/*err*/) {
       // This is an error
-      done("Should not receive a reconnect event");
+      done('Should not receive a reconnect event');
     });
   });
 
@@ -95,7 +99,7 @@ describe('Cluster', function() {
       conns.push(nc);
       var nurl = url.format(nc.url);
       if (nurl == s1Url) {
-	s1Count++;
+        s1Count++;
       }
     }
     for (i=0; i<100; i++) {
@@ -113,7 +117,7 @@ describe('Cluster', function() {
       conns.push(nc);
       var nurl = url.format(nc.url);
       if (nurl == s1Url) {
-	s1Count++;
+        s1Count++;
       }
     }
     for (i=0; i<100; i++) {
@@ -134,7 +138,7 @@ describe('Cluster', function() {
     nc.on('reconnect', function() {
       s2.kill();
     });
-    nc.on('reconnecting', function(client) {
+    nc.on('reconnecting', function(/*client*/) {
       var elapsed = new Date() - startTime;
       elapsed.should.be.within(WAIT, 5*WAIT);
       startTime = new Date();

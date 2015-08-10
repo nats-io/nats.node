@@ -1,8 +1,10 @@
+/* jslint node: true */
+/* global describe: false, it: false */
+/* jshint -W030 */
+'use strict';
 
-var NATS = require ('../');
-
-// Ignore - Expected an assignment or function call and instead saw an expression.
-// jshint -W030
+var NATS = require ('../'),
+    should = require('should');
 
 describe('Base Properties', function() {
 

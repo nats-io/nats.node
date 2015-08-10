@@ -1,10 +1,14 @@
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+'use strict';
+
 var NATS = require ('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Basics', function() {
 
-  var PORT = 1421;
+  var PORT = 1423;
   var server;
 
   // Start up our own nats-server
@@ -111,7 +115,7 @@ describe('Basics', function() {
       nc.publish(reply, replyMsg);
     });
 
-    var sub = nc.request('foo', initMsg, function(reply) {
+    var sub = nc.request('foo', initMsg, function(/*reply*/) {
       nc.flush(function() {
         received.should.equal(expected);
         nc.close();

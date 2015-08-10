@@ -1,7 +1,12 @@
-var NATS = require ('../'),
-    nsc = require('./support/nats_server_control');
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+'use strict';
 
-var PORT = 1421;
+var NATS = require ('../'),
+    nsc = require('./support/nats_server_control'),
+    should = require('should');
+
+var PORT = 1428;
 
 describe('Timeout and max received events for subscriptions', function() {
 
@@ -24,6 +29,7 @@ describe('Timeout and max received events for subscriptions', function() {
       var sid = nc.subscribe('foo');
       nc.timeout(sid, 50, 1, function() {
         var elapsed = new Date() - startTime;
+        should.exists(elapsed);
         elapsed.should.be.within(45, 75);
         done();
       });
