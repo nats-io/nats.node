@@ -65,7 +65,7 @@ describe('Cluster', function() {
     for (i=0; i<100; i++) {
       conns[i].close();
     }
-    s1Count.should.be.within(35, 60);
+    s1Count.should.be.within(35, 65);
     done();
   });
 
