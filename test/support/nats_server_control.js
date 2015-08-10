@@ -4,7 +4,7 @@
 var spawn = require('child_process').spawn;
 var net = require('net');
 
-var SERVER = 'gnatsd';
+var SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
 var DEFAULT_PORT = 4222;
 
 exports.start_server = function(port, opt_flags, done) {
