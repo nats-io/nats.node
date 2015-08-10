@@ -8,7 +8,7 @@ var NATS = require ('../'),
 
 describe('Queues', function() {
 
-  var PORT = 1421;
+  var PORT = 1429;
   var server;
 
   // Start up our own nats-server
