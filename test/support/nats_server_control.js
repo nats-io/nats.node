@@ -8,7 +8,7 @@ var SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
 var DEFAULT_PORT = 4222;
 
 exports.start_server = function(port, opt_flags, done) {
-  if (port === undefined) {
+  if (!port) {
     port = DEFAULT_PORT;
   }
   if (typeof opt_flags == 'function') {
