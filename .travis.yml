@@ -8,4 +8,4 @@ node_js:
 before_script:
   - mkdir -p gnatsd
   - wget https://github.com/nats-io/gnatsd/releases/download/v0.6.4/gnatsd-v0.6.4-linux-amd64.tar.gz -qO - | tar -zxvC gnatsd/
-  - export PATH=$PATH:$PWD/gnatsd/gnatsd
+  - sudo ln -s "$(pwd)/gnatsd/gnatsd" /usr/local/bin/gnatsd
