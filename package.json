@@ -28,6 +28,9 @@
   },
   "contributors": [],
   "main": "./index.js",
+  "browser": {
+    "net": "./lib/net.js"
+  },
   "scripts": {
     "lint": "jshint --reporter node_modules/jshint-stylish lib/*.js test/*.js test/support/*.js examples/*.js",
     "depcheck": "dependency-check . lib/*",
@@ -39,7 +42,9 @@
   "engines": {
     "node": ">= 0.10.x"
   },
-  "dependencies": {},
+  "dependencies": {
+    "events": "^1.0.2"
+  },
   "devDependencies": {
     "jshint": "2.8.x",
     "jshint-stylish": "2.0.x",
