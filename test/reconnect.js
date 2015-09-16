@@ -79,6 +79,41 @@ describe('Reconnect functionality', function() {
     });
   });
 
+  it('should emit reconnecting events indefinitely if maxReconnectAttempts is set to -1', function(done) {
+
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':WAIT, 'maxReconnectAttempts':-1});
+    var numAttempts = 0;
+
+    // stop trying after an arbitrary amount of elapsed time
+    var timeout = setTimeout(function() {
+      // restart server and make sure next flush works ok
+      if (server === null) {
+        server = nsc.start_server(PORT);
+      }
+    }, 1000);
+
+    nc.on('connect', function() {
+      server.kill();
+      server = null;
+    });
+    nc.on('reconnecting', function(/*client*/) {
+      numAttempts += 1;
+      // attempt indefinitely to reconnect
+      nc.reconnects.should.equal(numAttempts);
+      nc.connected.should.equal(false);
+      nc.wasConnected.should.equal(true);
+      nc.reconnecting.should.equal(true);
+      // if maxReconnectAttempts is set to -1, the number of reconnects will always be greater
+      nc.reconnects.should.be.above(nc.options.maxReconnectAttempts);
+    });
+    nc.on('reconnect', function() {
+      nc.flush(function() {
+        nc.close();
+        done();
+      });
+    });
+  });
+
   it('should succesfully reconnect to new server', function(done) {
     var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
     // Kill server after first successful contact
