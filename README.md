@@ -29,8 +29,14 @@ nats.subscribe('foo', function(msg) {
 var sid = nats.subscribe('foo', function(msg) {});
 nats.unsubscribe(sid);
 
-// Requests
-nats.request('help', function(response) {
+// Request Streams
+var sid = nats.request('request', function(response) {
+  console.log('Got a response in msg stream: ' + response);
+});
+
+// Request with Auto-Unsubscribe. Will unsubscribe after
+// the first response is received via {'max':1}
+nats.request('help', null, {'max':1}, function(response) {
   console.log('Got a response for help: ' + response);
 });
 
@@ -149,7 +155,7 @@ See examples and benchmarks for more information..
 (The MIT License)
 
 Copyright (c) 2015 Apcera Inc.<br/>
-Copyright (c) 2011-2014 Derek Collison
+Copyright (c) 2011-2015 Derek Collison
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
