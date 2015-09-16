@@ -42,7 +42,6 @@ nats.subscribe('help', function(request, replyTo) {
 // Close connection
 nats.close();
 
-end
 ```
 
 ## Wildcard Subscriptions
