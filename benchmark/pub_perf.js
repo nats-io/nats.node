@@ -1,6 +1,5 @@
 
 var nats = require('../lib/nats').connect();
-//var nats = require('../lib/nats').connect('nats://demo.nats.io:4222');
 
 ///////////////////////////////////////
 // Publish Performance

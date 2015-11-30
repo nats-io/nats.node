@@ -3,7 +3,7 @@
 /* jslint node: true */
 'use strict';
 
-var nats = require ('../lib/nats.js').connect({tls: true, name: 'node-pub'});
+var nats = require ('nats').connect();
 
 nats.on('error', function(e) {
   console.log('Error [' + nats.options.url + ']: ' + e);

@@ -3,19 +3,7 @@
 /* jslint node: true */
 'use strict';
 
-var fs = require('fs');
-
-var tlsOptions = {
-  rejectUnauthorized: true,
-  key: fs.readFileSync('./client-key.pem'),
-  cert: fs.readFileSync('./client-cert.pem'),
-  ca: [ fs.readFileSync('./ca.pem') ]
-};
-
-//var nats = require ('nats').connect();
-var nats = require ('../lib/nats.js').connect({tls: true});
-//var nats = require ('../lib/nats.js').connect({tls: tlsOptions, name: 'node-sub'});
-//var nats = require ('../lib/nats.js').connect();
+var nats = require ('nats').connect();
 
 nats.on('error', function(e) {
   console.log('Error [' + nats.options.url + ']: ' + e);
