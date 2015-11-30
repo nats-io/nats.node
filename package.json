@@ -1,6 +1,6 @@
 {
   "name": "nats",
-  "version": "0.4.4",
+  "version": "0.5.0.beta",
   "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
     "nats",

@@ -72,8 +72,8 @@ exports.start_server = function(port, opt_flags, done) {
     });
 
     // Wait for next try..
-    socket.on('error', function(/*error*/) {
-      // finish(new Error("Problem connecting to server on port: " + port + " (" + error + ")"));
+    socket.on('error', function(error) {
+      finish(new Error("Problem connecting to server on port: " + port + " (" + error + ")"));
     });
 
   }, delta);
