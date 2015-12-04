@@ -101,6 +101,38 @@ console.log("Connected to " + nc.currentServer.host);
 nc = nats.connect({'dontRandomize': true, 'servers':servers});
 
 ```
+## TLS
+
+```javascript
+var nats = require('nats');
+var fs = require('fs');
+
+// Simple TLS connect
+var nc = nats.connect({port: TLSPORT, tls: true});
+
+// Overriding and not verifying the server
+var tlsOptions = {
+  rejectUnauthorized: false,
+};
+var nc = nats.connect({port: TLSPORT, tls: tlsOptions});
+// nc.stream.authorized will be false
+
+// Use a specified CA for self-signed server certificates
+var tlsOptions = {
+  ca: [ fs.readFileSync('./test/certs/ca.pem') ]
+};
+var nc = nats.connect({port: TLSPORT, tls: tlsOptions});
+// nc.stream.authorized should be true
+
+// Use a client certificate if the server requires
+var tlsOptions = {
+  key: fs.readFileSync('./test/certs/client-key.pem'),
+  cert: fs.readFileSync('./test/certs/client-cert.pem'),
+  ca: [ fs.readFileSync('./test/certs/ca.pem') ]
+};
+var nc = nats.connect({port: TLSPORT, tls: tlsOptions});
+
+```
 
 ## Advanced Usage
 
@@ -174,4 +206,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
-
