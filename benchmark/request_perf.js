@@ -7,7 +7,7 @@ var nc2 = require('../lib/nats').connect();
 ///////////////////////////////////////
 
 var start;
-var loop = 50000;
+var loop = 100000;
 var hash = 1000;
 var received = 0;
 

@@ -6,8 +6,8 @@ var nc2 = require('../lib/nats').connect();
 // Publish/Subscribe Performance
 ///////////////////////////////////////
 
-var loop = 500000;
-var hash = 1000;
+var loop = 2000000;
+var hash = 2500;
 
 console.log('Publish/Subscribe Performance Test');
 
