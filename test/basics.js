@@ -233,4 +233,15 @@ describe('Basics', function() {
     });
   });
 
+  it('should pass sid properly to a message callback if requested', function(done) {
+    var nc = NATS.connect(PORT);
+    var expected = 5;
+    var received = 0;
+    var sid = nc.subscribe('foo', function(msg, reply, subj, lsid) {
+      sid.should.equal(lsid);
+      done();
+    });
+    nc.publish('foo');
+  });
+
 });
