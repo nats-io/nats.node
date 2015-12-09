@@ -149,6 +149,12 @@ nats.flush(function() {
   console.log('All clear!');
 });
 
+// If you want to make sure NATS yields during the processing
+// of messages, you can use an option to specify a yieldTime in ms.
+// During the processing of the inbound stream, we will yield if we
+// spend more then yieldTime milliseconds processing.
+var nc = nats.connect({port: PORT, yieldTime: 10});
+
 // Timeouts for subscriptions
 var sid = nats.subscribe('foo', function() {
   received += 1;
