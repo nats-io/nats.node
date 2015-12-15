@@ -210,4 +210,26 @@ describe('Reconnect functionality', function() {
     });
   });
 
+  it('should not crash when sending a publish with a callback after connection loss', function(done) {
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':WAIT});
+    var startTime;
+    should.exist(nc);
+    nc.on('connect', function() {
+      server.kill();
+      startTime = new Date();
+    });
+    nc.on('disconnect', function() {
+      nc.publish('foo', 'bar', 'reply', function() {
+         // fails to get here, but should not crash
+      });
+      server = nsc.start_server(PORT);
+    });
+    nc.on('reconnect', function() {
+      nc.flush(function() {
+	nc.close();
+	done();
+      });
+    });
+  });
+
 });
