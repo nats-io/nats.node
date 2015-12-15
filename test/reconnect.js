@@ -222,6 +222,13 @@ describe('Reconnect functionality', function() {
       nc.publish('foo', 'bar', 'reply', function() {
          // fails to get here, but should not crash
       });
+      server = nsc.start_server(PORT);
+    });
+    nc.on('reconnect', function() {
+      nc.flush(function() {
+	nc.close();
+	done();
+      });
     });
   });
 
