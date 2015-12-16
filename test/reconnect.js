@@ -177,11 +177,12 @@ describe('Reconnect functionality', function() {
       }
     });
     nc.on('reconnect', function() {
-      nc.publish('foo', function() {
+      nc.publish('foo');
+      setTimeout(function() {
 	received.should.equal(1);
 	nc.close();
 	done();
-      });
+      },25);
     });
   });
 

@@ -27,12 +27,13 @@ describe('Queues', function() {
     nc.subscribe('foo', {'queue':'myqueue'}, function() {
       received += 1;
     });
-    nc.publish('foo', function() {
+    nc.publish('foo');
+    setTimeout(function() {
       should.exists(received);
       received.should.equal(1);
       nc.close();
       done();
-    });
+    },10);
   });
 
   it('should deliver a message to only one member of a queue group', function(done) {
@@ -42,11 +43,12 @@ describe('Queues', function() {
     for (var i=0; i<5; i++) {
       nc.subscribe('foo', {'queue':'myqueue'}, cb);
     }
-    nc.publish('foo', function() {
+    nc.publish('foo');
+    setTimeout(function() {
       received.should.equal(1);
       nc.close();
       done();
-    });
+    },10);
   });
 
   it('should allow queue subscribers and normal subscribers to work together', function(done) {
@@ -56,11 +58,11 @@ describe('Queues', function() {
     nc.subscribe('foo', function() { received += 1; });
     nc.publish('foo');
     nc.publish('foo');
-    nc.flush(function() {
+    setTimeout(function() {
       received.should.equal(4);
       nc.close();
       done();
-    });
+    },10);
   });
 
   it('should spread messages out equally (given random)', function(done) {
@@ -96,11 +98,12 @@ describe('Queues', function() {
     nc.subscribe('foo.bar', {'queue':'wcqueue'}, function() { received += 1; });
     nc.subscribe('foo.*', {'queue':'wcqueue'}, function() { received += 1; });
     nc.subscribe('foo.>', {'queue':'wcqueue'}, function() { received += 1; });
-    nc.publish('foo.bar', function() {
+    nc.publish('foo.bar');
+    setTimeout(function() {
       received.should.equal(1);
       nc.close();
       done();
-    });
+    },10);
   });
 
   it('should deliver to multiple queue groups', function(done) {
