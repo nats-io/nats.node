@@ -198,7 +198,9 @@ describe('Basics', function() {
 
   it('should do callback after publish is flushed', function(done) {
     var nc = NATS.connect(PORT);
-    nc.publish('foo', done);
+    nc.on('connect',function() {
+       nc.publish('foo', done);
+    });
   });
 
   it('should do callback after flush', function(done) {
@@ -226,11 +228,12 @@ describe('Basics', function() {
 
     nc.publish('foo');
     nc.publish('foo');
-    nc.publish('foo', function() {
+    nc.publish('foo');
+    setTimeout(function() {
       received.should.equal(expected);
       nc.close();
       done();
-    });
+    },10);
   });
 
   it('should pass sid properly to a message callback if requested', function(done) {

@@ -43,7 +43,8 @@ describe('Timeout and max received events for subscriptions', function() {
       nc.timeout(sid, 50, 1, function() {
         done(new Error('Timeout improperly called'));
       });
-      nc.publish('foo', done);
+      nc.publish('foo');
+      setTimeout(done,10);
     });
   });
 
