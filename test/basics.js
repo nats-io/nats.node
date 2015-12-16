@@ -242,9 +242,38 @@ describe('Basics', function() {
     var received = 0;
     var sid = nc.subscribe('foo', function(msg, reply, subj, lsid) {
       sid.should.equal(lsid);
+      nc.close();
       done();
     });
     nc.publish('foo');
+  });
+
+  it('should not return an error to the publish callback when sending while connected', function(done) {
+    var nc = NATS.connect(PORT);
+    should.exist(nc);
+    nc.on('connect', function() {
+      nc.publish('foo', 'bar', 'reply', function(err) {
+         should(err).be.type('undefined');
+         nc.close();
+         done();
+      });
+    });
+  });
+
+  it('should return an error to the publish callback when sending after connection loss', function(done) {
+    var nc = NATS.connect(PORT);
+    should.exist(nc);
+    nc.on('connect', function() {
+      server.kill();
+    });
+    nc.on('disconnect', function() {
+      nc.publish('foo', 'bar', 'reply', function(err) {
+         should(err).not.be.type('undefined');
+         nc.close();
+         done();
+      });
+      server = nsc.start_server(PORT);
+    });
   });
 
 });
