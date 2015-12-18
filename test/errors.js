@@ -27,7 +27,7 @@ describe('Errors', function() {
     (function() { nc.publish(); }).should.throw(Error);
     // bad args
     (function() { nc.publish('foo', function(){}, 'bar'); }).should.throw(Error);
-    (function() { nc.publish('foo', 'bar', function(){}, function(){}, 'bar'); }).should.throw(Error);
+    (function() { nc.publish('foo', 'bar', function(){}, 'bar'); }).should.throw(Error);
     // closed
     nc.close();
     (function() { nc.publish('foo'); }).should.throw(Error);
@@ -41,27 +41,27 @@ describe('Errors', function() {
     done();
   });
 
-  it('should emit errors on publish with err handlers', function(done) {
+  it('should pass errors on publish with callbacks', function(done) {
     var nc = NATS.connect(PORT);
-    var expectedErrors = 3;
+    var expectedErrors = 4;
     var received = 0;
 
-    nc.on('error', function(err) {
+    var cb = function(err) {
       should.exist(err);
       if (++received == expectedErrors) {
 	done();
       }
-    });
+    };
 
     // No subject
-    nc.publish();
+    nc.publish(cb);
     // bad args
-    nc.publish('foo', function(){}, 'bar');
-    nc.publish('foo', 'bar', function(){}, function(){});
+    nc.publish('foo', function(){}, 'bar', cb);
+    nc.publish('foo', 'bar', function(){}, cb);
 
     // closed will still throw since we remove event listeners.
     nc.close();
-    (function() { nc.publish('foo'); }).should.throw(Error);
+    nc.publish('foo', cb);
   });
 
   it('should throw errors on subscribe', function(done) {
