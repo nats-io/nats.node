@@ -63,9 +63,9 @@ describe('Basic Connectivity', function() {
     var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
     var ua = NATS.connect({servers: natsServers});
     var ub = NATS.connect({servers: natsServers});
-    var recvMsg = ""
+    var recvMsg = "";
     ua.subscribe('topic1', function(msg, reply, subject){
-      recvMsg = msg
+      recvMsg = msg;
     });
     setTimeout(function(){
       ub.publish('topic1', 'hello');
@@ -80,9 +80,9 @@ describe('Basic Connectivity', function() {
     var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
     var ua = NATS.connect({servers: natsServers, noRandomize:true});
     var ub = NATS.connect({servers: natsServers, noRandomize:true});
-    var recvMsg = ""
+    var recvMsg = "";
     ua.subscribe('topic1', function(msg, reply, subject){
-      recvMsg = msg
+      recvMsg = msg;
     });
     setTimeout(function(){
       ub.publish('topic1', 'hello');
@@ -92,6 +92,5 @@ describe('Basic Connectivity', function() {
       done();
     }, 100 * 2);
   });
-  
 
 });
