@@ -83,6 +83,7 @@ describe('Cluster', function() {
   it('should emit error if no servers are available', function(done) {
     var nc = NATS.connect({'servers':['nats://localhost:' + 21022, 'nats://localhost:' + 21023]});
     nc.on('error', function(/*err*/) {
+      nc.close();
       done();
     });
     nc.on('reconnecting', function(/*err*/) {

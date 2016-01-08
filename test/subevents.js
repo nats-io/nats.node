@@ -29,6 +29,7 @@ describe('Subscription Events', function() {
       should.exist(sid);
       should.exist(subject);
       subject.should.equal(subj);
+      nc.close();
       done();
     });
     nc.subscribe(subj);
@@ -45,6 +46,7 @@ describe('Subscription Events', function() {
       should.exist(opts);
       should.exist(opts.queue);
       opts.queue.should.equal(queuegroup);
+      nc.close();
       done();
     });
     nc.subscribe(subj, {queue:queuegroup});
@@ -57,6 +59,7 @@ describe('Subscription Events', function() {
       should.exist(sid);
       should.exist(subject);
       subject.should.equal(subj);
+      nc.close();
       done();
     });
     var sid = nc.subscribe(subj);
@@ -70,6 +73,7 @@ describe('Subscription Events', function() {
       should.exist(sid);
       should.exist(subject);
       subject.should.equal(subj);
+      nc.close();
       done();
     });
     nc.subscribe(subj, {max:1});
@@ -92,6 +96,7 @@ describe('Subscription Events', function() {
     }
     nc.flush(function() {
       eventsReceived.should.equal(1);
+      nc.close();
       done();
     });
   });
