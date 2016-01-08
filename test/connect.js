@@ -58,5 +58,40 @@ describe('Basic Connectivity', function() {
       done();
     });
   });
+  
+  it('should still receive publish when some servers are invalid', function(done){
+    var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
+    var ua = NATS.connect({servers: natsServers});
+    var ub = NATS.connect({servers: natsServers});
+    var recvMsg = ""
+    ua.subscribe('topic1', function(msg, reply, subject){
+      recvMsg = msg
+    });
+    setTimeout(function(){
+      ub.publish('topic1', 'hello');
+    }, 100 * 1);
+    setTimeout(function(){
+      recvMsg.should.equal('hello');
+      done();
+    }, 100 * 2);
+  });
+
+  it('should still receive publish when some servers[noRandomize] are invalid', function(done){
+    var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
+    var ua = NATS.connect({servers: natsServers, noRandomize:true});
+    var ub = NATS.connect({servers: natsServers, noRandomize:true});
+    var recvMsg = ""
+    ua.subscribe('topic1', function(msg, reply, subject){
+      recvMsg = msg
+    });
+    setTimeout(function(){
+      ub.publish('topic1', 'hello');
+    }, 100 * 1);
+    setTimeout(function(){
+      recvMsg.should.equal('hello');
+      done();
+    }, 100 * 2);
+  });
+  
 
 });
