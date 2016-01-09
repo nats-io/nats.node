@@ -1,0 +1,79 @@
+/* jslint node: true */
+/* global describe: false, before: false, after: false, it: false */
+'use strict';
+
+var NATS = require ('../'),
+    nsc = require('./support/nats_server_control'),
+    should = require('should');
+
+describe('binary', function() {
+
+  var PORT = 1432;
+  var server;
+
+  // Start up our own nats-server
+  before(function(done) {
+    server = nsc.start_server(PORT, done);
+  });
+
+  // Shutdown our server
+  after(function() {
+    server.kill();
+  });
+
+  it('should allow sending and receiving binary data', function(done) {
+    var nc = NATS.connect({'url': 'nats://localhost:' + PORT, 'encoding': 'binary'});
+
+    // try some invalid utf-8 byte sequences
+    var invalid2octet = new Buffer('\xc3\x28', 'binary');
+    var invalidsequenceidentifier = new Buffer('\xa0\xa1', 'binary');
+    var invalid3octet = new Buffer('\xe2\x28\xa1', 'binary');
+    var invalid4octet = new Buffer('\xf0\x90\x28\xbc', 'binary');
+
+    // make sure embedded nulls don't cause truncation
+    var embeddednull = new Buffer('\x00\xf0\x00\x28\x00\x00\xf0\x9f\x92\xa9\x00', 'binary');
+
+    var count = 5;
+    var finished = function() {
+      if (--count <= 0) {
+          done();
+      }
+    };
+
+    nc.subscribe('invalid2octet', function(msg) {
+      msg.length.should.equal(2);
+      msg.should.equal(invalid2octet.toString('binary'));
+      finished();
+    });
+
+    nc.subscribe('invalidsequenceidentifier', function(msg) {
+      msg.length.should.equal(2);
+      msg.should.equal(invalidsequenceidentifier.toString('binary'));
+      finished();
+    });
+
+    nc.subscribe('invalid3octet', function(msg) {
+      msg.length.should.equal(3);
+      msg.should.equal(invalid3octet.toString('binary'));
+      finished();
+    });
+
+    nc.subscribe('invalid4octet', function(msg) {
+      msg.length.should.equal(4);
+      msg.should.equal(invalid4octet.toString('binary'));
+      finished();
+    });
+
+    nc.subscribe('embeddednull', function(msg) {
+      msg.length.should.equal(11);
+      msg.should.equal(embeddednull.toString('binary'));
+      finished();
+    });
+
+    nc.publish('invalid2octet', invalid2octet);
+    nc.publish('invalidsequenceidentifier', invalidsequenceidentifier);
+    nc.publish('invalid3octet', invalid3octet);
+    nc.publish('invalid4octet', invalid4octet);
+    nc.publish('embeddednull', embeddednull);
+  });
+});
