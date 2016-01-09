@@ -48,4 +48,11 @@ describe('Authorization', function() {
     });
   });
 
+  it('should connect with proper credentials as server url', function(done) {
+    var nc = NATS.connect({'servers':[authUrl]});
+    nc.on('connect', function(/*nc*/) {
+      setTimeout(done, 100);
+    });
+  });
+
 });
