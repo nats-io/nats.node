@@ -63,7 +63,7 @@ describe('Basic Connectivity', function() {
     var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
     var ua = NATS.connect({servers: natsServers});
     var ub = NATS.connect({servers: natsServers});
-    var recvMsg = "";
+    var recvMsg = '';
     ua.subscribe('topic1', function(msg, reply, subject){
       recvMsg = msg;
     });
@@ -77,6 +77,7 @@ describe('Basic Connectivity', function() {
       done();
     }, 100 * 2);
   });
+
 
   it('should still receive publish when some servers[noRandomize] are invalid', function(done){
     var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];

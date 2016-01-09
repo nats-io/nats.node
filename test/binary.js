@@ -8,7 +8,7 @@ var NATS = require ('../'),
 
 describe('Binary', function() {
 
-  var PORT = 1431;
+  var PORT = 1432;
   var server;
 
   // Start up our own nats-server
