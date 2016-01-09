@@ -54,7 +54,8 @@ describe('Queues', function() {
     var expected = 4;
     var received = 0;
     var recv = function() {
-      if (++received == expected) {
+      received += 1;
+      if (received == expected) {
         nc.close();
         done();
       }
