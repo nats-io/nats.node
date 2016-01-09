@@ -8,4 +8,4 @@
 8. [DONE] TLS
 9. [DONE] Support client names
 10. Enforce max payload at client
-11. Watch latency on large receive buffers with responses.
+11. [DONE] Watch latency on large receive buffers with responses.
