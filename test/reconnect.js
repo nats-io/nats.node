@@ -232,4 +232,49 @@ describe('Reconnect functionality', function() {
     });
   });
 
+  it('should emit reconnect before flush callbacks are called', function(done) {
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
+    var reconnected = false;
+    nc.on('reconnecting', function(/*client*/) {
+      // restart server
+      if (server === null) {
+        nc.flush(function() {
+          if (!reconnected) {
+            done(new Error('Flush callback called before reconnect emitted'));
+          }
+          nc.close();
+          done();
+        });
+        server = nsc.start_server(PORT);
+      }
+    });
+    nc.on('reconnect', function() {
+      reconnected = true;
+    });
+    nc.on('connect', function() {
+      var s = server;
+      server = null;
+      s.kill();
+    });
+  });
+
+  it('should not lose messages if published during reconnect', function(done) {
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
+    nc.subscribe('foo', function() {
+      nc.close();
+      done();
+    });
+    nc.on('reconnecting', function(/*client*/) {
+      // restart server
+      if (server === null) {
+        nc.publish('foo');
+        server = nsc.start_server(PORT);
+      }
+    });
+    nc.on('connect', function() {
+      var s = server;
+      server = null;
+      s.kill();
+    });
+  });
 });

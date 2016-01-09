@@ -53,6 +53,7 @@ describe('UTF8', function() {
 
     nc.subscribe('plain', function(msg) {
       msg.should.equal(plain_data);
+      nc.close();
       done();
     });
 
