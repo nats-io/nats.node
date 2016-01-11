@@ -31,6 +31,7 @@ describe('Timeout and max received events for subscriptions', function() {
         var elapsed = new Date() - startTime;
         should.exists(elapsed);
         elapsed.should.be.within(45, 75);
+        nc.close();
         done();
       });
     });
@@ -43,7 +44,10 @@ describe('Timeout and max received events for subscriptions', function() {
       nc.timeout(sid, 50, 1, function() {
         done(new Error('Timeout improperly called'));
       });
-      nc.publish('foo', done);
+      nc.publish('foo', function() {
+          nc.close();
+          done();
+      });
     });
   });
 

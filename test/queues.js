@@ -51,16 +51,21 @@ describe('Queues', function() {
 
   it('should allow queue subscribers and normal subscribers to work together', function(done) {
     var nc = NATS.connect(PORT);
+    var expected = 4;
     var received = 0;
-    nc.subscribe('foo', {'queue':'myqueue'}, function() { received += 1; });
-    nc.subscribe('foo', function() { received += 1; });
+    var recv = function() {
+      received += 1;
+      if (received == expected) {
+        nc.close();
+        done();
+      }
+    };
+
+    nc.subscribe('foo', {'queue':'myqueue'}, recv);
+    nc.subscribe('foo', recv);
     nc.publish('foo');
     nc.publish('foo');
-    nc.flush(function() {
-      received.should.equal(4);
-      nc.close();
-      done();
-    });
+    nc.flush();
   });
 
   it('should spread messages out equally (given random)', function(done) {

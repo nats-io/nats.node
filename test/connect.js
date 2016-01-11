@@ -72,9 +72,12 @@ describe('Basic Connectivity', function() {
     }, 100 * 1);
     setTimeout(function(){
       recvMsg.should.equal('hello');
+      ua.close();
+      ub.close();
       done();
     }, 100 * 2);
   });
+
 
   it('should still receive publish when some servers[noRandomize] are invalid', function(done){
     var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
@@ -89,6 +92,8 @@ describe('Basic Connectivity', function() {
     }, 100 * 1);
     setTimeout(function(){
       recvMsg.should.equal('hello');
+      ua.close();
+      ub.close();
       done();
     }, 100 * 2);
   });
