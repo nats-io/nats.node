@@ -1,8 +1,0 @@
-FROM node:5.4-onbuild
-
-RUN mkdir gnatsd
-RUN wget https://github.com/nats-io/gnatsd/releases/download/v0.7.2/gnatsd-v0.7.2-linux-amd64.tar.gz -qO - | tar -zxvC gnatsd/
-RUN npm install
-
-ENV TRAVIS=true
-CMD ["node", "benchmark/reconnect_perf.js"]
