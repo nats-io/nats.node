@@ -198,12 +198,18 @@ describe('Basics', function() {
 
   it('should do callback after publish is flushed', function(done) {
     var nc = NATS.connect(PORT);
-    nc.publish('foo', done);
+    nc.publish('foo', function() {
+        nc.close();
+        done();
+    });
   });
 
   it('should do callback after flush', function(done) {
     var nc = NATS.connect(PORT);
-    nc.flush(done);
+    nc.flush(function() {
+      nc.close();
+      done();
+    });
   });
 
   it('should handle an unsubscribe after close of connection', function(done) {
@@ -239,6 +245,7 @@ describe('Basics', function() {
     var received = 0;
     var sid = nc.subscribe('foo', function(msg, reply, subj, lsid) {
       sid.should.equal(lsid);
+      nc.close();
       done();
     });
     nc.publish('foo');

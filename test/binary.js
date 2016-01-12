@@ -6,7 +6,7 @@ var NATS = require ('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
-describe('binary', function() {
+describe('Binary', function() {
 
   var PORT = 1432;
   var server;
@@ -36,6 +36,7 @@ describe('binary', function() {
     var count = 5;
     var finished = function() {
       if (--count <= 0) {
+          nc.close();
           done();
       }
     };

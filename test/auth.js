@@ -37,14 +37,20 @@ describe('Authorization', function() {
   it('should connect with proper credentials in url', function(done) {
     var nc = NATS.connect(authUrl);
     nc.on('connect', function(/*nc*/) {
-      setTimeout(done, 100);
+      setTimeout(function() {
+          nc.close();
+          done();
+      }, 100);
     });
   });
 
   it('should connect with proper credentials as options', function(done) {
     var nc = NATS.connect({'url':noAuthUrl, 'user':'derek', 'pass':'foobar'});
     nc.on('connect', function(/*nc*/) {
-      setTimeout(done, 100);
+        setTimeout(function() {
+            nc.close();
+            done();
+        }, 100);
     });
   });
 

@@ -232,4 +232,71 @@ describe('Reconnect functionality', function() {
     });
   });
 
+  it('should execute callbacks if published during reconnect', function(done) {
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
+    nc.on('reconnecting', function(/*client*/) {
+      // restart server
+      if (server === null) {
+        nc.publish('foo', function() {
+          nc.close();
+          done();
+        });
+        server = nsc.start_server(PORT);
+      }
+    });
+    nc.on('connect', function() {
+      var s = server;
+      server = null;
+      s.kill();
+    });
+  });
+
+  it('should not lose messages if published during reconnect', function(done) {
+    // This checks two things if the client publishes while reconnecting:
+    // 1) the message is published when the client reconnects
+    // 2) the client's subscriptions are synced before the message is published
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
+    nc.subscribe('foo', function() {
+      nc.close();
+      done();
+    });
+    nc.on('reconnecting', function(/*client*/) {
+      // restart server
+      if (server === null) {
+        nc.publish('foo');
+        server = nsc.start_server(PORT);
+      }
+    });
+    nc.on('connect', function() {
+      var s = server;
+      server = null;
+      s.kill();
+    });
+  });
+
+  it('should emit reconnect before flush callbacks are called', function(done) {
+    var nc = NATS.connect({'port':PORT, 'reconnectTimeWait':100});
+    var reconnected = false;
+    nc.on('reconnecting', function() {
+      // restart server
+      if (server === null) {
+        nc.flush(function() {
+          nc.close();
+          if (!reconnected) {
+            done(new Error('Flush callback called before reconnect emitted'));
+          }
+          done();
+        });
+        server = nsc.start_server(PORT);
+      }
+    });
+    nc.on('reconnect', function() {
+      reconnected = true;
+    });
+    nc.on('connect', function() {
+      var s = server;
+      server = null;
+      s.kill();
+    });
+  });
 });
