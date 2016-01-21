@@ -62,7 +62,7 @@ describe('Basic Connectivity', function() {
   it('should emit connecting events and try repeatedly if configured and no server available', function(done){
     var nc = NATS.connect({'uri':'nats://localhost:22222',
 			   'waitOnFirstConnect': true,
-			   'reconnectTimeWait':50,
+			   'reconnectTimeWait':100,
 			   'maxReconnectAttempts':20});
     var connectingEvents = 0;
     nc.on('error', function() {
@@ -73,9 +73,9 @@ describe('Basic Connectivity', function() {
       connectingEvents++;
     });
     setTimeout(function(){
-      connectingEvents.should.equal(10);
+      connectingEvents.should.equal(5);
       done();
-    }, 575);
+    }, 550);
   });
 
 
