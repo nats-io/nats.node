@@ -278,7 +278,7 @@ describe('Basics', function() {
     };
     nc.subscribe('foo2', function(msg) {
       msg.should.have.property('key');
-      msg.key.should.equal('CEDILA-Ç')
+      msg.key.should.equal('CEDILA-Ç');
       done();
     });
     nc.publish('foo2', utf8msg);
