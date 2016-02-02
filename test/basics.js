@@ -251,4 +251,20 @@ describe('Basics', function() {
     nc.publish('foo');
   });
 
+  it('should parse json messages', function(done) {
+    var config = {
+      port: PORT,
+      json: true
+    };
+    var nc = NATS.connect(config);
+    var jsonMsg = {
+      json: true
+    };
+    nc.subscribe('foo', function(msg) {
+      msg.should.have.property('json').and.be.a.Boolean();
+      done();
+    });
+    nc.publish('foo', jsonMsg);
+  });
+
 });
