@@ -251,4 +251,91 @@ describe('Basics', function() {
     nc.publish('foo');
   });
 
+  it('should parse json messages', function(done) {
+    var config = {
+      port: PORT,
+      json: true,
+    };
+    var nc = NATS.connect(config);
+    var jsonMsg = {
+      key: true
+    };
+    nc.subscribe('foo1', function(msg) {
+      msg.should.have.property('key').and.be.a.Boolean();
+      nc.close();
+      done();
+    });
+    nc.publish('foo1', jsonMsg);
+  });
+
+  it('should parse UTF8 json messages', function(done) {
+    var config = {
+      port: PORT,
+      json: true
+    };
+    var nc = NATS.connect(config);
+    var utf8msg = {
+      key: 'CEDILA-Ç'
+    };
+    nc.subscribe('foo2', function(msg) {
+      msg.should.have.property('key');
+      msg.key.should.equal('CEDILA-Ç');
+      nc.close();
+      done();
+    });
+    nc.publish('foo2', utf8msg);
+  });
+
+  it('should validate json messages before publishing', function(done) {
+    var config = {
+      port: PORT,
+      json: true
+    };
+    var nc = NATS.connect(config);
+    var error;
+
+    try {
+      nc.publish('foo3', 'not JSON');
+    } catch (e) {
+      error = e;
+    }
+    if (!error) {
+      nc.close();
+      return done('Should not accept string as message when JSON switch is turned on');
+    }
+
+    try {
+      nc.publish('foo3', 1);
+    } catch (e) {
+      error = e;
+    }
+    if (!error) {
+      nc.close();
+      return done('Should not accept number as message when JSON switch is turned on');
+    }
+
+    try {
+      nc.publish('foo3', false);
+    } catch (e) {
+      error = e;
+    }
+    if (!error) {
+      nc.close();
+      return done('Should not accept boolean as message when JSON switch is turned on');
+    }
+
+    try {
+      nc.publish('foo3', []);
+    } catch (e) {
+      error = e;
+    }
+    if (!error) {
+      nc.close();
+      return done('Should not accept array as message when JSON switch is turned on');
+    }
+
+    nc.close();
+    done();
+  });
+
 });
