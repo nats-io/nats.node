@@ -59,6 +59,26 @@ describe('Basic Connectivity', function() {
     });
   });
 
+  it('should emit connecting events and try repeatedly if configured and no server available', function(done){
+    var nc = NATS.connect({'uri':'nats://localhost:22222',
+			   'waitOnFirstConnect': true,
+			   'reconnectTimeWait':100,
+			   'maxReconnectAttempts':20});
+    var connectingEvents = 0;
+    nc.on('error', function() {
+      nc.close();
+      done('should not have produced error');
+    });
+    nc.on('reconnecting', function() {
+      connectingEvents++;
+    });
+    setTimeout(function(){
+      connectingEvents.should.equal(5);
+      done();
+    }, 550);
+  });
+
+
   it('should still receive publish when some servers are invalid', function(done){
     var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
     var ua = NATS.connect({servers: natsServers});
