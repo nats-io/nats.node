@@ -50,5 +50,6 @@
     "istanbul": "^0.3.17",
     "coveralls": "^2.11.2",
     "should": ">= 7.0.0"
-  }
+  },
+  "typings": "./index.d.ts"
 }
