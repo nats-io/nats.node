@@ -30,27 +30,27 @@ export function connect(port: number): Client;
 export function connect(url: string): Client;
 
 export interface ClientOpts {
-	url: string,
-	user: string,
-	pass: string,
-	verbose: boolean,
-	pedantic: boolean,
-	reconnect: boolean,
-	maxReconnectAttempts: number,
-	reconnectTimeWait: number,
-	servers: Array<string>,
-	noRandomize: boolean,
-	encoding: BufferEncoding,
-	tls: boolean,
-	name: string,
-	yieldTime: number,
-	waitOnFirstConnect: boolean,
-	json: boolean
+	url?: string,
+	user?: string,
+	pass?: string,
+	verbose?: boolean,
+	pedantic?: boolean,
+	reconnect?: boolean,
+	maxReconnectAttempts?: number,
+	reconnectTimeWait?: number,
+	servers?: Array<string>,
+	noRandomize?: boolean,
+	encoding?: BufferEncoding,
+	tls?: boolean,
+	name?: string,
+	yieldTime?: number,
+	waitOnFirstConnect?: boolean,
+	json?: boolean
 }
 
 export interface SubscribeOptions {
-	queue: string,
-	max: number
+	queue?: string,
+	max?: number
 }
 
 declare class Client extends events.EventEmitter {
