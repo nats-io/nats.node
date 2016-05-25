@@ -192,7 +192,7 @@ See examples and benchmarks for more information..
 
 (The MIT License)
 
-Copyright (c) 2015 Apcera Inc.<br/>
+Copyright (c) 2015-2016 Apcera Inc.<br/>
 Copyright (c) 2011-2015 Derek Collison
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
