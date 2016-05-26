@@ -118,4 +118,21 @@ describe('Basic Connectivity', function() {
     }, 100 * 2);
   });
 
+
+  it('should add a new cluster server', function(done){
+    var servers = [uri,'nats://localhost:22223'];
+    var nc = NATS.connect({servers: new Array(servers[0])});
+    var contains = 0;
+
+    nc.on('connect', function(client) {
+      client.addServer(servers[1]);
+      client.servers.forEach(function(_server) {
+       if (servers.indexOf(_server.url.href) !== -1)
+        contains++;
+      });
+      contains.should.equal(servers.length);
+      done();
+    });
+  });
+
 });
