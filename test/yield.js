@@ -35,7 +35,7 @@ describe('Yield', function() {
     }, 10);
 
     nc.subscribe('foo', function() {
-      sleep.sleep(1);
+      sleep.sleep(10);
     });
 
     for (var i = 0; i < 256; i++) {
