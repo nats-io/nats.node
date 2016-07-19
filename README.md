@@ -133,7 +133,22 @@ var tlsOptions = {
 var nc = nats.connect({port: TLSPORT, tls: tlsOptions});
 
 ```
+## Authentication
+```javascript
 
+// Connect with username and password in the url
+var nc = NATS.connect("nats://foo:bar@localhost:4222");
+
+// Connect with username and password inside object
+var nc = NATS.connect({'url':"nats://localhost:4222", 'user':'foo', 'pass':'bar'});
+
+// Connect with token in url
+var nc = NATS.connect("nats://mytoken@localhost:4222");
+
+// Connect with token inside object
+var nc = NATS.connect({'url':"nats://localhost:4222", 'token':'mytoken'});
+
+```
 ## Advanced Usage
 
 ```javascript
