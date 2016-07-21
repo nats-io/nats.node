@@ -20,6 +20,11 @@ describe('Errors', function() {
   after(function(){
     server.kill();
   });
+  
+  it('should throw errors on connect', function(done) {
+    (function() { var nc = NATS.connect({'url':'nats://localhost:' + PORT, 'token':'token1', 'user':'foo'}); }).should.throw(Error);
+    done();
+  });
 
   it('should throw errors on publish', function(done) {
     var nc = NATS.connect(PORT);
