@@ -39,7 +39,9 @@
   "engines": {
     "node": ">= 0.10.x"
   },
-  "dependencies": {},
+  "dependencies": {
+    "nuid": ">=0.6.8"
+  },
   "devDependencies": {
     "jshint": "2.9.x",
     "jshint-stylish": "2.2.x",
