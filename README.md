@@ -3,7 +3,7 @@
 A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
 [![License MIT](https://img.shields.io/npm/l/express.svg)](http://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.org/nats-io/node-nats.svg?branch=master)](http://travis-ci.org/nats-io/node-nats) [![npm version](https://badge.fury.io/js/nats.svg)](http://badge.fury.io/js/nats)[![Coverage Status](https://coveralls.io/repos/nats-io/node-nats/badge.svg)](https://coveralls.io/r/nats-io/node-nats?branch=master)
+[![Build Status](https://travis-ci.org/nats-io/node-nats.svg?branch=master)](http://travis-ci.org/nats-io/node-nats) [![npm version](https://badge.fury.io/js/nats.svg)](http://badge.fury.io/js/nats)[![Coverage Status](https://coveralls.io/repos/github/nats-io/node-nats/badge.svg?branch=master)](https://coveralls.io/github/nats-io/node-nats?branch=master)
 
 ## Installation
 
