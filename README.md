@@ -199,6 +199,16 @@ nc2.publish('foo');
 
 nc = nats.connect({'servers':servers, 'encoding': 'ascii'});
 
+// Setting encoding to null explicitly allows messages to be sent and recieved
+// as raw Buffer objects.
+
+nc = nats.connect({'servers':servers, 'encoding': null});
+
+nats.subscribe('foo', function(response) {
+  var rawInt = response.readInt32LE(0);
+  console.log('Got a raw integer from the response buffer: ' + rawInt);
+});
+
 ```
 
 See examples and benchmarks for more information..
