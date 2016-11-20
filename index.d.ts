@@ -53,6 +53,10 @@ export interface SubscribeOptions {
 	max?: number
 }
 
+export interface RequestOptions extends SubscribeOptions {
+	timeout?: number
+}
+
 declare class Client extends events.EventEmitter {
 	/**
 	 * Create a properly formatted inbox subject.
@@ -104,7 +108,7 @@ declare class Client extends events.EventEmitter {
 	 */
 	request(subject: string, callback: Function): number;
 	request(subject: string, msg: string | Buffer, callback: Function): number;
-	request(subject: string, msg?: string, options?: SubscribeOptions, callback?: Function): number;
+	request(subject: string, msg?: string, options?: RequestOptions, callback?: Function): number;
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.
