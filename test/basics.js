@@ -99,7 +99,7 @@ describe('Basics', function() {
 
   });
 
-  it('should throe exception for request timeout', function(done) {
+  it('should throw exception for request timeout', function(done) {
     var nc = NATS.connect(PORT);
     var initMsg = 'Hello World';
     var replyMsg = 'Hello Back!';
@@ -109,11 +109,11 @@ describe('Basics', function() {
       msg.should.equal(initMsg);
       should.exist(reply);
       reply.should.match(/_INBOX\.*/);
-      // nc.publish(reply, replyMsg);
+      // do not publish so a timeout occurs
     });
 
     try {
-      nc.request('foo', initMsg,i {timeout: 2000}, function(reply) {
+      nc.request('foo', initMsg, {timeout: 2000}, function(reply) {
         should.exist(reply);
         reply.should.equal(replyMsg);
         nc.close();
