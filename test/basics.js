@@ -113,7 +113,7 @@ describe('Basics', function() {
     });
 
     try {
-      nc.request('foo', initMsg, function(reply) {
+      nc.request('foo', initMsg,i {timeout: 2000}, function(reply) {
         should.exist(reply);
         reply.should.equal(replyMsg);
         nc.close();
