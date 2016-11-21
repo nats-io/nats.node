@@ -99,6 +99,35 @@ describe('Basics', function() {
 
   });
 
+  it('should throe exception for request timeout', function(done) {
+    var nc = NATS.connect(PORT);
+    var initMsg = 'Hello World';
+    var replyMsg = 'Hello Back!';
+
+    nc.subscribe('foo', function(msg, reply) {
+      should.exist(msg);
+      msg.should.equal(initMsg);
+      should.exist(reply);
+      reply.should.match(/_INBOX\.*/);
+      // nc.publish(reply, replyMsg);
+    });
+
+    try {
+      nc.request('foo', initMsg, function(reply) {
+        should.exist(reply);
+        reply.should.equal(replyMsg);
+        nc.close();
+        done();
+      });
+    }
+    catch(ex) {
+      if (ex === 'Request wait time elapsed without receiving a reply') {
+        done();
+      }
+    }
+
+  });
+
   it('should return a sub id for requests', function(done) {
     var nc = NATS.connect(PORT);
     var initMsg = 'Hello World';
