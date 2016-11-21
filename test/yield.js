@@ -30,7 +30,7 @@ describe('Yield', function() {
       var delta = Date.now() - start;
       nc.close();
       clearTimeout(timer);
-      delta.should.within(10, 20);
+      delta.should.within(10, 25);
       done();
     }, 10);
 

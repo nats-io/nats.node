@@ -4,12 +4,13 @@ sudo: false
 node_js:
   - "0.12"
   - "4"
-  - "5"
   - "6"
+  - "7"
 
 before_script:
-  - mkdir -p gnatsd
-  - wget https://github.com/nats-io/gnatsd/releases/download/v0.7.2/gnatsd-v0.7.2-linux-amd64.tar.gz -qO - | tar -zxvC gnatsd/
+  - wget https://github.com/nats-io/gnatsd/releases/download/v0.9.4/gnatsd-v0.9.4-linux-amd64.zip -qO tmp.zip
+  - unzip tmp.zip
+  - mv gnatsd-v0.9.4-linux-amd64 gnatsd
 
 after_success:
   - npm run coveralls
