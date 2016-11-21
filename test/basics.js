@@ -112,20 +112,13 @@ describe('Basics', function() {
       // do not publish so a timeout occurs
     });
 
-    try {
+    expect(function(){
       nc.request('foo', initMsg, {timeout: 2000}, function(reply) {
         should.exist(reply);
         reply.should.equal(replyMsg);
         nc.close();
-        done();
       });
-    }
-    catch(ex) {
-      if (ex === 'Request wait time elapsed without receiving a reply') {
-        done();
-      }
-    }
-
+    }).to.throw('Request wait time elapsed without receiving a reply');
   });
 
   it('should return a sub id for requests', function(done) {
