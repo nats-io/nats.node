@@ -100,25 +100,23 @@ describe('Basics', function() {
   });
 
   it('should throw exception for request timeout', function(done) {
-    var nc = NATS.connect(PORT);
-    var initMsg = 'Hello World';
-    var replyMsg = 'Hello Back!';
+    setTimeout(function() {
+      var nc = NATS.connect(PORT);
+      var initMsg = 'Hello World';
+      var replyMsg = 'Hello Back!';
 
-    nc.subscribe('foo', function(msg, reply) {
-      should.exist(msg);
-      msg.should.equal(initMsg);
-      should.exist(reply);
-      reply.should.match(/_INBOX\.*/);
-      // do not publish so a timeout occurs
-    });
+      try {
+        nc.request('foo', initMsg, {"timeout": 5}, function(reply) {
+          nc.close();
+          done(new Error("Got a response"));
+        });
+      }
+      catch(e) {
+        done();
+      }
 
-    expect(function(){
-      nc.request('foo', initMsg, {timeout: 2000}, function(reply) {
-        should.exist(reply);
-        reply.should.equal(replyMsg);
-        nc.close();
-      });
-    }).to.throw('Request wait time elapsed without receiving a reply');
+      setTimeout(function() { done("nothing happened"); }, 2000);
+    }, 100);
   });
 
   it('should return a sub id for requests', function(done) {
