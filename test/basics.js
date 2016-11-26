@@ -99,6 +99,26 @@ describe('Basics', function() {
 
   });
 
+  it('should throw exception for request timeout', function(done) {
+    setTimeout(function() {
+      var nc = NATS.connect(PORT);
+      var initMsg = 'Hello World';
+      var replyMsg = 'Hello Back!';
+
+      try {
+        nc.request('foo', initMsg, {"timeout": 5}, function(reply) {
+          nc.close();
+          done(new Error("Got a response"));
+        });
+      }
+      catch(e) {
+        done();
+      }
+
+      setTimeout(function() { done("nothing happened"); }, 2000);
+    }, 100);
+  });
+
   it('should return a sub id for requests', function(done) {
     var nc = NATS.connect(PORT);
     var initMsg = 'Hello World';
