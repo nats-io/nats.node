@@ -126,3 +126,12 @@ declare class Client extends events.EventEmitter {
 	 */
 	numSubscriptions(): number;
 }
+
+declare class NatsError implements Error {
+    public name: string;
+    public message: string;
+    public code: string;
+    public chainedError: Error;
+
+    constructor(message:string, code:string, chainedError?:Error);
+}
