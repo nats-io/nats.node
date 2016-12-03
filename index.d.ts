@@ -4,6 +4,21 @@ import events = require('events');
 export const version: string;
 
 /**
+ * Error codes
+ */
+export const BAD_SUBJECT: string;
+export const BAD_MSG: string;
+export const BAD_REPLY: string;
+export const CONN_CLOSED: string;
+export const BAD_JSON: string;
+export const BAD_AUTHENTICATION: string;
+export const INVALID_ENCODING: string;
+export const SECURE_CONN_REQ: string;
+export const NON_SECURE_CONN_REQ: string;
+export const CLIENT_CERT_REQ: string;
+export const NATS_PROTOCOL_ERR: string;
+
+/**
  * Create a properly formatted inbox subject.
 */
 export function createInbox(): string;
@@ -110,4 +125,13 @@ declare class Client extends events.EventEmitter {
 	 * Report number of outstanding subscriptions on this connection.
 	 */
 	numSubscriptions(): number;
+}
+
+declare class NatsError implements Error {
+    public name: string;
+    public message: string;
+    public code: string;
+    public chainedError: Error;
+
+    constructor(message:string, code:string, chainedError?:Error);
 }

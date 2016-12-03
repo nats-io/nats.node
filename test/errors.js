@@ -77,4 +77,18 @@ describe('Errors', function() {
     done();
   });
 
+  it ('NatsErrors have code', function() {
+    var err = new NATS.NatsError("hello", "helloid");
+    should.equal(err.message, 'hello');
+    should.equal(err.code, 'helloid');
+  });
+
+  it ('NatsErrors can chain an error', function() {
+    var srcErr = new Error('foo');
+    var err = new NATS.NatsError("hello", "helloid", srcErr);
+    should.equal(err.message, 'hello');
+    should.equal(err.code, 'helloid');
+    should.equal(err.chainedError, srcErr);
+  });
+
 });
