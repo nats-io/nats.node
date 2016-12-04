@@ -89,6 +89,7 @@ describe('Errors', function() {
     should.equal(err.message, 'hello');
     should.equal(err.code, 'helloid');
     should.equal(err.chainedError, srcErr);
+    should.equal(err.name, 'NatsError');
   });
 
 });
