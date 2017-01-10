@@ -29,7 +29,7 @@
   "contributors": [],
   "main": "./index.js",
   "scripts": {
-    "lint": "jshint --reporter node_modules/jshint-stylish lib/*.js test/*.js test/support/*.js examples/*.js",
+    "lint": "jshint --reporter node_modules/jshint-stylish lib test examples",
     "depcheck": "dependency-check . lib/*",
     "depcheck:unused": "dependency-check ./package.json --unused --no-dev lib/*",
     "test:unit": "mkdir -p reports/ && NODE_ENV=test multi='spec=- xunit=reports/mocha-xunit.xml' istanbul cover _mocha -- -R mocha-multi --timeout 10000 --slow 750 && istanbul check-coverage",
