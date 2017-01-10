@@ -39,4 +39,25 @@ describe('Buffer', function () {
         nc.publish('validBuffer', validBuffer);
 
     });
+
+    it('should allow parsing raw buffers to json', function (done) {
+        var nc = NATS.connect({
+            'url': 'nats://localhost:' + PORT,
+            'preserveBuffers': true,
+            'json': true
+        });
+
+        var jsonString = '{ "foo-bar": true }';
+        var validBuffer = new Buffer(jsonString);
+
+        nc.subscribe('validBuffer', function (msg) {
+
+            msg.should.eql({ "foo-bar": true });
+            nc.close();
+            done();
+        });
+
+        nc.publish('validBuffer', validBuffer);
+
+    });
 });
