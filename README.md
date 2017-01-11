@@ -199,6 +199,15 @@ nc2.publish('foo');
 
 nc = nats.connect({'servers':servers, 'encoding': 'ascii'});
 
+
+
+// PreserveBuffers
+
+// To prevent payload conversion from a Buffer to a string, set the 
+// preserveBuffers option to true. Message payload return will be a Buffer.
+
+nc = nats.connect({'preserveBuffers': true);
+
 ```
 
 See examples and benchmarks for more information..
