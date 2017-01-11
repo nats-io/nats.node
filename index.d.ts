@@ -60,7 +60,8 @@ export interface ClientOpts {
 	name?: string,
 	yieldTime?: number,
 	waitOnFirstConnect?: boolean,
-	json?: boolean
+	json?: boolean,
+	preserveBuffers?: boolean
 }
 
 export interface SubscribeOptions {
