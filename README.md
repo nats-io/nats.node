@@ -95,7 +95,7 @@ var servers = ['nats://nats.io:4222', 'nats://nats.io:5222', 'nats://nats.io:622
 var nc = nats.connect({'servers': servers});
 
 // currentServer is the URL of the connected server.
-console.log("Connected to " + nc.currentServer.host);
+console.log("Connected to " + nc.currentServer.url.host);
 
 // Preserve order when connecting to servers.
 nc = nats.connect({'dontRandomize': true, 'servers':servers});
