@@ -120,4 +120,30 @@ describe('Binary', function() {
     var nc = NATS.connect({'url': 'nats://localhost:' + PORT, 'preserveBuffers': true});
     binaryDataTests(done, nc);
   });
+
+  it('should not append control characters on chunk processing', function(done) {
+    var nc = NATS.connect({ 'url': 'nats://localhost:' + PORT, 'preserveBuffers': true });
+    var buffer = crypto.randomBytes(1024);
+
+    var count = 0;
+    var finished = function () {
+      
+      if (++count == 100) {
+        nc.close();
+        done();
+      }
+    };
+    
+    nc.subscribe('trailingData', function (msg) {
+      should.ok(msg.equals(buffer));
+      finished();
+    });
+
+    for (let i = 0; i <= 100; i++) {
+      
+      nc.publish('trailingData', buffer);
+    }
+
+  });
+
 });
