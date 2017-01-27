@@ -139,7 +139,7 @@ describe('Binary', function() {
       finished();
     });
 
-    for (let i = 0; i <= 100; i++) {
+    for (var i = 0; i <= 100; i++) {
       
       nc.publish('trailingData', buffer);
     }
