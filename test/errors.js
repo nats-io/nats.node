@@ -96,7 +96,7 @@ describe('Errors', function() {
     var nc = NATS.connect(PORT);
     var initMsg = 'Hello World';
 
-    nc.request('foo', initMsg, function(error, reply) {
+    nc.request('foo', initMsg, {timeout: 200},function(error, reply) {
       should.exist(error);
       error.code.should.equal(NATS.REQUEST_TIMEOUT);
       nc.close();
