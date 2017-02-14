@@ -29,14 +29,21 @@ nats.subscribe('foo', function(msg) {
 var sid = nats.subscribe('foo', function(msg) {});
 nats.unsubscribe(sid);
 
-// Request Streams
-var sid = nats.request('request', function(response) {
+// Request Streams, will Auto-Unsubscribe after 1 response
+var sid = nats.request('request', function(error, response) {
+  if (error) console.error(error);
   console.log('Got a response in msg stream: ' + response);
 });
 
-// Request with Auto-Unsubscribe. Will unsubscribe after
-// the first response is received via {'max':1}
-nats.request('help', null, {'max':1}, function(response) {
+// Request without Auto-Unsubscribe. Will never unsubscribe
+nats.request('help', null, {'max':false}, function(error, response) {
+  if (error) console.error(error);
+  console.log('Got a response for help: ' + response);
+});
+
+// Request with timeout, returns error if no response was received after 10000 ms
+nats.request('help', null, {'timeout': 10000}, function(error, response) {
+  if (error) console.error(error);
   console.log('Got a response for help: ' + response);
 });
 
