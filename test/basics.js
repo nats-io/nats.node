@@ -90,7 +90,7 @@ describe('Basics', function() {
       nc.publish(reply, replyMsg);
     });
 
-    nc.request('foo', initMsg, function(reply) {
+    nc.request('foo', initMsg, function(error, reply) {
       should.exist(reply);
       reply.should.equal(replyMsg);
       nc.close();

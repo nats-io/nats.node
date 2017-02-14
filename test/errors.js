@@ -91,5 +91,18 @@ describe('Errors', function() {
     should.equal(err.chainedError, srcErr);
     should.equal(err.name, 'NatsError');
   });
+  
+  it('should timeout request', function(done) {
+    var nc = NATS.connect(PORT);
+    var initMsg = 'Hello World';
+
+    nc.request('foo', initMsg, function(error, reply) {
+      should.exist(error);
+      error.code.should.equal(NATS.REQUEST_TIMEOUT);
+      nc.close();
+      done();
+    });
+
+  });
 
 });
