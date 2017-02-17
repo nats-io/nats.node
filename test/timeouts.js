@@ -51,4 +51,26 @@ describe('Timeout and max received events for subscriptions', function() {
     });
   });
 
+
+  it('should not timeout if unsubscribe is called', function(done) {
+    var nc = NATS.connect(PORT);
+    nc.on('connect', function() {
+      var count = 0;
+      var sid = nc.subscribe('bar', function(m) {
+        count++;
+        if(count === 1) {
+          nc.unsubscribe(sid);
+        }
+      });
+      nc.timeout(sid, 1000, 2, function() {
+        done(new Error('Timeout improperly called'));
+      });
+      nc.publish('bar', '');
+      nc.flush();
+      setTimeout(function() {
+        // terminate the test
+        done();
+      }, 1500);
+    });
+  });
 });
