@@ -49,4 +49,17 @@ describe('JSON payloads', function() {
       done();
     }
   });
+
+  it('should pub/sub array with json', function(done){
+    var nc = NATS.connect({json: true, port: PORT});
+    nc.subscribe('foo', function(msg, reply, subj, sid){
+      should.ok(typeof msg !== 'string');
+      msg.should.be.instanceof(Array).and.have.lengthOf(3);
+      nc.unsubscribe(sid);
+      nc.close();
+      done();
+    });
+
+    nc.publish('foo', ['one', 'two', 'three']);
+  });
 });
