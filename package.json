@@ -1,6 +1,6 @@
 {
   "name": "nats",
-  "version": "0.7.6",
+  "version": "0.7.8",
   "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
     "nats",
@@ -44,14 +44,14 @@
     "nuid": ">=0.6.8"
   },
   "devDependencies": {
+    "coveralls": "^2.11.2",
+    "dependency-check": "2.5.x",
+    "istanbul": "0.4.x",
     "jshint": "2.9.x",
     "jshint-stylish": "2.2.x",
     "mocha": "2.5.x",
-    "mocha-multi": "0.9.x",
     "mocha-lcov-reporter": "1.2.x",
-    "dependency-check": "2.5.x",
-    "istanbul": "0.4.x",
-    "coveralls": "^2.11.2",
+    "mocha-multi": "0.9.x",
     "should": ">= 9.0.0"
   },
   "typings": "./index.d.ts"

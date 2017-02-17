@@ -18,7 +18,7 @@ describe('Basics', function() {
 
   // Shutdown our server
   after(function() {
-    server.kill();
+    nsc.stop_server(server);
   });
 
   it('should do basic subscribe and unsubscribe', function(done) {
@@ -96,7 +96,6 @@ describe('Basics', function() {
       nc.close();
       done();
     });
-
   });
 
   it('should return a sub id for requests', function(done) {
@@ -338,4 +337,68 @@ describe('Basics', function() {
     done();
   });
 
+  it('should do requestone-get-reply', function(done) {
+    var nc = NATS.connect(PORT);
+    var initMsg = 'Hello World';
+    var replyMsg = 'Hello Back!';
+
+    nc.subscribe('foo', function(msg, reply) {
+      should.exist(msg);
+      msg.should.equal(initMsg);
+      should.exist(reply);
+      reply.should.match(/_INBOX\.*/);
+      nc.publish(reply, replyMsg);
+    });
+
+    var gotOne = false;
+    nc.requestOne('foo', initMsg, null, 1000, function(reply) {
+      should.exist(reply);
+      reply.should.equal(replyMsg);
+      if(! gotOne) {
+        gotOne = true;
+        nc.close();
+        done();
+      }
+    });
+  });
+
+  it('should do requestone-will-unsubscribe', function(done) {
+    var rsub = "x.y.z";
+    var nc = NATS.connect(PORT);
+    var count = 0;
+
+    nc.subscribe(rsub, function(msg, reply) {
+      reply.should.match(/_INBOX\.*/);
+      nc.publish(reply, "y");
+      nc.publish(reply, "yy");
+      nc.flush();
+      setTimeout(function() {
+        nc.publish(reply, "z");
+        nc.flush();
+        nc.close();
+        setTimeout(function() {
+          count.should.equal(1);
+          done();
+        }, 1000);
+      }, 1500);
+    });
+
+    nc.requestOne(rsub, "", null, 1000, function(reply) {
+      reply.should.not.be.instanceof(NATS.NatsError);
+      should.exist(reply);
+      count++;
+    });
+  });
+
+
+  it('should do requestone-can-timeout', function(done) {
+    var nc = NATS.connect(PORT);
+    nc.requestOne('a.b.c', '', null, 1000, function(reply) {
+      should.exist(reply);
+      reply.should.be.instanceof(NATS.NatsError);
+      reply.should.have.property('code', NATS.REQ_TIMEOUT);
+      nc.close();
+      done();
+    });
+  });
 });

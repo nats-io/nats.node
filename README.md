@@ -40,6 +40,17 @@ nats.request('help', null, {'max':1}, function(response) {
   console.log('Got a response for help: ' + response);
 });
 
+
+// Request for single response with timeout.
+nats.requestOne('help', null, 1000, function(response) {
+  // `NATS` is the library.
+  if(response.code && response.code === NATS.REQ_TIMEOUT) {
+    console.log('Request for help timed out.');
+    return;
+  }
+  console.log('Got a response for help: ' + response);
+});
+
 // Replies
 nats.subscribe('help', function(request, replyTo) {
   nats.publish(replyTo, 'I can help!');
