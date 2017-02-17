@@ -54,8 +54,7 @@ describe('JSON payloads', function() {
     var nc = NATS.connect({json: true, port: PORT});
     nc.subscribe('foo', function(msg, reply, subj, sid){
       should.ok(typeof msg !== 'string');
-      (msg).should.be.an.Array;
-      (msg).should.have.lengthOf(3);
+      msg.should.be.instanceof(Array).and.have.lengthOf(3);
       nc.unsubscribe(sid);
       nc.close();
       done();
