@@ -123,6 +123,16 @@ declare class Client extends events.EventEmitter {
 	request(subject: string, msg?: string, options?: SubscribeOptions, callback?: Function): number;
 
 	/**
+	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
+	 * This should be treated as a subscription. Request one, will terminate the subscription
+	 * after the first response is received or the timeout is reached.
+	 * The callback can be called with either a message payload or a NatsError to indicate
+	 * a timeout has been reached.
+	 * The Subscriber Id is returned.
+	 */
+	requestOne(subject: string, msg: string | Buffer, options?: SubscribeOptions, timeout: number, callback?:Function) : number
+
+	/**
 	 * Report number of outstanding subscriptions on this connection.
 	 */
 	numSubscriptions(): number;
