@@ -78,21 +78,21 @@ declare class Client extends events.EventEmitter {
 	/**
 	 * Close the connection to the server.
 	 */
-	close();
+	close():void;
 
 	/**
 	 * Flush outbound queue to server and call optional callback when server has processed
 	 * all data.
 	 */
-	flush(callback?: Function);
+	flush(callback?: Function):void;
 
 	/**
 	 * Publish a message to the given subject, with optional reply and callback.
 	 */
-	publish(callback: Function);
-	publish(subject: string, callback: Function);
-	publish(subject: string, msg: string | Buffer, callback: Function);
-	publish(subject: string, msg?: string | Buffer, reply?: string, callback?: Function);
+	publish(callback: Function):void;
+	publish(subject: string, callback: Function):void;
+	publish(subject: string, msg: string | Buffer, callback: Function):void;
+	publish(subject: string, msg?: string | Buffer, reply?: string, callback?: Function):void;
 
 	/**
 	 * Subscribe to a given subject, with optional options and callback. opts can be
@@ -104,12 +104,12 @@ declare class Client extends events.EventEmitter {
 	/**
 	 * Unsubscribe to a given Subscriber Id, with optional max parameter.
 	 */
-	unsubscribe(sid: number, max?: number);
+	unsubscribe(sid: number, max?: number):void;
 
 	/**
 	 * Set a timeout on a subscription.
 	 */
-	timeout(sid: number, timeout: number, expected: number, callback: (sid: number) => void);
+	timeout(sid: number, timeout: number, expected: number, callback: (sid: number) => void):void;
 
 	/**
 	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
@@ -130,7 +130,7 @@ declare class Client extends events.EventEmitter {
 	 * a timeout has been reached.
 	 * The Subscriber Id is returned.
 	 */
-	requestOne(subject: string, msg: string | Buffer, options?: SubscribeOptions, timeout: number, callback?:Function) : number
+	requestOne(subject: string, msg: string | Buffer, options?: SubscribeOptions, timeout?: number, callback?:Function) : number
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.
