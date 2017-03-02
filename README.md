@@ -14,8 +14,8 @@ npm install nats
 ## Basic Usage
 
 ```javascript
-
-var nats = require('nats').connect();
+var NATS = require('nats');
+var nats = NATS.connect();
 
 // Simple Publisher
 nats.publish('foo', 'Hello World!');
@@ -42,7 +42,7 @@ nats.request('help', null, {'max':1}, function(response) {
 
 
 // Request for single response with timeout.
-nats.requestOne('help', null, 1000, function(response) {
+nats.requestOne('help', null, {'max':1}, 1000, function(response) {
   // `NATS` is the library.
   if(response.code && response.code === NATS.REQ_TIMEOUT) {
     console.log('Request for help timed out.');
