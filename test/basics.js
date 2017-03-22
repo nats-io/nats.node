@@ -363,6 +363,7 @@ describe('Basics', function() {
   });
 
   it('should do requestone-will-unsubscribe', function(done) {
+    this.timeout(3000);
     var rsub = "x.y.z";
     var nc = NATS.connect(PORT);
     var count = 0;
@@ -400,5 +401,38 @@ describe('Basics', function() {
       nc.close();
       done();
     });
+  });
+
+
+  it('should unsubscribe when request one timesout', function(done) {
+    this.timeout(3000);
+    var nc = NATS.connect(PORT);
+
+    var replies = 0;
+    var responses = 0;
+    // set a subscriber to respond to the request
+    nc.subscribe('a.b.c', {max: 1}, function(msg, reply) {
+      setTimeout(function() {
+        nc.publish(reply, '');
+        nc.flush();
+        replies++;
+      }, 500);
+    });
+
+    // request one - we expect a timeout
+    nc.requestOne('a.b.c', '', null, 250, function(reply) {
+      reply.should.be.instanceof(NATS.NatsError);
+      reply.should.have.property('code', NATS.REQ_TIMEOUT);
+      if(! reply.hasOwnProperty('code')) {
+        responses++;
+      }
+    });
+
+    // verify reply was sent, but we didn't get it
+    setTimeout(function() {
+      should(replies).equal(1);
+      should(responses).equal(0);
+      done();
+    },1000);
   });
 });

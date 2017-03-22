@@ -73,4 +73,25 @@ describe('Timeout and max received events for subscriptions', function() {
       }, 1500);
     });
   });
+
+  it('timeout should unsubscribe', function(done) {
+    var nc = NATS.connect(PORT);
+    nc.on('connect', function() {
+      var count = 0;
+      var sid = nc.subscribe('bar', function(m) {
+        count++;
+      });
+      nc.timeout(sid, 250, 2, function() {
+        process.nextTick(function () {
+          nc.publish('bar', '');
+          nc.flush();
+        });
+      });
+      setTimeout(function() {
+        nc.close();
+        should(count).equal(0);
+        done();
+      }, 1000);
+    });
+  });
 });
