@@ -217,7 +217,7 @@ nc = nats.connect({'servers':servers, 'encoding': 'ascii'});
 // To prevent payload conversion from a Buffer to a string, set the 
 // preserveBuffers option to true. Message payload return will be a Buffer.
 
-nc = nats.connect({'preserveBuffers': true);
+nc = nats.connect({'preserveBuffers': true});
 
 ```
 
@@ -227,7 +227,7 @@ See examples and benchmarks for more information..
 
 (The MIT License)
 
-Copyright (c) 2015-2016 Apcera Inc.<br/>
+Copyright (c) 2015-2017 Apcera Inc.<br/>
 Copyright (c) 2011-2015 Derek Collison
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
