@@ -7,7 +7,7 @@ var net = require('net');
 var SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
 var DEFAULT_PORT = 4222;
 
-exports.start_server = function(port, opt_flags, done) {
+function start_server(port, opt_flags, done) {
   if (!port) {
     port = DEFAULT_PORT;
   }
@@ -94,10 +94,89 @@ exports.start_server = function(port, opt_flags, done) {
   });
 
   return server;
-};
+}
 
-exports.stop_server = function(server) {
+exports.start_server = start_server;
+
+function stop_server(server) {
   if (server !== undefined) {
     server.kill();
   }
+}
+
+exports.stop_server = stop_server;
+
+// starts a number of servers in a cluster at the specified ports.
+// must call with at least one port.
+function start_cluster(ports, route_port, opt_flags, done) {
+  if (typeof opt_flags == 'function') {
+    done = opt_flags;
+    opt_flags = null;
+  }
+  var servers = [];
+  var started = 0;
+  var server = add_member(ports[0], route_port, route_port, function() {
+    started++;
+    servers.push(server);
+    if(started === ports.length) {
+      done();
+    }
+  });
+
+  var others = ports.slice(1);
+  others.forEach(function(p){
+      var s = add_member(p, route_port, p+1000, opt_flags, function() {
+        started++;
+        servers.push(s);
+      if(started === ports.length) {
+        done();
+      }
+    });
+  });
+  return servers;
+}
+
+// adds more cluster members, if more than one server is added additional
+// servers are added after the specified delay.
+function add_member_with_delay(ports, route_port, delay, opt_flags, done) {
+  if (typeof opt_flags == 'function') {
+    done = opt_flags;
+    opt_flags = null;
+  }
+  var servers = [];
+  ports.forEach(function(p, i) {
+    setTimeout(function() {
+      var s = add_member(p, route_port, p+1000, opt_flags, function() {
+        servers.push(s);
+        if(servers.length === ports.length) {
+          done();
+        }
+      });
+    }, i*delay);
+  });
+
+  return servers;
+}
+exports.add_member_with_delay = add_member_with_delay;
+
+function add_member(port, route_port, cluster_port, opt_flags, done) {
+  if (typeof opt_flags == 'function') {
+    done = opt_flags;
+    opt_flags = null;
+  }
+  opt_flags = opt_flags || [];
+  var opts = JSON.parse(JSON.stringify(opt_flags));
+  opts.push('--routes', 'nats://localhost:' + route_port);
+  opts.push('--cluster', 'nats://localhost:' + cluster_port);
+  return start_server(port, opts, done);
+}
+
+exports.start_cluster = start_cluster;
+exports.add_member = add_member;
+
+exports.stop_cluster = function(servers) {
+  servers.forEach(function(s) {
+    stop_server(s);
+  });
 };
+
