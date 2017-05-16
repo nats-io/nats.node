@@ -21,6 +21,10 @@ function start_server(port, opt_flags, done) {
     flags = flags.concat(opt_flags);
   }
 
+  if(process.env.PRINT_LAUNCH_CMD) {
+      console.log(flags.join(" "));
+  }
+
   var server = spawn(SERVER, flags);
 
   var start   = new Date();
@@ -115,7 +119,7 @@ function start_cluster(ports, route_port, opt_flags, done) {
   }
   var servers = [];
   var started = 0;
-  var server = add_member(ports[0], route_port, route_port, function() {
+  var server = add_member(ports[0], route_port, route_port, opt_flags, function() {
     started++;
     servers.push(server);
     if(started === ports.length) {
@@ -168,6 +172,7 @@ function add_member(port, route_port, cluster_port, opt_flags, done) {
   var opts = JSON.parse(JSON.stringify(opt_flags));
   opts.push('--routes', 'nats://localhost:' + route_port);
   opts.push('--cluster', 'nats://localhost:' + cluster_port);
+
   return start_server(port, opts, done);
 }
 
