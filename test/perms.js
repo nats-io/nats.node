@@ -3,14 +3,14 @@
 /* jshint -W030 */
 'use strict';
 
-var NATS = require ('../'),
-nsc = require('./support/nats_server_control'),
-ncu = require('./support/nats_conf_utils'),
-os = require('os'),
-fs = require('fs'),
-path = require('path'),
-should = require('should'),
-nuid = require('nuid');
+var NATS = require('../'),
+    nsc = require('./support/nats_server_control'),
+    ncu = require('./support/nats_conf_utils'),
+    os = require('os'),
+    fs = require('fs'),
+    path = require('path'),
+    should = require('should'),
+    nuid = require('nuid');
 
 
 describe('Auth Basics', function() {
@@ -19,7 +19,7 @@ describe('Auth Basics', function() {
     var server;
 
     // Start up our own nats-server
-    before(function (done) {
+    before(function(done) {
         var conf = {
             authorization: {
                 ADMIN: {
@@ -34,24 +34,35 @@ describe('Auth Basics', function() {
                     subscribe: "foo",
                     publish: "foo"
                 },
-                users: [
-                    {user: 'admin', password: 'admin', permission: '$ADMIN'},
-                    {user: 'foo', password: 'foo', permission: '$PUB'},
-                    {user: 'bar', password: 'bar', permission: '$SUB'}
+                users: [{
+                        user: 'admin',
+                        password: 'admin',
+                        permission: '$ADMIN'
+                    },
+                    {
+                        user: 'foo',
+                        password: 'foo',
+                        permission: '$PUB'
+                    },
+                    {
+                        user: 'bar',
+                        password: 'bar',
+                        permission: '$SUB'
+                    }
                 ]
             }
         };
-        var cf = path.resolve(os.tmpdir(), 'conf-' + nuid.next() +'.conf');
-        ncu.writeFile(cf, ncu.JsonToYaml(conf));
+        var cf = path.resolve(os.tmpdir(), 'conf-' + nuid.next() + '.conf');
+        ncu.writeFile(cf, ncu.j(conf));
         server = nsc.start_server(PORT, ['-c', cf], done);
     });
 
     // Shutdown our server
-    after(function () {
+    after(function() {
         nsc.stop_server(server);
     });
 
-    it('bar cannot subscribe/pub foo', function (done) {
+    it('bar cannot subscribe/pub foo', function(done) {
         var nc = NATS.connect({
             port: PORT,
             user: 'bar',
@@ -61,7 +72,7 @@ describe('Auth Basics', function() {
         var perms = 0;
         nc.on('permission_error', function() {
             perms++;
-            if(perms === 2) {
+            if (perms === 2) {
                 nc.close();
                 done();
             }

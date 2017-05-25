@@ -9,8 +9,10 @@ var u = require('./support/nats_conf_utils'),
 
 describe('NATS Conf Utils', function() {
     it('test serializing simple', function() {
-        var x = {test: 'one'};
-        var y = u.JsonToYaml(x);
+        var x = {
+            test: 'one'
+        };
+        var y = u.j(x);
 
         var buf = y.split('\n');
         buf.forEach(function(e, i) {
@@ -22,8 +24,13 @@ describe('NATS Conf Utils', function() {
     });
 
     it('test serializing nested', function() {
-        var x = {a: 'one', b: {a: 'two'}};
-        var y = u.JsonToYaml(x);
+        var x = {
+            a: 'one',
+            b: {
+                a: 'two'
+            }
+        };
+        var y = u.j(x);
 
         var buf = y.split('\n');
         buf.forEach(function(e, i) {
@@ -35,8 +42,11 @@ describe('NATS Conf Utils', function() {
     });
 
     it('test serializing array', function() {
-        var x = {a: 'one', b: ['a', 'b', 'c']};
-        var y = u.JsonToYaml(x);
+        var x = {
+            a: 'one',
+            b: ['a', 'b', 'c']
+        };
+        var y = u.j(x);
 
         var buf = y.split('\n');
         buf.forEach(function(e, i) {
@@ -48,8 +58,17 @@ describe('NATS Conf Utils', function() {
     });
 
     it('test serializing array objs', function() {
-        var x = {a: 'one', b: [{a: 'a'}, {b: 'b'}, {c: 'c'}]};
-        var y = u.JsonToYaml(x);
+        var x = {
+            a: 'one',
+            b: [{
+                a: 'a'
+            }, {
+                b: 'b'
+            }, {
+                c: 'c'
+            }]
+        };
+        var y = u.j(x);
         var buf = y.split('\n');
         buf.forEach(function(e, i) {
             buf[i] = e.trim();
@@ -60,8 +79,18 @@ describe('NATS Conf Utils', function() {
     });
 
     it('test serializing array arrays', function() {
-        var x = {a: 'one', b: [{a: 'a', b: ['b', 'c']}, {b: 'b'}, {c: 'c'}]};
-        var y = u.JsonToYaml(x);
+        var x = {
+            a: 'one',
+            b: [{
+                a: 'a',
+                b: ['b', 'c']
+            }, {
+                b: 'b'
+            }, {
+                c: 'c'
+            }]
+        };
+        var y = u.j(x);
         var buf = y.split('\n');
         buf.forEach(function(e, i) {
             buf[i] = e.trim();
