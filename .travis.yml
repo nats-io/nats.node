@@ -6,6 +6,7 @@ node_js:
   - "4"
   - "6"
   - "7"
+  - "8"
 
 before_script:
   - wget https://github.com/nats-io/gnatsd/releases/download/v0.9.4/gnatsd-v0.9.4-linux-amd64.zip -qO tmp.zip
