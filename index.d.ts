@@ -1,5 +1,6 @@
 
 import events = require('events');
+import tls = require('tls');
 
 export const version: string;
 
@@ -56,7 +57,7 @@ export interface ClientOpts {
 	servers?: Array<string>,
 	noRandomize?: boolean,
 	encoding?: BufferEncoding,
-	tls?: boolean,
+	tls?: boolean | tls.TlsOptions,
 	name?: string,
 	yieldTime?: number,
 	waitOnFirstConnect?: boolean,
