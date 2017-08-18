@@ -219,6 +219,41 @@ nc = nats.connect({'servers':servers, 'encoding': 'ascii'});
 
 nc = nats.connect({'preserveBuffers': true});
 
+// Reconnect Attempts and Time between reconnects
+
+// By default a NATS connection will try to reconnect to a server 10 times
+// waiting 2 seconds between reconnect attempts. If the maximum number of
+// retries is reached, the client will close the connection.
+// To change the default behaviour specify the max number of connection
+// attempts in `maxReconnectAttempts` (set to -1 to retry forever), and the 
+// time in milliseconds between reconnects in `reconnectTimeWait`.
+
+nc = nats.connect({'maxReconnectAttempts': -1, 'reconnectTimeWait': 250});
+
+nc.on('error', function(err) {
+	console.log(err);
+});
+
+nc.on('connect', function(nc) {
+	console.log('connected');
+});
+
+nc.on('disconnect', function() {
+	console.log('disconnect');
+});
+
+nc.on('reconnecting', function() {
+	console.log('reconnecting');
+});
+
+nc.on('reconnect', function(nc) {
+	console.log('reconnect');
+});
+
+nc.on('close', function() {
+	console.log('close');
+});
+
 ```
 
 See examples and benchmarks for more information..
