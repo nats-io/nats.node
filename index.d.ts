@@ -18,6 +18,7 @@ export const SECURE_CONN_REQ: string;
 export const NON_SECURE_CONN_REQ: string;
 export const CLIENT_CERT_REQ: string;
 export const NATS_PROTOCOL_ERR: string;
+export const REQ_TIMEOUT: string;
 
 /**
  * Create a properly formatted inbox subject.
