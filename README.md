@@ -256,7 +256,16 @@ nc.on('close', function() {
 
 ```
 
-See examples and benchmarks for more information..
+See examples and benchmarks for more information.
+
+
+## Supported Node Versions
+
+Support policy for Nodejs versions follows 
+[Nodejs release support]( https://github.com/nodejs/Release).
+We will support and build node-nats on even Nodejs versions that are current 
+or in maintenance.
+
 
 ## License
 
