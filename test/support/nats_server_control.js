@@ -7,15 +7,34 @@ var net = require('net');
 var SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
 var DEFAULT_PORT = 4222;
 
+// select some random start port between 40000 and 50000
+var next = Math.floor(Math.random()*(50000-40000+1)+40000);
+function alloc_next_port(n) {
+    if(n < 1) {
+        throw new Error("illegal number of ports");
+    }
+    if(n === undefined || n === 1) {
+        return next++;
+    }
+    var a = [];
+    for(var i=0; i < n; i++) {
+        a.push(next++);
+    }
+    return a;
+}
+
+exports.alloc_next_port = alloc_next_port;
+
 function start_server(port, opt_flags, done) {
     if (!port) {
         port = DEFAULT_PORT;
     }
+
     if (typeof opt_flags == 'function') {
         done = opt_flags;
         opt_flags = null;
     }
-    var flags = ['-p', port];
+    var flags = ['-p', port, '-a', 'localhost'];
 
     if (opt_flags) {
         flags = flags.concat(opt_flags);

@@ -8,7 +8,7 @@ var NATS = require('../'),
 
 describe('Subscription Events', function() {
 
-    var PORT = 9422;
+    var PORT = nsc.alloc_next_port();
     var server;
 
     // Start up our own nats-server

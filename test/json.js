@@ -9,7 +9,7 @@ var NATS = require('../'),
 
 describe('JSON payloads', function() {
 
-    var PORT = 1423;
+    var PORT = nsc.alloc_next_port();
     var server;
 
     // Start up our own nats-server

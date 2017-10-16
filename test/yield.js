@@ -8,7 +8,7 @@ var NATS = require('../'),
     should = require('should');
 
 describe('Yield', function() {
-    var PORT = 1469;
+    var PORT = nsc.alloc_next_port();
     var server;
 
     // Start up our own nats-server

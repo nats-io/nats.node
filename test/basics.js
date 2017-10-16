@@ -8,7 +8,7 @@ var NATS = require('../'),
 
 describe('Basics', function() {
 
-    var PORT = 1423;
+    var PORT = nsc.alloc_next_port();
     var server;
 
     // Start up our own nats-server
@@ -251,7 +251,7 @@ describe('Basics', function() {
     it('should parse json messages', function(done) {
         var config = {
             port: PORT,
-            json: true,
+            json: true
         };
         var nc = NATS.connect(config);
         var jsonMsg = {

@@ -4,7 +4,6 @@ sudo: false
 node_js:
   - "4"
   - "6"
-  - "7"
   - "8"
 
 before_script:
@@ -12,5 +11,7 @@ before_script:
   - unzip tmp.zip
   - mv gnatsd-v1.0.4-linux-amd64 gnatsd
 
-after_success:
-  - npm run coveralls
+script:
+  - if [[ "$TRAVIS_NODE_VERSION" == 4 ]]; then npm test; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 6 ]]; then npm test; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 8 ]]; then npm run coveralls; fi

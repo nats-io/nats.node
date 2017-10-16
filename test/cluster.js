@@ -13,19 +13,18 @@ describe('Cluster', function() {
     var WAIT = 20;
     var ATTEMPTS = 4;
 
-    var PORT1 = 15621;
-    var PORT2 = 15622;
+    var ports = nsc.alloc_next_port(2);
 
-    var s1Url = 'nats://localhost:' + PORT1;
-    var s2Url = 'nats://localhost:' + PORT2;
+    var s1Url = 'nats://localhost:' + ports[0];
+    var s2Url = 'nats://localhost:' + ports[1];
 
     var s1;
     var s2;
 
     // Start up our own nats-server
     before(function(done) {
-        s1 = nsc.start_server(PORT1, function() {
-            s2 = nsc.start_server(PORT2, function() {
+        s1 = nsc.start_server(ports[0], function() {
+            s2 = nsc.start_server(ports[1], function() {
                 done();
             });
         });
@@ -75,7 +74,7 @@ describe('Cluster', function() {
 
     it('should connect to first valid server', function(done) {
         var nc = NATS.connect({
-            'servers': ['nats://localhost:' + 21022, s1Url, s2Url]
+            'servers': ['nats://localhost:' + nsc.alloc_next_port(), s1Url, s2Url]
         });
         nc.on('error', function(err) {
             done(err);
@@ -88,7 +87,8 @@ describe('Cluster', function() {
 
     it('should emit error if no servers are available', function(done) {
         var nc = NATS.connect({
-            'servers': ['nats://localhost:' + 21022, 'nats://localhost:' + 21023]
+            'servers': ['nats://localhost:' + nsc.alloc_next_port(),
+                'nats://localhost:' + nsc.alloc_next_port()]
         });
         nc.on('error', function(err) {
             nc.close();
