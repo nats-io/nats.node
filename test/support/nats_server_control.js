@@ -8,7 +8,8 @@ var SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
 var DEFAULT_PORT = 4222;
 
 // select some random start port between 40000 and 50000
-var next = Math.floor(Math.random()*(50000-40000+1)+40000);
+var next = 40000;
+//Math.floor(Math.random()*(50000-40000+1)+40000);
 function alloc_next_port(n) {
     if(n < 1) {
         throw new Error("illegal number of ports");
@@ -104,7 +105,7 @@ function start_server(port, opt_flags, done) {
     // Other way to catch another server running.
     server.on('exit', function(code, signal) {
         if (code === 1) {
-            finish(new Error('Server exited with bad code, already running? (' + code + ' / ' + signal + ')'));
+            finish(new Error('Server exited with bad code, already running? (' + code + ' / ' + signal + ')' + ' port: ' + port));
         }
     });
 
@@ -138,7 +139,11 @@ function start_cluster(ports, route_port, opt_flags, done) {
     }
     var servers = [];
     var started = 0;
-    var server = add_member(ports[0], route_port, route_port, opt_flags, function() {
+    var server = add_member(ports[0], route_port, route_port, opt_flags, function(err) {
+        if(err) {
+
+            done(err);
+        }
         started++;
         servers.push(server);
         if (started === ports.length) {
@@ -148,7 +153,10 @@ function start_cluster(ports, route_port, opt_flags, done) {
 
     var others = ports.slice(1);
     others.forEach(function(p) {
-        var s = add_member(p, route_port, p + 1000, opt_flags, function() {
+        var s = add_member(p, route_port, alloc_next_port(), opt_flags, function(err) {
+            if(err) {
+                done(err);
+            }
             started++;
             servers.push(s);
             if (started === ports.length) {
@@ -169,7 +177,10 @@ function add_member_with_delay(ports, route_port, delay, opt_flags, done) {
     var servers = [];
     ports.forEach(function(p, i) {
         setTimeout(function() {
-            var s = add_member(p, route_port, p + 1000, opt_flags, function() {
+            var s = add_member(p, route_port, alloc_next_port(), opt_flags, function(err) {
+                if(err) {
+                    done(err);
+                }
                 servers.push(s);
                 if (servers.length === ports.length) {
                     done();
