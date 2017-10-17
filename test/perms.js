@@ -78,16 +78,16 @@ describe('Auth Basics', function() {
             }
         });
 
-        function doit() {
-            nc.subscribe('foo', function () {
-                nc.close();
-                done(new Error("shouldn't have been able to subscribe to foo"));
-            });
-            nc.publish('foo', '');
-        }
-
         nc.on('connect', function() {
-            setTimeout(doit, 1000);
+            process.nextTick(function(){
+                nc.publish('foo', '');
+            });
+            process.nextTick(function() {
+                nc.subscribe('foo', function () {
+                    nc.close();
+                    done(new Error("shouldn't have been able to subscribe to foo"));
+                });
+            });
         });
     });
 });
