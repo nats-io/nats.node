@@ -27,7 +27,10 @@ describe('Dynamic Cluster - Connect URLs', function() {
         var port = nsc.alloc_next_port();
 
         // start a new cluster with single server
-        servers = nsc.start_cluster([port], route_port, function() {
+        servers = nsc.start_cluster([port], route_port, function(err) {
+            if(err) {
+                done(err);
+            }
             should(servers.length).be.equal(1);
 
             // connect the client
@@ -38,7 +41,10 @@ describe('Dynamic Cluster - Connect URLs', function() {
             nc.on('connect', function() {
                 // start adding servers
                 process.nextTick(function() {
-                    var others = nsc.add_member_with_delay(nsc.alloc_next_port(2), route_port, 250, function() {
+                    var others = nsc.add_member_with_delay(nsc.alloc_next_port(2), route_port, 250, function(err) {
+                        if(err) {
+                            done(err);
+                        }
                         // verify that 2 servers were added
                         should(others.length).be.equal(2);
                         others.forEach(function(o) {
@@ -64,7 +70,10 @@ describe('Dynamic Cluster - Connect URLs', function() {
         var map = {};
         servers = nsc.start_cluster(ports, route_port, startCluster);
 
-        function startCluster() {
+        function startCluster(err) {
+            if(err) {
+                done(err);
+            }
             should(servers.length).be.equal(10);
 
             var connectCount = 0;
@@ -111,7 +120,10 @@ describe('Dynamic Cluster - Connect URLs', function() {
 
         // start a cluster of one server
         var map = {};
-        servers = nsc.start_cluster(ports, route_port, function() {
+        servers = nsc.start_cluster(ports, route_port, function(err) {
+            if(err) {
+                done(err);
+            }
             should(servers.length).be.equal(10);
 
             var connectCount = 0;
@@ -200,9 +212,15 @@ describe('Dynamic Cluster - Connect URLs', function() {
 
         // start a new cluster with single server
         var memberPort = nsc.alloc_next_port();
-        servers = nsc.start_cluster([port], route_port, ['-c', normal_conf], function() {
+        servers = nsc.start_cluster([port], route_port, ['-c', normal_conf], function(err) {
+            if(err) {
+                done(err);
+            }
             process.nextTick(function() {
-                var others = nsc.add_member_with_delay([memberPort], route_port, 250, ['-c', short_conf], function() {
+                var others = nsc.add_member_with_delay([memberPort], route_port, 250, ['-c', short_conf], function(err) {
+                    if(err) {
+                        done(err);
+                    }
                     // add the second server
                     servers.push(others[0]);
                     setTimeout(startClient, 1000);
