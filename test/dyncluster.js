@@ -175,6 +175,8 @@ describe('Dynamic Cluster - Connect URLs', function() {
     });
 
     function reconnectTest(port, route_port, use_certs, done) {
+        var start = Date.now();
+        var m = use_certs ? "[tls]" : "[non tls]";
         var config = {
             tls: {
                 cert_file: path.resolve(process.cwd(), "./test/certs/server-cert.pem"),
@@ -207,6 +209,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
             short.tls.timeout = 0.0001;
         }
         short.authorization.timeout = 0.0001;
+
         var short_conf = path.resolve(os.tmpdir(), 'shortconf_' + nuid.next() + '.conf');
         ncu.writeFile(short_conf, ncu.j(short));
 
@@ -214,16 +217,20 @@ describe('Dynamic Cluster - Connect URLs', function() {
         var memberPort = nsc.alloc_next_port();
         servers = nsc.start_cluster([port], route_port, ['-c', normal_conf], function(err) {
             if(err) {
+                console.log(m, 'cluster startup failed: ', err.stack);
                 done(err);
             }
+            console.log('server started at port', port);
             process.nextTick(function() {
                 var others = nsc.add_member_with_delay([memberPort], route_port, 250, ['-c', short_conf], function(err) {
                     if(err) {
+                        console.log(m, 'cluster member startup failed: ', err.stack);
                         done(err);
                     }
+                    console.log(m, 'cluster member added at port', memberPort);
                     // add the second server
                     servers.push(others[0]);
-                    setTimeout(startClient, 1000);
+                    process.nextTick(startClient);
                 });
             });
         });
@@ -247,10 +254,11 @@ describe('Dynamic Cluster - Connect URLs', function() {
 
             function testClusterOK(nc) {
                 if(nc.servers.length === 2) {
+                    console.log(m, 'cluster has two members');
                     killServer();
                 } else {
                     setTimeout(function(){
-                        console.log('cluster not formed yet', nc.servers);
+                        console.log(m, 'cluster not formed yet');
                         testClusterOK(nc);
                     }, 250);
                 }
@@ -260,36 +268,43 @@ describe('Dynamic Cluster - Connect URLs', function() {
                 connected = true;
                 // now we disconnect first server
                 setTimeout(function() {
+                    console.log(m, 'killing server 0');
                     servers[0].kill();
                 }, 100);
             }
 
             var nc = NATS.connect(opts);
+            nc.DEBUG = true;
             var connected = false;
             nc.on('connect', function(nc) {
                 if (!connected) {
+                    console.log(m, 'first connect');
                     testClusterOK(nc);
                 }
             });
 
             var errors = [];
             nc.on('error', function(e) {
+                console.log(m, 'connection got error', e);
                 // save the error
                 errors.push(e);
             });
             nc.on('close', function() {
-                should.ok(connected);
+                console.log(m, 'got close');
+                should.ok(connected, 'connected');
                 // for tls the error isn't always raised so we'll just trust
                 // that we we tried connecting to the bad server
-                should.ok(errors.length === 1 || disconnects.indexOf((memberPort) + '') !== -1);
+                should.ok(errors.length === 1 || disconnects.indexOf(memberPort) > -1, 'got error or disconnect');
+
+                console.log(m, '>>> took', Date.now() - start);
+
                 done();
             });
             var disconnects = [];
             nc.on('disconnect', function() {
-                var p = nc.currentServer.url.port;
-                if (disconnects.indexOf(p) === -1) {
-                    disconnects.push(p);
-                }
+                var p = parseInt(nc.currentServer.url.port);
+                console.log(m, 'got disconnect from', p);
+                disconnects.push(p);
             });
         }
     }

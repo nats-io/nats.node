@@ -3,9 +3,14 @@
 
 var spawn = require('child_process').spawn;
 var net = require('net');
+var fs = require('fs');
+var path = require('path');
+var os = require('os');
 
 var SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
 var DEFAULT_PORT = 4222;
+
+console.log(path.resolve(os.tmpdir(), 'test_ports.txt'));
 
 // select some random start port between 40000 and 50000
 var next = 40000;
@@ -24,6 +29,34 @@ function alloc_next_port(n) {
     return a;
 }
 
+function log(port, extra) {
+    var lines = new Error('debug').stack.split('\n');
+    lines = lines.filter(function(s) {
+        return s.indexOf('/nats-io/node-nats/test') > -1;
+    });
+
+    var ctx = lines[lines.length-1];
+    ctx = ctx.substr(ctx.lastIndexOf('/')+1);
+    ctx = ctx.substr(0, ctx.length-1);
+
+    extra = extra || '';
+    var cf = path.resolve(os.tmpdir(), 'test_ports.txt');
+    fs.appendFileSync(cf, port + ' ' + extra + ' ' + ctx + '\n');
+}
+
+function printLog() {
+    var cf = path.resolve(os.tmpdir(), 'test_ports.txt');
+    fs.readFile(cf, 'utf8', function(err, data){
+        if(err){
+            console.log('Error reading log', err);
+            return;
+        }
+        console.og(data);
+    });
+}
+
+exports.printLog = printLog;
+
 exports.alloc_next_port = alloc_next_port;
 
 function start_server(port, opt_flags, done) {
@@ -40,6 +73,8 @@ function start_server(port, opt_flags, done) {
     if (opt_flags) {
         flags = flags.concat(opt_flags);
     }
+
+    log(port + ' ' + JSON.stringify(flags));
 
     if (process.env.PRINT_LAUNCH_CMD) {
         console.log(flags.join(" "));

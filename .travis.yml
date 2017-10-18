@@ -15,3 +15,6 @@ script:
   - if [[ "$TRAVIS_NODE_VERSION" == 4 ]]; then npm test; fi
   - if [[ "$TRAVIS_NODE_VERSION" == 6 ]]; then npm test; fi
   - if [[ "$TRAVIS_NODE_VERSION" == 8 ]]; then npm run coveralls; fi
+
+after_failure:
+  - cat "/tmp/test_ports.txt"
