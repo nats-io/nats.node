@@ -39,7 +39,7 @@
     "fmt": "js-beautify -n --config crockford.jscsrc -r lib/* test/*.js test/support/*.js examples/* benchmark/*.js"
   },
   "engines": {
-    "node": ">= 0.10.x"
+    "node": ">= 4.0.0"
   },
   "dependencies": {
     "nuid": ">=0.6.8"

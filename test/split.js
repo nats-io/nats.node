@@ -8,7 +8,7 @@ var NATS = require('../'),
 
 describe('Split Messages', function() {
 
-    var PORT = 1427;
+    var PORT = nsc.alloc_next_port();
     var server;
 
     // Start up our own nats-server

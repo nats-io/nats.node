@@ -4,6 +4,7 @@
 'use strict';
 
 var NATS = require('../'),
+    nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Base Properties', function() {
@@ -70,8 +71,9 @@ describe('Connection Properties', function() {
     nc.close();
 
     it('should allow options to be overridden', function() {
+        var p = nsc.alloc_next_port()
         var options = {
-            'url': 'nats://localhost:22421',
+            'url': 'nats://localhost:' + p,
             'verbose': true,
             'pedantic': true,
             'reconnect': false,
@@ -82,7 +84,7 @@ describe('Connection Properties', function() {
         nc = NATS.connect(options);
         nc.on('error', function() {}); // Eat error
 
-        nc.options.url.should.equal('nats://localhost:22421');
+        nc.options.url.should.equal('nats://localhost:' + p);
         nc.options.verbose.should.equal(true);
         nc.options.pedantic.should.equal(true);
         nc.options.reconnect.should.equal(false);

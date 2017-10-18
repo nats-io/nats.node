@@ -8,7 +8,7 @@ var NATS = require('../'),
 
 describe('Basic Connectivity', function() {
 
-    var PORT = 1424;
+    var PORT = nsc.alloc_next_port();
     var uri = 'nats://localhost:' + PORT;
     var server;
 
@@ -63,7 +63,7 @@ describe('Basic Connectivity', function() {
 
     it('should emit connecting events and try repeatedly if configured and no server available', function(done) {
         var nc = NATS.connect({
-            'uri': 'nats://localhost:22222',
+            'uri': 'nats://localhost:' + nsc.alloc_next_port(),
             'waitOnFirstConnect': true,
             'reconnectTimeWait': 100,
             'maxReconnectAttempts': 20
@@ -77,14 +77,14 @@ describe('Basic Connectivity', function() {
             connectingEvents++;
         });
         setTimeout(function() {
-            connectingEvents.should.equal(5);
+            connectingEvents.should.be.above(1);
             done();
         }, 550);
     });
 
 
     it('should still receive publish when some servers are invalid', function(done) {
-        var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
+        var natsServers = ['nats://localhost:' + nsc.alloc_next_port(), uri, 'nats://localhost:' + nsc.alloc_next_port()];
         var ua = NATS.connect({
             servers: natsServers
         });
@@ -108,7 +108,7 @@ describe('Basic Connectivity', function() {
 
 
     it('should still receive publish when some servers[noRandomize] are invalid', function(done) {
-        var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
+        var natsServers = ['nats://localhost:' + nsc.alloc_next_port(), uri, 'nats://localhost:' + nsc.alloc_next_port()];
         var ua = NATS.connect({
             servers: natsServers,
             noRandomize: true
@@ -134,7 +134,7 @@ describe('Basic Connectivity', function() {
 
 
     it('should add a new cluster server', function(done) {
-        var servers = [uri, 'nats://localhost:22223'];
+        var servers = [uri, 'nats://localhost:' + nsc.alloc_next_port()];
         var nc = NATS.connect({
             servers: new Array(servers[0])
         });

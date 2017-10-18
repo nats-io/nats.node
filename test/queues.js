@@ -8,7 +8,7 @@ var NATS = require('../'),
 
 describe('Queues', function() {
 
-    var PORT = 1425;
+    var PORT = nsc.alloc_next_port();
     var server;
 
     // Start up our own nats-server

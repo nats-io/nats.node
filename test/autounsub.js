@@ -8,7 +8,7 @@ var NATS = require('../'),
 
 describe('Max responses and Auto-unsub', function() {
 
-    var PORT = 1422;
+    var PORT = nsc.alloc_next_port();
     var server;
 
     // Start up our own nats-server
@@ -186,7 +186,5 @@ describe('Max responses and Auto-unsub', function() {
                 done();
             }, 100);
         });
-
     });
-
 });

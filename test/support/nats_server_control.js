@@ -3,23 +3,78 @@
 
 var spawn = require('child_process').spawn;
 var net = require('net');
+var fs = require('fs');
+var path = require('path');
+var os = require('os');
 
 var SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
 var DEFAULT_PORT = 4222;
+
+console.log(path.resolve(os.tmpdir(), 'test_ports.txt'));
+
+// select some random start port between 40000 and 50000
+var next = 40000;
+//Math.floor(Math.random()*(50000-40000+1)+40000);
+function alloc_next_port(n) {
+    if(n < 1) {
+        throw new Error("illegal number of ports");
+    }
+    if(n === undefined || n === 1) {
+        return next++;
+    }
+    var a = [];
+    for(var i=0; i < n; i++) {
+        a.push(next++);
+    }
+    return a;
+}
+
+function log(port, extra) {
+    var lines = new Error('debug').stack.split('\n');
+    lines = lines.filter(function(s) {
+        return s.indexOf('/nats-io/node-nats/test') > -1;
+    });
+
+    var ctx = lines[lines.length-1];
+    ctx = ctx.substr(ctx.lastIndexOf('/')+1);
+    ctx = ctx.substr(0, ctx.length-1);
+
+    extra = extra || '';
+    var cf = path.resolve(os.tmpdir(), 'test_ports.txt');
+    fs.appendFileSync(cf, port + ' ' + extra + ' ' + ctx + '\n');
+}
+
+function printLog() {
+    var cf = path.resolve(os.tmpdir(), 'test_ports.txt');
+    fs.readFile(cf, 'utf8', function(err, data){
+        if(err){
+            console.log('Error reading log', err);
+            return;
+        }
+        console.og(data);
+    });
+}
+
+exports.printLog = printLog;
+
+exports.alloc_next_port = alloc_next_port;
 
 function start_server(port, opt_flags, done) {
     if (!port) {
         port = DEFAULT_PORT;
     }
+
     if (typeof opt_flags == 'function') {
         done = opt_flags;
         opt_flags = null;
     }
-    var flags = ['-p', port];
+    var flags = ['-p', port, '-a', 'localhost'];
 
     if (opt_flags) {
         flags = flags.concat(opt_flags);
     }
+
+    log(port + ' ' + JSON.stringify(flags));
 
     if (process.env.PRINT_LAUNCH_CMD) {
         console.log(flags.join(" "));
@@ -85,7 +140,7 @@ function start_server(port, opt_flags, done) {
     // Other way to catch another server running.
     server.on('exit', function(code, signal) {
         if (code === 1) {
-            finish(new Error('Server exited with bad code, already running? (' + code + ' / ' + signal + ')'));
+            finish(new Error('Server exited with bad code, already running? (' + code + ' / ' + signal + ')' + ' port: ' + port));
         }
     });
 
@@ -119,7 +174,11 @@ function start_cluster(ports, route_port, opt_flags, done) {
     }
     var servers = [];
     var started = 0;
-    var server = add_member(ports[0], route_port, route_port, opt_flags, function() {
+    var server = add_member(ports[0], route_port, route_port, opt_flags, function(err) {
+        if(err) {
+
+            done(err);
+        }
         started++;
         servers.push(server);
         if (started === ports.length) {
@@ -129,7 +188,10 @@ function start_cluster(ports, route_port, opt_flags, done) {
 
     var others = ports.slice(1);
     others.forEach(function(p) {
-        var s = add_member(p, route_port, p + 1000, opt_flags, function() {
+        var s = add_member(p, route_port, alloc_next_port(), opt_flags, function(err) {
+            if(err) {
+                done(err);
+            }
             started++;
             servers.push(s);
             if (started === ports.length) {
@@ -150,7 +212,10 @@ function add_member_with_delay(ports, route_port, delay, opt_flags, done) {
     var servers = [];
     ports.forEach(function(p, i) {
         setTimeout(function() {
-            var s = add_member(p, route_port, p + 1000, opt_flags, function() {
+            var s = add_member(p, route_port, alloc_next_port(), opt_flags, function(err) {
+                if(err) {
+                    done(err);
+                }
                 servers.push(s);
                 if (servers.length === ports.length) {
                     done();

@@ -9,9 +9,9 @@ var NATS = require('../'),
 
 describe('TLS', function() {
 
-    var PORT = 1442;
-    var TLSPORT = 1443;
-    var TLSVERIFYPORT = 1444;
+    var PORT = nsc.alloc_next_port();
+    var TLSPORT = nsc.alloc_next_port();
+    var TLSVERIFYPORT = nsc.alloc_next_port();
     var flags = [];
 
     var server;
@@ -81,7 +81,7 @@ describe('TLS', function() {
 
     it('should connect if authorized is overridden', function(done) {
         var tlsOptions = {
-            rejectUnauthorized: false,
+            rejectUnauthorized: false
         };
         var nc = NATS.connect({
             port: TLSPORT,

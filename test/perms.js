@@ -15,7 +15,7 @@ var NATS = require('../'),
 
 describe('Auth Basics', function() {
 
-    var PORT = 6758;
+    var PORT = nsc.alloc_next_port();
     var server;
 
     // Start up our own nats-server
@@ -79,11 +79,15 @@ describe('Auth Basics', function() {
         });
 
         nc.on('connect', function() {
-            nc.subscribe('foo', function() {
-                nc.close();
-                done(new Error("shouldn't have been able to subscribe to foo"));
+            process.nextTick(function(){
+                nc.publish('foo', '');
             });
-            nc.publish('foo', '');
+            process.nextTick(function() {
+                nc.subscribe('foo', function () {
+                    nc.close();
+                    done(new Error("shouldn't have been able to subscribe to foo"));
+                });
+            });
         });
     });
 });

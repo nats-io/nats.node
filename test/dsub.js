@@ -8,7 +8,7 @@ var NATS = require('../'),
 
 describe('Double SUBS', function() {
 
-    var PORT = 1922;
+    var PORT = nsc.alloc_next_port();
     var flags = ['-DV'];
     var server;
 

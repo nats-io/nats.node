@@ -8,7 +8,7 @@ var NATS = require('../'),
 
 describe('Authorization', function() {
 
-    var PORT = 1421;
+    var PORT = nsc.alloc_next_port();
     var flags = ['--user', 'derek', '--pass', 'foobar'];
     var authUrl = 'nats://derek:foobar@localhost:' + PORT;
     var noAuthUrl = 'nats://localhost:' + PORT;
@@ -71,7 +71,7 @@ describe('Authorization', function() {
 
 describe('Token Authorization', function() {
 
-    var PORT = 1421;
+    var PORT = nsc.alloc_next_port();
     var flags = ['--auth', 'token1'];
     var authUrl = 'nats://token1@localhost:' + PORT;
     var noAuthUrl = 'nats://localhost:' + PORT;
