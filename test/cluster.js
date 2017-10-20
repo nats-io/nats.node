@@ -32,9 +32,8 @@ describe('Cluster', function() {
     });
 
     // Shutdown our server
-    after(function() {
-        s1.kill();
-        s2.kill();
+    after(function(done) {
+        nsc.stop_cluster([s1, s2], done);
     });
 
     it('should accept servers options', function(done) {
@@ -152,11 +151,15 @@ describe('Cluster', function() {
         var startTime;
         var numAttempts = 0;
         nc.on('connect', function() {
-            s1.kill();
-            startTime = new Date();
+            nsc.stop_server(s1, function(){
+                s1 = null;
+                startTime = new Date();
+            });
         });
         nc.on('reconnect', function() {
-            s2.kill();
+            nsc.stop_server(s2, function(){
+                s2 = null;
+            });
         });
         nc.on('reconnecting', function(client) {
             var elapsed = new Date() - startTime;

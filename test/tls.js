@@ -37,10 +37,8 @@ describe('TLS', function() {
 
 
     // Shutdown our server after each test.
-    after(function() {
-        server.kill();
-        tlsServer.kill();
-        tlsVerifyServer.kill();
+    after(function(done) {
+        nsc.stop_cluster([server, tlsServer, tlsVerifyServer], done);
     });
 
     it('should error if server does not support TLS', function(done) {

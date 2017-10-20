@@ -17,8 +17,8 @@ describe('Split Messages', function() {
     });
 
     // Shutdown our server
-    after(function() {
-        server.kill();
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
     it('should properly handle large # of messages from split buffers', function(done) {
