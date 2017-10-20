@@ -17,8 +17,8 @@ describe('Queues', function() {
     });
 
     // Shutdown our server
-    after(function() {
-        server.kill();
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
     it('should deliver a message to single member of a queue group', function(done) {

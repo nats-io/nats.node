@@ -28,7 +28,7 @@ describe('Auth Basics', function() {
                 },
                 SUB: {
                     subscribe: "bar",
-                    publish: "bar",
+                    publish: "bar"
                 },
                 PUB: {
                     subscribe: "foo",
@@ -58,8 +58,8 @@ describe('Auth Basics', function() {
     });
 
     // Shutdown our server
-    after(function() {
-        nsc.stop_server(server);
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
     it('bar cannot subscribe/pub foo', function(done) {

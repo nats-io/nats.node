@@ -18,9 +18,11 @@ describe('Dynamic Cluster - Connect URLs', function() {
     // this to enable per test cleanup
     var servers;
     // Shutdown our servers
-    afterEach(function() {
-        nsc.stop_cluster(servers);
-        servers = [];
+    afterEach(function(done) {
+        nsc.stop_cluster(servers, function() {
+            servers = [];
+            done();
+        });
     });
 
     it('adding cluster performs update', function(done) {
@@ -159,113 +161,4 @@ describe('Dynamic Cluster - Connect URLs', function() {
             }
         });
     });
-
-    it('error connecting raises error and closes', function(done) {
-        reconnectTest(55421, 55420, true, done);
-    });
-
-    it('error connecting raises error and closes - non tls', function(done) {
-        reconnectTest(55521, 55520, false, done);
-    });
-
-    function reconnectTest(port, route_port, use_certs, done) {
-        var config = {
-            tls: {
-                cert_file: path.resolve(process.cwd(), "./test/certs/server-cert.pem"),
-                key_file: path.resolve(process.cwd(), "./test/certs/server-key.pem"),
-                ca_file: path.resolve(process.cwd(), "./test/certs/ca.pem"),
-                verify: false,
-                timeout: 2.0
-            },
-            authorization: {
-                user: "test",
-                // password is 'test'
-                password: "$2a$10$P6A99S9.wOT3yzNcz0OY/OBatni9Jl01AMuzRUkhXei6nOadn6R4C",
-                timeout: 2.0
-            }
-        };
-
-        if (!use_certs) {
-            delete config.tls;
-        }
-
-        // write two normal configs
-        var normal = JSON.parse(JSON.stringify(config));
-        var normal_conf = path.resolve(os.tmpdir(), 'normalauth_' + nuid.next() + '.conf');
-        ncu.writeFile(normal_conf, ncu.j(normal));
-
-        // one that has bad timeout
-        var short = JSON.parse(JSON.stringify(normal));
-
-        if (use_certs) {
-            short.tls.timeout = 0.0001;
-        }
-        short.authorization.timeout = 0.0001;
-        var short_conf = path.resolve(os.tmpdir(), 'shortconf_' + nuid.next() + '.conf');
-        ncu.writeFile(short_conf, ncu.j(short));
-
-        // start a new cluster with single server
-        servers = nsc.start_cluster([port], route_port, ['-c', normal_conf], function() {
-            process.nextTick(function() {
-                var others = nsc.add_member_with_delay([port + 1], route_port, 250, ['-c', short_conf], function() {
-                    // add the second server
-                    servers.push(others[0]);
-                    process.nextTick(function() {
-                        startClient();
-                    });
-                });
-            });
-        });
-
-        function startClient() {
-            // connect the client
-            var opts = {
-                port: port,
-                reconnectTimeWait: 100,
-                maxReconnectAttempts: 2,
-                user: 'test',
-                password: 'test',
-                noRandomize: true,
-                tls: {
-                    rejectUnauthorized: false
-                }
-            };
-            if (!use_certs) {
-                delete opts.tls;
-            }
-
-            var nc = NATS.connect(opts);
-            var connected = false;
-            nc.on('connect', function(c) {
-                if (!connected) {
-                    // should(nc.servers.length).be.equal(2);
-                    // now we disconnect first server
-                    connected = true;
-                    process.nextTick(function() {
-                        servers[0].kill();
-                    });
-                }
-            });
-
-            var errors = [];
-            nc.on('error', function(e) {
-                // save the error
-                errors.push(e);
-            });
-            nc.on('close', function() {
-                should.ok(connected);
-                // for tls the error isn't always raised so we'll just trust
-                // that we we tried connecting to the bad server
-                should.ok(errors.length === 1 || disconnects.indexOf((port + 1) + '') !== -1);
-                done();
-            });
-            var disconnects = [];
-            nc.on('disconnect', function() {
-                var p = nc.currentServer.url.port;
-                if (disconnects.indexOf(p) === -1) {
-                    disconnects.push(p);
-                }
-            });
-        }
-    }
 });

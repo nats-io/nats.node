@@ -18,8 +18,8 @@ describe('Basic Connectivity', function() {
     });
 
     // Shutdown our server after we are done
-    after(function() {
-        server.kill();
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
 
