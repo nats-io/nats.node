@@ -291,7 +291,7 @@ describe('Reconnect functionality', function() {
         nc.on('connect', function() {
             var s = server;
             server = null;
-            s.kill();
+            nsc.stop_server(s);
         });
     });
 

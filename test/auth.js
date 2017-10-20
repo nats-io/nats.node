@@ -83,8 +83,8 @@ describe('Token Authorization', function() {
     });
 
     // Shutdown our server after we are done
-    after(function() {
-        server.kill();
+    after(function(done) {
+        server = nsc.stop_server(server, done);
     });
 
     it('should fail to connect with no credentials ', function(done) {
