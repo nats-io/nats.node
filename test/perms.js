@@ -7,9 +7,9 @@ var NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     ncu = require('./support/nats_conf_utils'),
     os = require('os'),
-    fs = require('fs'),
     path = require('path'),
     should = require('should'),
+    fs = require('fs'),
     nuid = require('nuid');
 
 
@@ -22,29 +22,11 @@ describe('Auth Basics', function() {
     before(function(done) {
         var conf = {
             authorization: {
-                ADMIN: {
-                    publish: ">",
-                    subscribe: ">"
-                },
                 SUB: {
                     subscribe: "bar",
                     publish: "bar"
                 },
-                PUB: {
-                    subscribe: "foo",
-                    publish: "foo"
-                },
                 users: [{
-                        user: 'admin',
-                        password: 'admin',
-                        permission: '$ADMIN'
-                    },
-                    {
-                        user: 'foo',
-                        password: 'foo',
-                        permission: '$PUB'
-                    },
-                    {
                         user: 'bar',
                         password: 'bar',
                         permission: '$SUB'
@@ -53,8 +35,14 @@ describe('Auth Basics', function() {
             }
         };
         var cf = path.resolve(os.tmpdir(), 'conf-' + nuid.next() + '.conf');
-        ncu.writeFile(cf, ncu.j(conf));
-        server = nsc.start_server(PORT, ['-c', cf], done);
+        fs.writeFile(cf, ncu.j(conf), function(err) {
+            if(err) {
+                done(err);
+            } else {
+                console.log(cf);
+                server = nsc.start_server(PORT, ['-c', cf], done);
+            }
+        });
     });
 
     // Shutdown our server
@@ -77,13 +65,13 @@ describe('Auth Basics', function() {
                 done();
             }
         });
-
-        nc.on('connect', function() {
+        nc.flush(function(){
             nc.subscribe('foo', function() {
                 nc.close();
-                done(new Error("shouldn't have been able to subscribe to foo"));
+                done("Shouldn't be able to publish foo");
             });
-            nc.publish('foo', '');
+            nc.publish('foo', 'foo');
         });
+
     });
 });
