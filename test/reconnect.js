@@ -19,8 +19,8 @@ describe('Reconnect functionality', function() {
     });
 
     // Shutdown our server after we are done
-    after(function() {
-        server.kill();
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
     it('should not emit a reconnecting event if suppressed', function(done) {
@@ -30,7 +30,7 @@ describe('Reconnect functionality', function() {
         });
         should.exist(nc);
         nc.on('connect', function() {
-            server.kill();
+            nsc.stop_server(server);
         });
         nc.on('reconnecting', function(client) {
             done(new Error('Reconnecting improperly called'));
@@ -49,8 +49,9 @@ describe('Reconnect functionality', function() {
         var startTime;
         should.exist(nc);
         nc.on('connect', function() {
-            server.kill();
-            startTime = new Date();
+            nsc.stop_server(server, function(){
+                startTime = new Date();
+            });
         });
         nc.on('reconnecting', function(client) {
             var elapsed = new Date() - startTime;
@@ -73,8 +74,9 @@ describe('Reconnect functionality', function() {
         var startTime;
         var numAttempts = 0;
         nc.on('connect', function() {
-            server.kill();
-            startTime = new Date();
+            nsc.stop_server(server, function(){
+                startTime = new Date();
+            });
         });
         nc.on('reconnecting', function(client) {
             var elapsed = new Date() - startTime;
@@ -107,8 +109,9 @@ describe('Reconnect functionality', function() {
         }, 1000);
 
         nc.on('connect', function() {
-            server.kill();
-            server = null;
+            nsc.stop_server(server, function(){
+                server = null;
+            });
         });
         nc.on('reconnecting', function(client) {
             numAttempts += 1;
@@ -135,8 +138,9 @@ describe('Reconnect functionality', function() {
         });
         // Kill server after first successful contact
         nc.flush(function() {
-            server.kill();
-            server = null;
+            nsc.stop_server(server, function(){
+                server = null;
+            });
         });
         nc.on('reconnecting', function(client) {
             // restart server and make sure next flush works ok
@@ -159,8 +163,9 @@ describe('Reconnect functionality', function() {
         });
         // Kill server after first successful contact
         nc.flush(function() {
-            server.kill();
-            server = null;
+            nsc.stop_server(server, function(){
+                server = null;
+            });
         });
         nc.subscribe('foo', function() {
             nc.close();
@@ -184,8 +189,9 @@ describe('Reconnect functionality', function() {
         });
         // Kill server after first successful contact
         nc.flush(function() {
-            server.kill();
-            server = null;
+            nsc.stop_server(server, function(){
+                server = null;
+            });
         });
         var received = 0;
         // Multiple subscribers
@@ -222,9 +228,10 @@ describe('Reconnect functionality', function() {
         nc.on('connect', function() {
             var sid = nc.subscribe('foo', function() {
                 // Kill server on first message, inbound should still be full.
-                server.kill();
-                nc.unsubscribe(sid);
-                server = nsc.start_server(PORT);
+                nsc.stop_server(server, function(){
+                    nc.unsubscribe(sid);
+                    server = nsc.start_server(PORT);
+                });
             });
             var b = new Buffer(4096).toString();
             for (var i = 0; i < 1000; i++) {
@@ -248,8 +255,9 @@ describe('Reconnect functionality', function() {
         var startTime;
         should.exist(nc);
         nc.on('connect', function() {
-            server.kill();
-            startTime = new Date();
+            nsc.stop_server(server, function(){
+                startTime = new Date();
+            });
         });
         nc.on('disconnect', function() {
             nc.publish('foo', 'bar', 'reply', function() {
@@ -309,7 +317,7 @@ describe('Reconnect functionality', function() {
         nc.on('connect', function() {
             var s = server;
             server = null;
-            s.kill();
+            nsc.stop_server(s);
         });
     });
 
@@ -338,7 +346,7 @@ describe('Reconnect functionality', function() {
         nc.on('connect', function() {
             var s = server;
             server = null;
-            s.kill();
+            nsc.stop_server(s);
         });
     });
 });

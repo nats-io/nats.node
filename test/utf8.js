@@ -17,8 +17,8 @@ describe('UTF8', function() {
     });
 
     // Shutdown our server
-    after(function() {
-        server.kill();
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
     it('should do publish and subscribe with UTF8 payloads by default', function(done) {

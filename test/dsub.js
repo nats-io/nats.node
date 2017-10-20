@@ -18,8 +18,8 @@ describe('Double SUBS', function() {
     });
 
     // Shutdown our server after we are done
-    after(function() {
-        server.kill();
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
     it('should not send multiple subscriptions on startup', function(done) {

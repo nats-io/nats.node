@@ -17,8 +17,8 @@ describe('Callbacks', function() {
     });
 
     // Shutdown our server
-    after(function() {
-        server.kill();
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
     it('should properly do a publish callback after connection is closed', function(done) {

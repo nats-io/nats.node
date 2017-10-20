@@ -15,11 +15,12 @@ function start_server(port, opt_flags, done) {
         done = opt_flags;
         opt_flags = null;
     }
-    var flags = ['-p', port];
+    var flags = ['-p', port, '-a', '127.0.0.1'];
 
     if (opt_flags) {
         flags = flags.concat(opt_flags);
     }
+
 
     if (process.env.PRINT_LAUNCH_CMD) {
         console.log(flags.join(" "));
@@ -102,9 +103,24 @@ function start_server(port, opt_flags, done) {
 
 exports.start_server = start_server;
 
-function stop_server(server) {
-    if (server !== undefined) {
+function wait_stop(server, done) {
+    if(server.killed) {
+        if(done) {
+            done();
+        }
+    } else {
+        setTimeout(function () {
+            wait_stop(server, done);
+        });
+    }
+}
+
+function stop_server(server, done) {
+    if (server) {
         server.kill();
+        wait_stop(server, done);
+    } else if(done) {
+        done();
     }
 }
 
@@ -179,8 +195,15 @@ function add_member(port, route_port, cluster_port, opt_flags, done) {
 exports.start_cluster = start_cluster;
 exports.add_member = add_member;
 
-exports.stop_cluster = function(servers) {
+exports.stop_cluster = function(servers, done) {
+    var count = servers.length;
+    function latch() {
+        count--;
+        if(count === 0) {
+            done();
+        }
+    }
     servers.forEach(function(s) {
-        stop_server(s);
+        stop_server(s, latch);
     });
 };

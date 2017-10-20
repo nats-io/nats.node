@@ -17,8 +17,8 @@ describe('Basics', function() {
     });
 
     // Shutdown our server
-    after(function() {
-        nsc.stop_server(server);
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
     it('should do basic subscribe and unsubscribe', function(done) {

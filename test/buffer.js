@@ -17,8 +17,8 @@ describe('Buffer', function() {
     });
 
     // Shutdown our server
-    after(function() {
-        server.kill();
+    after(function(done) {
+        nsc.stop_server(server, done);
     });
 
     it('should allow sending and receiving raw buffers', function(done) {
