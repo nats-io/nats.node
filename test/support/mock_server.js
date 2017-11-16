@@ -1,3 +1,4 @@
+/*eslint-env es6, node*/
 "use strict";
 
 var net = require('net'),
@@ -87,8 +88,8 @@ function handleData(server, client) {
         // convert to string like node-nats does so we can test protocol
         var buf = client.buffer.toString('binary', 0, MAX_CONTROL);
         if (client.script.length) {
-            var match;
-            if (match = client.script[0].re.exec(buf)) {
+            var match = client.script[0].re.exec(buf);
+            if (match) {
                 // if we have a match, execute the handler
                 client.script[0].h(client, match);
 
@@ -103,12 +104,12 @@ function handleData(server, client) {
                 // delete the script step
                 client.script.shift();
             } else {
-                server.emit('warn', 'no match:\n' + colorize(buf))
+                server.emit('warn', 'no match:\n' + colorize(buf));
             }
         } else {
-            server.emit('info','no more script handlers, ignoring:\n' + colorize(buf))
+            server.emit('info', 'no more script handlers, ignoring:\n' + colorize(buf));
         }
-    }
+    };
 }
 
 function colorize(str) {

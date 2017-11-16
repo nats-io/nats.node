@@ -1,5 +1,5 @@
-/* jslint node: true */
-/* global describe: false, before: false, after: false, it: false, afterEach: false, beforeEach: false */
+/* eslint-env node, es6 */
+/* global describe: false, before: false, after: false, it: false */
 /* jshint -W030 */
 
 'use strict';
@@ -20,11 +20,11 @@ describe('Ping Timer', function() {
         server.start();
     });
 
-    after(function(done){
+    after(function(done) {
         server.stop(done);
     });
 
-    it('should reconnect if server doesnt ping', function(done){
+    it('should reconnect if server doesnt ping', function(done) {
         var nc = NATS.connect({
             port: PORT,
             pingInterval: 200,
