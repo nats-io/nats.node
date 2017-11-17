@@ -39,7 +39,6 @@ describe('Auth Basics', function() {
             if(err) {
                 done(err);
             } else {
-                console.log(cf);
                 server = nsc.start_server(PORT, ['-c', cf], done);
             }
         });
