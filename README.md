@@ -258,6 +258,34 @@ nc.on('close', function() {
 
 See examples and benchmarks for more information.
 
+## Options
+
+The following is a list of all the options that you may pass into
+`nats.connect()`, and their default values.
+
+```javascript
+{
+  url: 'nats://localhost:4222',
+  user: null,
+  pass: null,
+  token: null,
+  verbose: false,
+  pedantic: false,
+  reconnect: true,
+  maxReconnectAttempts: 10,
+  reconnectTimeWait: 2000,
+  servers: ['nats://localhost:4222'],
+  noRandomise: false,
+  encoding: 'utf8',
+  tls: false,
+  name: '',
+  waitOnFirstConnect: false,
+  json: false,
+  preserveBuffers: false,
+  pingInterval: 120000,
+  maxPingOut: 2,
+}
+```
 
 ## Supported Node Versions
 
