@@ -3,8 +3,8 @@
 A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
 [![License MIT](https://img.shields.io/npm/l/express.svg)](http://opensource.org/licenses/MIT)
-[![Travis](https://img.shields.io/travis/nats-io/node-nats.svg)](https://www.npmjs.com/package/nats)
-[![Coveralls github](https://img.shields.io/coveralls/github/nats-io/node-nats.svg)](https://www.npmjs.com/package/nats)
+[![Travis branch](https://img.shields.io/travis/nats-io/node-nats/master.svg)]()
+[![Coveralls github branch](https://img.shields.io/coveralls/github/nats-io/node-nats/master.svg)]()
 [![npm](https://img.shields.io/npm/v/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dt/nats.svg)](https://www.npmjs.com/package/nats)
 
