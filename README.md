@@ -274,6 +274,7 @@ or in maintenance.
 
 (The MIT License)
 
+Copyright (c) 2018 Synadia Communications Inc.
 Copyright (c) 2015-2017 Apcera Inc.<br/>
 Copyright (c) 2011-2015 Derek Collison
 
