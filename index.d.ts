@@ -61,7 +61,7 @@ export interface ClientOpts {
 	servers?: Array<string>,
 	noRandomize?: boolean,
 	encoding?: BufferEncoding,
-	tls?: boolean | tls.TlsOptions,
+	tls?: boolean | tls.TlsServerOptions,
 	name?: string,
 	yieldTime?: number,
 	waitOnFirstConnect?: boolean,
