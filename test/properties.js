@@ -57,6 +57,8 @@ describe('Connection Properties', function() {
         nc.options.should.have.property('reconnect');
         nc.options.should.have.property('maxReconnectAttempts');
         nc.options.should.have.property('reconnectTimeWait');
+        nc.options.should.have.property('useOldRequestStyle');
+        nc.options.useOldRequestStyle.should.equal(false);
     });
 
     it('should have an parsed url', function() {
@@ -76,7 +78,8 @@ describe('Connection Properties', function() {
             'pedantic': true,
             'reconnect': false,
             'maxReconnectAttempts': 22,
-            'reconnectTimeWait': 11
+            'reconnectTimeWait': 11,
+            'useOldRequestStyle': true,
         };
 
         nc = NATS.connect(options);
@@ -88,7 +91,7 @@ describe('Connection Properties', function() {
         nc.options.reconnect.should.equal(false);
         nc.options.maxReconnectAttempts.should.equal(22);
         nc.options.reconnectTimeWait.should.equal(11);
+        nc.options.useOldRequestStyle.should.equal(true);
         nc.close();
     });
-
 });
