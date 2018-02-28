@@ -94,4 +94,39 @@ describe('Timeout and max received events for subscriptions', function() {
             }, 1000);
         });
     });
+
+
+    it('should perform simple timeouts on requests', function(done) {
+        var nc = NATS.connect(PORT);
+        nc.on('connect', function() {
+            nc.request('foo', null, {max: 1, timeout: 1000}, function(err) {
+                err.should.be.instanceof(NATS.NatsError);
+                err.should.have.property('code', NATS.REQ_TIMEOUT);
+                nc.close();
+                done();
+            });
+        });
+    });
+
+    it('should perform simple timeouts on requests without specified number of messages', function(done) {
+        var nc = NATS.connect(PORT);
+        nc.on('connect', function() {
+            nc.subscribe('foo', function(msg, reply) {
+                nc.publish(reply);
+            });
+
+            var responses = 0;
+            nc.request('foo', null, {max: 2, timeout: 1000}, function(err) {
+                if(!err.hasOwnProperty('code')) {
+                    responses++;
+                    return;
+                }
+                responses.should.be.equal(1);
+                err.should.be.instanceof(NATS.NatsError);
+                err.should.have.property('code', NATS.REQ_TIMEOUT);
+                nc.close();
+                done();
+            });
+        });
+    });
 });
