@@ -129,4 +129,21 @@ describe('Timeout and max received events for subscriptions', function() {
             });
         });
     });
+
+    it('should override request autoset timeouts', function(done) {
+        var nc = NATS.connect(PORT);
+        var calledOnRequestHandler = false;
+        nc.on('connect', function() {
+            var sid = nc.request('foo', null, {max: 2, timeout: 1000}, function(err) {
+                calledOnRequestHandler = true;
+            });
+
+            nc.timeout(sid, 1500, 2, function(v) {
+                calledOnRequestHandler.should.be.false();
+                v.should.be.equal(sid);
+                nc.close();
+                done();
+            });
+        });
+    });
 });
