@@ -495,4 +495,48 @@ describe('Basics', function() {
             done();
         });
     });
+
+    function paramTranspositions(nc, done) {
+        var all = false;
+        var four = false;
+        var three = true;
+        var count = 0;
+        nc.flush(function() {
+            nc.requestOne("a", NATS.EMPTY, {}, 1, function() {
+                all = true;
+                called();
+            });
+
+            nc.requestOne("b", NATS.EMPTY, 1, function() {
+                four = true;
+                called();
+            });
+
+            nc.requestOne("b", 1, function() {
+                three = true;
+                called();
+            });
+        });
+
+        function called() {
+            count++;
+            if(count === 3) {
+                all.should.be.true();
+                four.should.be.true();
+                three.should.be.true();
+                nc.close();
+                done();
+            }
+        }
+    }
+
+    it('requestOne: optional param transpositions', function (done) {
+        var nc = NATS.connect(PORT);
+        paramTranspositions(nc, done);
+    });
+
+    it('old requestOne: optional param transpositions', function (done) {
+        var nc = NATS.connect({port: PORT, useOldRequestStyle: true});
+        paramTranspositions(nc, done);
+    });
 });

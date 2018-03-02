@@ -168,6 +168,7 @@ describe('Max responses and Auto-unsub', function() {
             nc.publish(reply, 'I can help!');
         });
 
+        /* jshint loopfunc: true */
         // Create 5 requests
         for (var i = 0; i < 5; i++) {
             nc.request('help', null, {
@@ -188,21 +189,16 @@ describe('Max responses and Auto-unsub', function() {
     }
 
     it('should not leak subscriptions when using max', function(done) {
-        /* jshint loopfunc: true */
         var nc = NATS.connect(PORT);
         requestSubscriptions(nc, done);
     });
 
     it('oldRequest should not leak subscriptions when using max', function(done) {
-        /* jshint loopfunc: true */
         var nc = NATS.connect({port: PORT, useOldRequestStyle: true});
         requestSubscriptions(nc, done);
     });
 
     function requestGetsWantedNumberOfMessages(nc, done) {
-        /* jshint loopfunc: true */
-        var nc = NATS.connect({port: PORT, useOldRequestStyle: true});
-
         var received = 0;
 
         nc.subscribe('help', function(msg, reply) {
