@@ -1,22 +1,27 @@
 
 import events = require('events');
+import tls = require('tls');
 
 export const version: string;
 
 /**
  * Error codes
  */
-export const BAD_SUBJECT: string;
+export const BAD_AUTHENTICATION: string;
+export const BAD_JSON: string;
 export const BAD_MSG: string;
 export const BAD_REPLY: string;
-export const CONN_CLOSED: string;
-export const BAD_JSON: string;
-export const BAD_AUTHENTICATION: string;
-export const INVALID_ENCODING: string;
-export const SECURE_CONN_REQ: string;
-export const NON_SECURE_CONN_REQ: string;
+export const BAD_SUBJECT: string;
 export const CLIENT_CERT_REQ: string;
+export const CONN_CLOSED: string;
+export const CONN_ERR: string;
+export const INVALID_ENCODING: string;
 export const NATS_PROTOCOL_ERR: string;
+export const NON_SECURE_CONN_REQ: string;
+export const PERMISSIONS_ERR: string;
+export const REQ_TIMEOUT: string;
+export const SECURE_CONN_REQ: string;
+export const STALE_CONNECTION_ERR: string;
 
 /**
  * Create a properly formatted inbox subject.
@@ -56,7 +61,7 @@ export interface ClientOpts {
 	servers?: Array<string>,
 	noRandomize?: boolean,
 	encoding?: BufferEncoding,
-	tls?: boolean,
+	tls?: boolean | tls.TlsOptions,
 	name?: string,
 	yieldTime?: number,
 	waitOnFirstConnect?: boolean,
@@ -78,21 +83,21 @@ declare class Client extends events.EventEmitter {
 	/**
 	 * Close the connection to the server.
 	 */
-	close();
+	close():void;
 
 	/**
 	 * Flush outbound queue to server and call optional callback when server has processed
 	 * all data.
 	 */
-	flush(callback?: Function);
+	flush(callback?: Function):void;
 
 	/**
 	 * Publish a message to the given subject, with optional reply and callback.
 	 */
-	publish(callback: Function);
-	publish(subject: string, callback: Function);
-	publish(subject: string, msg: string | Buffer, callback: Function);
-	publish(subject: string, msg?: string | Buffer, reply?: string, callback?: Function);
+	publish(callback: Function):void;
+	publish(subject: string, callback: Function):void;
+	publish(subject: string, msg: string | Buffer, callback: Function):void;
+	publish(subject: string, msg?: string | Buffer, reply?: string, callback?: Function):void;
 
 	/**
 	 * Subscribe to a given subject, with optional options and callback. opts can be
@@ -104,12 +109,12 @@ declare class Client extends events.EventEmitter {
 	/**
 	 * Unsubscribe to a given Subscriber Id, with optional max parameter.
 	 */
-	unsubscribe(sid: number, max?: number);
+	unsubscribe(sid: number, max?: number):void;
 
 	/**
 	 * Set a timeout on a subscription.
 	 */
-	timeout(sid: number, timeout: number, expected: number, callback: (sid: number) => void);
+	timeout(sid: number, timeout: number, expected: number, callback: (sid: number) => void):void;
 
 	/**
 	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
@@ -121,6 +126,16 @@ declare class Client extends events.EventEmitter {
 	request(subject: string, callback: Function): number;
 	request(subject: string, msg: string | Buffer, callback: Function): number;
 	request(subject: string, msg?: string, options?: SubscribeOptions, callback?: Function): number;
+
+	/**
+	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
+	 * This should be treated as a subscription. Request one, will terminate the subscription
+	 * after the first response is received or the timeout is reached.
+	 * The callback can be called with either a message payload or a NatsError to indicate
+	 * a timeout has been reached.
+	 * The Subscriber Id is returned.
+	 */
+	requestOne(subject: string, msg: string | Buffer, options?: SubscribeOptions, timeout?: number, callback?:Function) : number
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.

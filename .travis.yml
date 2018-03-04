@@ -2,15 +2,18 @@ language: node_js
 sudo: false
 
 node_js:
-  - "0.12"
   - "4"
   - "6"
-  - "7"
+  - "8"
+  - "9"
 
 before_script:
-  - wget https://github.com/nats-io/gnatsd/releases/download/v0.9.4/gnatsd-v0.9.4-linux-amd64.zip -qO tmp.zip
+  - wget https://github.com/nats-io/gnatsd/releases/download/v1.0.4/gnatsd-v1.0.4-linux-amd64.zip -qO tmp.zip
   - unzip tmp.zip
-  - mv gnatsd-v0.9.4-linux-amd64 gnatsd
+  - mv gnatsd-v1.0.4-linux-amd64 gnatsd
 
-after_success:
-  - npm run coveralls
+script:
+  - if [[ "$TRAVIS_NODE_VERSION" == 4 ]]; then npm test; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 6 ]]; then npm test; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 8 ]]; then npm test; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 9 ]]; then npm run coveralls; fi

@@ -2,8 +2,11 @@
 
 A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
-[![License MIT](https://img.shields.io/npm/l/express.svg)](http://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.org/nats-io/node-nats.svg?branch=master)](http://travis-ci.org/nats-io/node-nats) [![npm version](https://badge.fury.io/js/nats.svg)](http://badge.fury.io/js/nats)[![Coverage Status](https://coveralls.io/repos/github/nats-io/node-nats/badge.svg?branch=master)](https://coveralls.io/github/nats-io/node-nats?branch=master)
+[![license](https://img.shields.io/github/license/nats-io/node-nats.svg)](http://opensource.org/licenses/MIT)
+[![Travis branch](https://img.shields.io/travis/nats-io/node-nats/master.svg)]()
+[![Coveralls github branch](https://img.shields.io/coveralls/github/nats-io/node-nats/master.svg)]()
+[![npm](https://img.shields.io/npm/v/nats.svg)](https://www.npmjs.com/package/nats)
+[![npm](https://img.shields.io/npm/dt/nats.svg)](https://www.npmjs.com/package/nats)
 
 ## Installation
 
@@ -14,8 +17,8 @@ npm install nats
 ## Basic Usage
 
 ```javascript
-
-var nats = require('nats').connect();
+var NATS = require('nats');
+var nats = NATS.connect();
 
 // Simple Publisher
 nats.publish('foo', 'Hello World!');
@@ -37,6 +40,17 @@ var sid = nats.request('request', function(response) {
 // Request with Auto-Unsubscribe. Will unsubscribe after
 // the first response is received via {'max':1}
 nats.request('help', null, {'max':1}, function(response) {
+  console.log('Got a response for help: ' + response);
+});
+
+
+// Request for single response with timeout.
+nats.requestOne('help', null, {}, 1000, function(response) {
+  // `NATS` is the library.
+  if(response.code && response.code === NATS.REQ_TIMEOUT) {
+    console.log('Request for help timed out.');
+    return;
+  }
   console.log('Got a response for help: ' + response);
 });
 
@@ -95,7 +109,7 @@ var servers = ['nats://nats.io:4222', 'nats://nats.io:5222', 'nats://nats.io:622
 var nc = nats.connect({'servers': servers});
 
 // currentServer is the URL of the connected server.
-console.log("Connected to " + nc.currentServer.host);
+console.log("Connected to " + nc.currentServer.url.host);
 
 // Preserve order when connecting to servers.
 nc = nats.connect({'dontRandomize': true, 'servers':servers});
@@ -206,17 +220,62 @@ nc = nats.connect({'servers':servers, 'encoding': 'ascii'});
 // To prevent payload conversion from a Buffer to a string, set the 
 // preserveBuffers option to true. Message payload return will be a Buffer.
 
-nc = nats.connect({'preserveBuffers': true);
+nc = nats.connect({'preserveBuffers': true});
+
+// Reconnect Attempts and Time between reconnects
+
+// By default a NATS connection will try to reconnect to a server 10 times
+// waiting 2 seconds between reconnect attempts. If the maximum number of
+// retries is reached, the client will close the connection.
+// To change the default behaviour specify the max number of connection
+// attempts in `maxReconnectAttempts` (set to -1 to retry forever), and the 
+// time in milliseconds between reconnects in `reconnectTimeWait`.
+
+nc = nats.connect({'maxReconnectAttempts': -1, 'reconnectTimeWait': 250});
+
+nc.on('error', function(err) {
+	console.log(err);
+});
+
+nc.on('connect', function(nc) {
+	console.log('connected');
+});
+
+nc.on('disconnect', function() {
+	console.log('disconnect');
+});
+
+nc.on('reconnecting', function() {
+	console.log('reconnecting');
+});
+
+nc.on('reconnect', function(nc) {
+	console.log('reconnect');
+});
+
+nc.on('close', function() {
+	console.log('close');
+});
 
 ```
 
-See examples and benchmarks for more information..
+See examples and benchmarks for more information.
+
+
+## Supported Node Versions
+
+Support policy for Nodejs versions follows 
+[Nodejs release support]( https://github.com/nodejs/Release).
+We will support and build node-nats on even Nodejs versions that are current 
+or in maintenance.
+
 
 ## License
 
 (The MIT License)
 
-Copyright (c) 2015-2016 Apcera Inc.<br/>
+Copyright (c) 2018 Synadia Communications Inc.<br/>
+Copyright (c) 2015-2017 Apcera Inc.<br/>
 Copyright (c) 2011-2015 Derek Collison
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
