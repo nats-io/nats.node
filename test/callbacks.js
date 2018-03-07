@@ -39,4 +39,26 @@ describe('Callbacks', function() {
         });
     });
 
+    it('request callbacks have message and reply', function(done) {
+      var nc = NATS.connect(PORT);
+      nc.flush(function() {
+          nc.subscribe("rr", function(msg, reply) {
+              nc.publish(reply, "data", "foo");
+          });
+      });
+
+      nc.flush(function() {
+          nc.requestOne("rr", 5000, function(msg, reply) {
+              if(msg instanceof NATS.NatsError) {
+                  nc.close();
+                  done("Error making request", msg);
+                  return;
+              }
+              msg.should.be.equal("data");
+              reply.should.be.equal("foo");
+              nc.close();
+              done();
+          });
+      });
+    });
 });
