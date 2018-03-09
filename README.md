@@ -263,7 +263,7 @@ See examples and benchmarks for more information.
 
 ## Connect Options
 
-The following is the list of connection options
+The following is the list of connection options and default values.
 
 | Option                 | Aliases                                      | Default                   | Description
 |--------                |---------                                     |---------                  |------------
