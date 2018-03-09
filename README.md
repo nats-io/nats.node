@@ -268,7 +268,7 @@ The following is the list of connection options
 | Option                 | Aliases                                      | Default                   | Description
 |--------                |---------                                     |---------                  |------------
 | `encoding`             |                                              | `"utf8"`                  | Encoding specified by the client to encode/decode data
-| `json`                 |                                              |                           | If true, message payloads are converted to/from JSON
+| `json`                 |                                              | `false`                   | If true, message payloads are converted to/from JSON
 | `maxPingOut`           |                                              | `2`                       | Max number of pings the client will allow unanswered before rasing a stale connection error
 | `maxReconnectAttempts` |                                              | `10`                      | Sets the maximun number of reconnect attempts. The value of `-1` specifies no limit
 | `name`                 | `client`                                     |                           | Optional client name
@@ -276,7 +276,7 @@ The following is the list of connection options
 | `pass`                 | `password`                                   |                           | Sets the password for a connection
 | `pedantic`             |                                              | `false`                   | Turns on strict subject format checks
 | `pingInterval`         |                                              | `120000`                  | Number of milliseconds between client-sent pings
-| `preserveBuffers`      |                                              |                           | If true, data for a message is returned as Buffer
+| `preserveBuffers`      |                                              | `false`                   | If true, data for a message is returned as Buffer
 | `reconnect`            |                                              | `true`                    | If false server will not attempt reconnecting
 | `reconnectTimeWait`    |                                              | `2000`                    | If disconnected, the client will wait the specified number of milliseconds between reconnect attempts
 | `servers`              | `urls`                                       |                           | Array of connection `url`s
