@@ -261,8 +261,40 @@ nc.on('close', function() {
 
 See examples and benchmarks for more information.
 
+## Connect Options
 
-## Supported Node Versions
+The following is the list of connection options
+
+| Option                 | Aliases                                      | Default                   | Description
+|--------                |---------                                     |---------                  |------------
+| `encoding`             |                                              | `"utf8"`                  | Encoding specified by the client to encode/decode data
+| `json`                 |                                              |                           | If true, message payloads are converted to/from JSON
+| `maxPingOut`           |                                              | `2`                       | Max number of pings the client will allow unanswered before rasing a stale connection error
+| `maxReconnectAttempts` |                                              | `10`                      | Sets the maximun number of reconnect attempts. The value of `-1` specifies no limit
+| `name`                 | `client`                                     |                           | Optional client name
+| `noRandomize`          | `dontRandomize`, `NoRandomize`               | `false`                   | If set, the order of discovered servers in not randomized
+| `pass`                 | `password`                                   |                           | Sets the password for a connection
+| `pedantic`             |                                              | `false`                   | Turns on strict subject format checks
+| `pingInterval`         |                                              | `120000`                  | Number of milliseconds between client-sent pings
+| `preserveBuffers`      |                                              |                           | If true, data for a message is returned as Buffer
+| `reconnect`            |                                              | `true`                    | If false server will not attempt reconnecting
+| `reconnectTimeWait`    |                                              | `2000`                    | If disconnected, the client will wait the specified number of milliseconds between reconnect attempts
+| `servers`              | `urls`                                       |                           | Array of connection `url`s
+| `tls`                  | `secure`                                     | `false`                   | If true the client requires a TLS connection. If false a non-tls connection is required.
+| `tlsOptions`           |                                              |                           | Object specifying TLS certificate data. The properties `ca`, `key`, `cert` should contain the certificate file data. `ca` should be provided for self-signed certificates. `key` and `cert` are required for client provided certificates. `rejectUnauthorized` if `true` validates server's credentials.
+| `token`                |                                              |                           | Sets a authorization token for a connection
+| `url`                  | `uri`                                        | `"nats://localhost:4222"` | Connection url
+| `useOldRequestStyle`   |                                              | `false`                   | If set to `true` calls to `request()` and `requestOne()` will create an inbox subscription per call.
+| `user`                 |                                              |                           | Sets the username for a connection
+| `verbose`              |                                              | `false`                   | Turns on `+OK` protocol acknowledgements
+| `waitOnFirstConnect`   |                                              | `false`                   | If `true` the server will fall back to a reconnect mode if it fails its first connection attempt.
+| `yieldTime`            |                                              |                           | If set, processing will yield at least the specified number of milliseconds to IO callbacks before processing inbound messages 
+
+
+  
+  
+
+## Supported Node Versions    
 
 Support policy for Nodejs versions follows 
 [Nodejs release support]( https://github.com/nodejs/Release).
