@@ -272,7 +272,7 @@ The following is the list of connection options and default values.
 | `maxPingOut`           |                                              | `2`                       | Max number of pings the client will allow unanswered before rasing a stale connection error
 | `maxReconnectAttempts` |                                              | `10`                      | Sets the maximun number of reconnect attempts. The value of `-1` specifies no limit
 | `name`                 | `client`                                     |                           | Optional client name
-| `noRandomize`          | `dontRandomize`, `NoRandomize`               | `false`                   | If set, the order of discovered servers in not randomized
+| `noRandomize`          | `dontRandomize`, `NoRandomize`               | `false`                   | If set, the order of user-specified servers is randomized.
 | `pass`                 | `password`                                   |                           | Sets the password for a connection
 | `pedantic`             |                                              | `false`                   | Turns on strict subject format checks
 | `pingInterval`         |                                              | `120000`                  | Number of milliseconds between client-sent pings
