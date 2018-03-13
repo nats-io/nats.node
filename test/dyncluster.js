@@ -178,8 +178,8 @@ describe('Dynamic Cluster - Connect URLs', function() {
   });
 
   it('discovered servers', function(done) {
-    var route_port = 35789;
-    var port = 25500;
+    var route_port = 12892;
+    var port = 14526;
     var ports = [port, port+1, port+2];
 
     servers = nsc.start_cluster(ports, route_port, function() {
@@ -202,7 +202,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
       nc.on('serversDiscovered', function() {
         if(countImplicit(nc) === 1) {
           var found = nc.servers.find(function(s) {
-            return s.url.href == "nats://127.0.0.1:" + (port+3);
+            return s.url.href === "nats://127.0.0.1:" + (port+3);
           });
           if(found) {
             done();
@@ -215,11 +215,13 @@ describe('Dynamic Cluster - Connect URLs', function() {
         countImplicit(nc).should.be.equal(1);
 
         // remove the implicit one
-        var s2 = nsc.find_server(port+2, servers);
-        nsc.stop_server(s2, function() {
-          // add another
-          var added = nsc.add_member(port+3, route_port, port+1003);
-          servers.push(added);
+        process.nextTick(function() {
+          var s2 = nsc.find_server(port + 2, servers);
+          nsc.stop_server(s2, function () {
+            // add another
+            var added = nsc.add_member(port + 3, route_port, port + 1003);
+            servers.push(added);
+          });
         });
       });
     });
