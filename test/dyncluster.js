@@ -177,8 +177,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
     });
   });
 
-  it('discoverd servers', function(done) {
-    this.timeout(60000);
+  it('discovered servers', function(done) {
     var route_port = 35789;
     var port = 25500;
     var ports = [port, port+1, port+2];
@@ -190,7 +189,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
         servers: ["nats://127.0.0.1:" + (port+1)]
       });
 
-      function calcImplict(c) {
+      function countImplicit(c) {
         var count = 0;
         c.servers.forEach(function(s) {
           if(s.implicit) {
@@ -200,12 +199,12 @@ describe('Dynamic Cluster - Connect URLs', function() {
         return count;
       }
 
-      nc.on('serversDiscovered', function(e) {
-        if(calcImplict(nc) === 1) {
-          var s = nc.servers.find(function(e) {
-            return e.url.href == "nats://127.0.0.1:" + (port+3);
+      nc.on('serversDiscovered', function() {
+        if(countImplicit(nc) === 1) {
+          var found = nc.servers.find(function(s) {
+            return s.url.href == "nats://127.0.0.1:" + (port+3);
           });
-          if(s) {
+          if(found) {
             done();
           }
         }
@@ -213,7 +212,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
 
       nc.on('connect', function() {
         nc.servers.should.have.length(3);
-        calcImplict(nc).should.be.equal(1);
+        countImplicit(nc).should.be.equal(1);
 
         // remove the implicit one
         var s2 = nsc.find_server(port+2, servers);
