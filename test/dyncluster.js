@@ -161,4 +161,36 @@ describe('Dynamic Cluster - Connect URLs', function() {
             }
         });
     });
+
+
+  it('multiple servers provided', function(done) {
+    var route_port = 54320;
+    var port = 54321;
+    // start a cluster of one server
+    var ports = [];
+    for (var i = 0; i < 10; i++) {
+      ports.push(port + i);
+    }
+
+    // Add 5 of the servers we know. One added in the 'uri'
+    var urls = [];
+    for (i=1; i < 4; i++) {
+        urls.push("nats://127.0.0.1:" + (port+i));
+    }
+    servers = nsc.start_cluster(ports, route_port, function() {
+
+      var nc = NATS.connect({
+        uri: "nats://127.0.0.1:" + port,
+        reconnectTimeWait: 100,
+        servers: urls
+      });
+
+      nc.on('connect', function (c) {
+          c.servers.should.have.length(10);
+          setTimeout(function() { c.close(); }, 0);
+          done();
+      });
+    });
+  });
 });
+
