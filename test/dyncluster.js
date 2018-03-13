@@ -35,8 +35,8 @@ describe('Dynamic Cluster - Connect URLs', function() {
 
             // connect the client
             var nc = NATS.connect({
-                'port': port,
-                'reconnectTimeWait': 100
+                url: "nats://127.0.0.1:" + port,
+                reconnectTimeWait: 100
             });
             nc.on('connect', function() {
                 // start adding servers
@@ -60,7 +60,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
         });
     });
 
-    it('added servers are shuffled at the end of the list', function(done) {
+    it('servers are shuffled', function(done) {
         var route_port = 54320;
         var port = 54321;
         // start a cluster of one server
@@ -68,45 +68,29 @@ describe('Dynamic Cluster - Connect URLs', function() {
         for (var i = 0; i < 10; i++) {
             ports.push(port + i);
         }
-        var map = {};
         servers = nsc.start_cluster(ports, route_port, function() {
             should(servers.length).be.equal(10);
 
-            var connectCount = 0;
+            // added in order
+            var uris = [];
+            ports.forEach(function(p) {
+              uris.push("nats://127.0.0.1:" + p);
+            });
 
-            function connectAndRecordPorts(check) {
-                var nc = NATS.connect({
-                    'port': port,
-                    'reconnectTimeWait': 100
-                });
-                nc.on('connect', function() {
-                    var have = [];
-                    nc.servers.forEach(function(s) {
-                        have.push(s.url.port);
-                    });
+            var nc = NATS.connect({
+                reconnectTimeWait: 100,
+                servers: uris
+            });
+            nc.on('connect', function() {
+              var found = [];
+              nc.servers.forEach(function(s) {
+                found.push(s.url.href);
+              });
 
-                    connectCount++;
-                    should.ok(have[0] == port);
-                    var key = have.join("_");
-                    map[key] = map[key] ? map[key] + 1 : 1;
-                    nc.close();
-                    if (connectCount === 10) {
-                        check();
-                    }
-                });
-            }
-
-            // we should have more than one property if there was randomization
-            function check() {
-                var keys = Object.getOwnPropertyNames(map);
-                should.ok(keys.length > 1);
-                done();
-            }
-
-            // connect several times...
-            for (var i = 0; i < 10; i++) {
-                connectAndRecordPorts(check);
-            }
+              should.notDeepEqual(found, ports, 'ports shouldnt be in the same order');
+              should.equal(found.length, ports.length, 'ports count should match');
+              done();
+            });
         });
     });
 
@@ -163,7 +147,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
     });
 
 
-  it('multiple servers provided', function(done) {
+  it('joins url and servers', function(done) {
     var route_port = 54320;
     var port = 54321;
     // start a cluster of one server
@@ -192,5 +176,55 @@ describe('Dynamic Cluster - Connect URLs', function() {
       });
     });
   });
+
+  it('discoverd servers', function(done) {
+    this.timeout(60000);
+    var route_port = 35789;
+    var port = 25500;
+    var ports = [port, port+1, port+2];
+
+    servers = nsc.start_cluster(ports, route_port, function() {
+      var nc = NATS.connect({
+        uri: "nats://127.0.0.1:" + port,
+        reconnectTimeWait: 100,
+        servers: ["nats://127.0.0.1:" + (port+1)]
+      });
+
+      function calcImplict(c) {
+        var count = 0;
+        c.servers.forEach(function(s) {
+          if(s.implicit) {
+            count++;
+          }
+        });
+        return count;
+      }
+
+      nc.on('serversDiscovered', function(e) {
+        if(calcImplict(nc) === 1) {
+          var s = nc.servers.find(function(e) {
+            return e.url.href == "nats://127.0.0.1:" + (port+3);
+          });
+          if(s) {
+            done();
+          }
+        }
+      });
+
+      nc.on('connect', function() {
+        nc.servers.should.have.length(3);
+        calcImplict(nc).should.be.equal(1);
+
+        // remove the implicit one
+        var s2 = nsc.find_server(port+2, servers);
+        nsc.stop_server(s2, function() {
+          // add another
+          var added = nsc.add_member(port+3, route_port, port+1003);
+          servers.push(added);
+        });
+      });
+    });
+  });
 });
+
 
