@@ -207,3 +207,9 @@ exports.stop_cluster = function(servers, done) {
         stop_server(s, latch);
     });
 };
+
+exports.find_server = function(port, servers) {
+  return servers.find(function(s) {
+    return s.spawnargs[2] === port;
+  });
+};
