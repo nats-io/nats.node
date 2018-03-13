@@ -211,6 +211,10 @@ describe('Dynamic Cluster - Connect URLs', function() {
       });
 
       nc.on('connect', function() {
+        if(!testVersion("1.0.7", nc)) {
+          done();
+        }
+        console.log(nc.info);
         nc.servers.should.have.length(3);
         countImplicit(nc).should.be.equal(1);
 
@@ -227,5 +231,25 @@ describe('Dynamic Cluster - Connect URLs', function() {
     });
   });
 });
+
+
+function parseVersion(verstr) {
+  // this will break
+  var a = verstr.split(".");
+  if(a.length > 3) {
+    a.splice(3, a.length - 3);
+  }
+  a[0] *= 100;
+  a[1] *= 10;
+
+  return a[0] + a[1] + a[2];
+}
+
+function testVersion(required, nc) {
+  var vers = parseVersion(nc.info.version);
+  var req = parseVersion(required);
+
+  return vers >= req;
+}
 
 
