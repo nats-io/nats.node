@@ -214,7 +214,6 @@ describe('Dynamic Cluster - Connect URLs', function() {
         if(!testVersion("1.0.7", nc)) {
           done();
         }
-        console.log(nc.info);
         nc.servers.should.have.length(3);
         countImplicit(nc).should.be.equal(1);
 
