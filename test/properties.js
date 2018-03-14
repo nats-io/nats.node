@@ -9,13 +9,13 @@ var NATS = require('../'),
 describe('Base Properties', function() {
 
     it('should have a version property', function() {
-        NATS.version.should.match(/[0-9]+\.[0-9]+\.[0-9]+/);
+        NATS.VERSION.should.match(/[0-9]+\.[0-9]+\.[0-9]+/);
     });
 
     it('should have the same version as package.json', function() {
         // eslint-disable-next-line
         var pkg = require('../package.json');
-        NATS.version.should.equal(pkg.version);
+        NATS.VERSION.should.equal(pkg.version);
     });
 
     it('should have a connect function', function() {

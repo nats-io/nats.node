@@ -42,6 +42,8 @@
     "node": ">= 0.10.x"
   },
   "dependencies": {
+    "@types/lodash": "^4.14.104",
+    "lodash": "^4.17.5",
     "nuid": ">=0.6.8"
   },
   "devDependencies": {
