@@ -45,10 +45,6 @@ const DEFAULT_PORT = 4222,
 
     MAX_CONTROL_LINE_SIZE = 512,
 
-    // Parser state
-    AWAITING_CONTROL = 0,
-    AWAITING_MSG_PAYLOAD = 1,
-
     // Reconnect Parameters, 2 sec wait, 10 tries
     DEFAULT_RECONNECT_TIME_WAIT = 2 * 1000,
     DEFAULT_MAX_RECONNECT_ATTEMPTS = 10,
@@ -102,6 +98,13 @@ const DEFAULT_PORT = 4222,
     //Q_SUB_NO_WC = /^([^\.\*>\s]+)(\.([^\.\*>\s]+))*$/, // TODO: remove / never used
 
     FLUSH_THRESHOLD = 65536;
+
+// Parser state
+enum ParserState {
+    CLOSED = -1,
+    AWAITING_CONTROL = 0,
+    AWAITING_MSG_PAYLOAD = 1
+}
 
 export class NatsError implements Error {
     name: string;
@@ -162,7 +165,7 @@ class Server {
 
 class Servers {
     servers: Server[];
-    currentServer: Server | undefined;
+    currentServer: Server;
 
     constructor(randomize: boolean, urls: string[], firstServer?: string) {
         this.servers = [] as Server[];
@@ -185,10 +188,11 @@ class Servers {
                 this.servers.unshift(fs);
             }
         } else {
-            if(this.servers.length() === 0) {
+            if(this.servers.length === 0) {
                 this.addServer(DEFAULT_URI, false);
             }
         }
+        this.currentServer = this.servers[0];
     }
 
     addServer(u: string, implicit = false) {
@@ -196,11 +200,12 @@ class Servers {
     }
 
     selectServer(): Server | undefined {
-        this.currentServer = this.servers.shift();
-        if(this.currentServer) {
+        let t = this.servers.shift();
+        if(t) {
             this.servers.push(this.currentServer);
+            this.currentServer = t;
         }
-        return this.currentServer;
+        return t;
     }
 
     removeCurrentServer() {
@@ -291,7 +296,7 @@ export interface ConnectionOptions {
 }
 
 class Client extends events.EventEmitter {
-    currentServer?: Server | null;
+    currentServer?: Server;
     encoding?: BufferEncoding;
     info: ServerInfo;
     options: ConnectionOptions;
@@ -300,13 +305,19 @@ class Client extends events.EventEmitter {
     token?: string;
     url?: url.Url | null;
     user?: string;
+    reconnecting: boolean = false;
+    reconnects: number = 0;
+    wasConnected: boolean = false;
+    pingTimer?: number;
+    pout?:number;
+    closed?: boolean;
+    stream?: net.Socket;
+    pong: any[] = [];
+    pending: any[] = [];
+    pSize: number = 0;
+    pstate: ParserState = ParserState.CLOSED;
 
-    /**
-     * Initialize a client with the appropriate options.
-     *
-     * @param ClientOpts [opts]
-     */
-    constructor(opts?: string | number | Partial<ConnectionOptions> | void) {
+    constructor(options?: string | number | Partial<ConnectionOptions> | void) {
         super();
         events.EventEmitter.call(this);
         this.options = {
@@ -325,13 +336,12 @@ class Client extends events.EventEmitter {
         this.url = null;
         this.info = {} as ServerInfo;
 
-        if(opts === undefined){
-            opts = {} as ConnectionOptions;
+        if(options === undefined){
+            options = {} as ConnectionOptions;
         }
 
-        this.parseOptions(opts);
+        this.parseOptions(options);
         this.servers = new Servers(true, this.options.servers || [], this.options.url);
-
         this.initState();
         this.createConnection();
     }
@@ -411,9 +421,9 @@ Client.prototype.createInbox = createInbox;
 
 
 function shuffle(array: object[]) {
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
+    for (let i = array.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        let temp = array[i];
         array[i] = array[j];
         array[j] = temp;
     }
@@ -521,8 +531,7 @@ Client.prototype.checkTLSMismatch = function() {
         return true;
     }
 
-    if (this.info.tls_verify === true &&
-        this.options.tls.cert === undefined) {
+    if (this.info.tls_verify === true && typeof this.options.tls === 'object' && this.options.tls.cert === undefined) {
         this.emit('error', new NatsError(CLIENT_CERT_REQ_MSG, CLIENT_CERT_REQ));
         this.closeStream();
         return true;
@@ -536,21 +545,20 @@ Client.prototype.checkTLSMismatch = function() {
  * @api private
  */
 Client.prototype.connectCB = function() {
-    var wasReconnecting = this.reconnecting;
-    var event = (wasReconnecting === true) ? 'reconnect' : 'connect';
+    var event = this.reconnecting ? 'reconnect' : 'connect';
     this.reconnecting = false;
     this.reconnects = 0;
     this.wasConnected = true;
-    this.currentServer.didConnect = true;
-
+    if(this.currentServer) {
+        this.currentServer.didConnect = true;
+    }
     this.emit(event, this);
-
     this.flushPending();
 };
 
 
 Client.prototype.scheduleHeartbeat = function() {
-    this.pingTimer = setTimeout(function(client) {
+    this.pingTimer = setTimeout(function(client: Client) {
         client.emit('pingtimer');
         if (client.closed) {
             return;
@@ -729,7 +737,7 @@ Client.prototype.createConnection = function() {
     this.pending = pend;
     this.pSize = pSize;
 
-    this.pstate = AWAITING_CONTROL;
+    this.pstate = ParserState.AWAITING_CONTROL;
 
     // Clear info processing.
     this.info = null;
@@ -781,7 +789,7 @@ Client.prototype.close = function() {
     this.closeStream();
     this.ssid = -1;
     this.subs = null;
-    this.pstate = -1;
+    this.pstate = ParserState.CLOSED;
     this.pongs = null;
     this.pending = null;
     this.pSize = 0;
@@ -965,7 +973,7 @@ Client.prototype.processInbound = function() {
     while (!client.closed && client.inbound && client.inbound.length > 0) {
         switch (client.pstate) {
 
-            case AWAITING_CONTROL:
+            case ParserState.AWAITING_CONTROL:
                 // Regex only works on strings, so convert once to be more efficient.
                 // Long term answer is a hand rolled parser, not regex.
                 var buf = client.inbound.toString('binary', 0, MAX_CONTROL_LINE_SIZE);
@@ -977,7 +985,7 @@ Client.prototype.processInbound = function() {
                         size: parseInt(m[5], 10)
                     };
                     client.payload.psize = client.payload.size + CR_LF_LEN;
-                    client.pstate = AWAITING_MSG_PAYLOAD;
+                    client.pstate = ParserState.AWAITING_MSG_PAYLOAD;
                 } else if ((m = OK.exec(buf)) !== null) {
                     // Ignore for now..
                 } else if ((m = ERR.exec(buf)) !== null) {
@@ -1049,7 +1057,7 @@ Client.prototype.processInbound = function() {
                 }
                 break;
 
-            case AWAITING_MSG_PAYLOAD:
+            case ParserState.AWAITING_MSG_PAYLOAD:
 
                 // If we do not have the complete message, hold onto the chunks
                 // and assemble when we have all we need. This optimizes for
@@ -1101,7 +1109,7 @@ Client.prototype.processInbound = function() {
                 client.processMsg();
 
                 // Reset
-                client.pstate = AWAITING_CONTROL;
+                client.pstate = ParserState.AWAITING_CONTROL;
                 client.payload = null;
 
                 // Check to see if we have an option to yield for other events after yieldTime.
