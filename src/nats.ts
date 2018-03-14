@@ -118,16 +118,24 @@ var VERSION = '0.8.6',
  *
  * @api private
  */
-function NatsError(message, code, chainedError) {
-    Error.captureStackTrace(this, this.constructor);
-    this.name = this.constructor.name;
-    this.message = message;
-    this.code = code;
-    this.chainedError = chainedError;
+
+export class NatsError implements Error {
+    name: string;
+    message: string;
+    code: string;
+    chainedError?: Error;
+
+    constructor(message: string, code: string, chainedError?: Error) {
+        Error.captureStackTrace(this, this.constructor);
+        this.name = "NatsError";
+        this.message = message;
+        this.code = code;
+        this.chainedError = chainedError;
+
+        util.inherits(NatsError, Error);
+    }
 }
 
-util.inherits(NatsError, Error);
-exports.NatsError = NatsError;
 
 /**
  * Library Version
