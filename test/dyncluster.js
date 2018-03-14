@@ -41,8 +41,8 @@ describe('Dynamic Cluster - Connect URLs', function() {
     });
 
     it('adding cluster performs update', function(done) {
-        var route_port = 54220;
-        var port = 54221;
+        var route_port = 25220;
+        var port = 25221;
 
         // start a new cluster with single server
         servers = nsc.start_cluster([port], route_port, function() {
@@ -66,7 +66,8 @@ describe('Dynamic Cluster - Connect URLs', function() {
                         // give some time for the server to send infos
                         setTimeout(function() {
                             // we should know of 3 servers - the one we connected and the 2 we added
-                            should(nc.servers.length).be.equal(3);
+                            console.log(nc.servers.servers);
+                            should(nc.servers.length()).be.equal(3);
                             done();
                         }, 1000);
                     });

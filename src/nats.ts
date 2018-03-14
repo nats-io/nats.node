@@ -16,22 +16,38 @@
 /* jslint node: true */
 'use strict';
 
-/**
- * Module Dependencies
- */
-var net = require('net'),
-    tls = require('tls'),
-    url = require('url'),
-    util = require('util'),
-    events = require('events'),
-    nuid = require('nuid');
+import url = require('url');
+import events = require('events');
+import util = require('util');
+import net = require('net');
+import tls = require('tls');
+import nuid = require('nuid');
+import _ = require('lodash');
+import {UrlWithStringQuery} from "url";
+
+export const VERSION = '0.8.6';
+
+export const BAD_AUTHENTICATION = 'BAD_AUTHENTICATION';
+export const BAD_JSON = 'BAD_JSON';
+export const BAD_MSG = 'BAD_MSG';
+export const BAD_REPLY = 'BAD_REPLY';
+export const BAD_SUBJECT = 'BAD_SUBJECT';
+export const CLIENT_CERT_REQ = 'CLIENT_CERT_REQ';
+export const CONN_CLOSED = 'CONN_CLOSED';
+export const CONN_ERR = 'CONN_ERR';
+export const INVALID_ENCODING = 'INVALID_ENCODING';
+export const NATS_PROTOCOL_ERR = 'NATS_PROTOCOL_ERR';
+export const NON_SECURE_CONN_REQ = 'NON_SECURE_CONN_REQ';
+export const PERMISSIONS_ERR = "permissions violation";
+export const REQ_TIMEOUT = 'REQ_TIMEOUT';
+export const SECURE_CONN_REQ = 'SECURE_CONN_REQ';
+export const STALE_CONNECTION_ERR = "stale connection";
+
 
 /**
  * Constants
  */
-var VERSION = '0.8.6',
-
-    DEFAULT_PORT = 4222,
+const DEFAULT_PORT = 4222,
     DEFAULT_PRE = 'nats://localhost:',
     DEFAULT_URI = DEFAULT_PRE + DEFAULT_PORT,
 
@@ -76,33 +92,18 @@ var VERSION = '0.8.6',
     PONG_RESPONSE = 'PONG' + CR_LF,
 
     // Errors
-    BAD_AUTHENTICATION = 'BAD_AUTHENTICATION',
     BAD_AUTHENTICATION_MSG = 'User and Token can not both be provided',
-    BAD_JSON = 'BAD_JSON',
     BAD_JSON_MSG = 'Message should be a JSON object',
-    BAD_MSG = 'BAD_MSG',
     BAD_MSG_MSG = 'Message can\'t be a function',
-    BAD_REPLY = 'BAD_REPLY',
     BAD_REPLY_MSG = 'Reply can\'t be a function',
-    BAD_SUBJECT = 'BAD_SUBJECT',
     BAD_SUBJECT_MSG = 'Subject must be supplied',
-    CLIENT_CERT_REQ = 'CLIENT_CERT_REQ',
     CLIENT_CERT_REQ_MSG = 'Server requires a client certificate.',
-    CONN_CLOSED = 'CONN_CLOSED',
     CONN_CLOSED_MSG = 'Connection closed',
-    CONN_ERR = 'CONN_ERR',
     CONN_ERR_MSG_PREFIX = 'Could not connect to server: ',
-    INVALID_ENCODING = 'INVALID_ENCODING',
     INVALID_ENCODING_MSG_PREFIX = 'Invalid Encoding:',
-    NATS_PROTOCOL_ERR = 'NATS_PROTOCOL_ERR',
-    NON_SECURE_CONN_REQ = 'NON_SECURE_CONN_REQ',
     NON_SECURE_CONN_REQ_MSG = 'Server does not support a secure connection.',
-    PERMISSIONS_ERR = "permissions violation",
-    REQ_TIMEOUT = 'REQ_TIMEOUT',
     REQ_TIMEOUT_MSG_PREFIX = 'The request timed out for subscription id: ',
-    SECURE_CONN_REQ = 'SECURE_CONN_REQ',
     SECURE_CONN_REQ_MSG = 'Server requires a secure connection.',
-    STALE_CONNECTION_ERR = "stale connection",
 
     // Pedantic Mode support
     //Q_SUB = /^([^\.\*>\s]+|>$|\*)(\.([^\.\*>\s]+|>$|\*))*$/, // TODO: remove / never used
@@ -110,21 +111,20 @@ var VERSION = '0.8.6',
 
     FLUSH_THRESHOLD = 65536;
 
-/**
- * @param {String} message
- * @param {String} code
- * @param {Error} [chainedError]
- * @constructor
- *
- * @api private
- */
-
 export class NatsError implements Error {
     name: string;
     message: string;
     code: string;
     chainedError?: Error;
 
+    /**
+     * @param {String} message
+     * @param {String} code
+     * @param {Error} [chainedError]
+     * @constructor
+     *
+     * @api private
+     */
     constructor(message: string, code: string, chainedError?: Error) {
         Error.captureStackTrace(this, this.constructor);
         this.name = "NatsError";
@@ -136,28 +136,252 @@ export class NatsError implements Error {
     }
 }
 
+interface ServerInfo {
+    tls_required: boolean;
+    tls_verify: boolean;
+    connect_urls?: string[];
+}
 
-/**
- * Library Version
- */
-exports.version = VERSION;
 
-/**
- * Error codes
- */
-exports.BAD_SUBJECT = BAD_SUBJECT;
-exports.BAD_MSG = BAD_MSG;
-exports.BAD_REPLY = BAD_REPLY;
-exports.CONN_CLOSED = CONN_CLOSED;
-exports.BAD_JSON = BAD_JSON;
-exports.BAD_AUTHENTICATION = BAD_AUTHENTICATION;
-exports.INVALID_ENCODING = INVALID_ENCODING;
-exports.SECURE_CONN_REQ = SECURE_CONN_REQ;
-exports.NON_SECURE_CONN_REQ = NON_SECURE_CONN_REQ;
-exports.CLIENT_CERT_REQ = CLIENT_CERT_REQ;
-exports.NATS_PROTOCOL_ERR = NATS_PROTOCOL_ERR;
-exports.REQ_TIMEOUT = REQ_TIMEOUT;
+class Server {
+    url: UrlWithStringQuery;
+    didConnect: boolean;
+    reconnects: number;
+    implicit: boolean;
 
+    constructor(u: string, implicit = false) {
+        this.url = url.parse(u);
+        this.didConnect = false;
+        this.reconnects = 0;
+        this.implicit = implicit;
+    }
+
+    toString(): string {
+        return this.url.href || "";
+    }
+
+    getCredentials(): string[] | undefined {
+        if ('auth' in this.url && !!this.url.auth) {
+            return this.url.auth.split(':');
+        }
+        return undefined;
+    }
+}
+
+class Servers {
+    servers: Server[];
+    currentServer: Server | undefined;
+
+    constructor(randomize: boolean, urls: string[], firstServer?: string) {
+        this.servers = [] as Server[];
+        if(urls) {
+            urls.forEach(element => {
+                this.servers.push(new Server(element));
+            });
+            if(randomize) {
+                shuffle(this.servers);
+            }
+        }
+
+        if(firstServer) {
+            let index = urls.indexOf(firstServer);
+            if(index === -1) {
+                this.addServer(firstServer, false);
+            } else {
+                let fs = this.servers[index];
+                this.servers.splice(index, 1);
+                this.servers.unshift(fs);
+            }
+        } else {
+            if(this.servers.length() === 0) {
+                this.addServer(DEFAULT_URI, false);
+            }
+        }
+    }
+
+    addServer(u: string, implicit = false) {
+        this.servers.push(new Server(u, implicit));
+    }
+
+    selectServer(): Server | undefined {
+        this.currentServer = this.servers.shift();
+        if(this.currentServer) {
+            this.servers.push(this.currentServer);
+        }
+        return this.currentServer;
+    }
+
+    removeCurrentServer() {
+        this.removeServer(this.currentServer);
+    }
+
+    removeServer(server: Server | undefined) {
+        if(server) {
+            let index = this.servers.indexOf(server);
+            this.servers.splice(index, 1);
+        }
+    }
+
+    length():number {
+        return this.servers.length;
+    }
+
+    next() : Server | undefined {
+        return this.servers.length ? this.servers[0] : undefined;
+    }
+
+
+    processServerUpdate(info: ServerInfo): string[] {
+        let newURLs = [];
+
+        if(info.connect_urls && info.connect_urls.length > 0) {
+            let discovered : {[key: string]: Server} = {};
+
+            info.connect_urls.forEach(server => {
+                var u = 'nats://' + server;
+                var s = new Server(u, true);
+                discovered[s.toString()] = s;
+            });
+
+            // remove implicit servers that are no longer reported
+            let toDelete: number[] = [];
+            this.servers.forEach((s, index) => {
+                var u = s.toString();
+                if(s.implicit && this.currentServer.url.href !== u && discovered[u] === undefined) {
+                    // server was removed
+                    toDelete.push(index);
+                }
+                // remove this entry from reported
+                delete discovered[u];
+            });
+
+            // perform the deletion
+            toDelete.reverse();
+            toDelete.forEach(index => {
+                this.servers.splice(index, 1);
+            });
+
+            // remaining servers are new
+            for(let k in discovered) {
+                if(discovered.hasOwnProperty(k)) {
+                    this.servers.push(discovered[k]);
+                    newURLs.push(k);
+                }
+            }
+        }
+        return newURLs;
+    }
+}
+
+export interface ConnectionOptions {
+    encoding?: BufferEncoding,
+    json?: boolean,
+    maxPingOut?: number,
+    maxReconnectAttempts?: number,
+    name?: string,
+    noRandomize?: boolean,
+    pass?: string,
+    pedantic?: boolean,
+    pingInterval?: number,
+    port?: number,
+    preserveBuffers?: boolean,
+    reconnect?: boolean,
+    reconnectTimeWait?: number,
+    servers?: Array<string>,
+    tls?: boolean | tls.TlsOptions,
+    token?: string,
+    url?: string,
+    useOldRequestStyle?: boolean
+    user?: string,
+    verbose?: boolean,
+    waitOnFirstConnect?: boolean,
+    yieldTime?: number,
+}
+
+class Client extends events.EventEmitter {
+    currentServer?: Server | null;
+    encoding?: BufferEncoding;
+    info: ServerInfo;
+    options: ConnectionOptions;
+    pass?: string;
+    servers: Servers;
+    token?: string;
+    url?: url.Url | null;
+    user?: string;
+
+    /**
+     * Initialize a client with the appropriate options.
+     *
+     * @param ClientOpts [opts]
+     */
+    constructor(opts?: string | number | Partial<ConnectionOptions> | void) {
+        super();
+        events.EventEmitter.call(this);
+        this.options = {
+            verbose: false,
+            pedantic: false,
+            reconnect: true,
+            maxReconnectAttempts: DEFAULT_MAX_RECONNECT_ATTEMPTS,
+            reconnectTimeWait: DEFAULT_RECONNECT_TIME_WAIT,
+            encoding: "utf8",
+            tls: false,
+            waitOnFirstConnect: false,
+            pingInterval: DEFAULT_PING_INTERVAL,
+            maxPingOut: DEFAULT_MAX_PING_OUT,
+            useOldRequestStyle: false
+        } as ConnectionOptions;
+        this.url = null;
+        this.info = {} as ServerInfo;
+
+        if(opts === undefined){
+            opts = {} as ConnectionOptions;
+        }
+
+        this.parseOptions(opts);
+        this.servers = new Servers(true, this.options.servers || [], this.options.url);
+
+        this.initState();
+        this.createConnection();
+    }
+}
+
+export interface SubscribeOptions {
+    queue?: string,
+    max?: number
+}
+
+interface ClientInternal {
+    parseOptions(opts: string | number | ConnectionOptions) : void
+    initState() : void
+    createConnection() : void
+    checkTLSMismatch() : boolean
+}
+
+interface Client extends ClientInternal {
+    createInbox() : string
+    selectServer() : void
+    connectCB() : void
+    scheduleHeartbeat() : void
+    setupHandlers() : void
+    sendConnect() : void
+    close() : void
+    closeStream() : void
+    flushPending() : void
+    stripPendingSubs() : void
+    sendCommand(cmd : string) : void
+    sendSubscription() : void
+    processInbound() : void
+    processErr(err: string) : void
+    flush(opt_callback?: Function) : void
+
+    publish(callback: Function):void;
+    publish(subject: string, callback: Function):void;
+    publish(subject: string, msg: string | Buffer, callback: Function):void;
+    publish(subject: string, msg?: string | Buffer, reply?: string, callback?: Function):void;
+
+    subscribe(subject: string, callback: Function): number;
+    subscribe(subject: string, opts: SubscribeOptions, callback: Function): number;
+}
 
 /**
  * Create a properly formatted inbox subject.
@@ -169,19 +393,6 @@ var createInbox = exports.createInbox = function() {
 };
 
 /**
- * Initialize a client with the appropriate options.
- *
- * @param {Mixed} [opts]
- * @api public
- */
-function Client(opts) {
-    events.EventEmitter.call(this);
-    this.parseOptions(opts);
-    this.initState();
-    this.createConnection();
-}
-
-/**
  * Connect to a nats-server and return the client.
  * Argument can be a url, or an object with a 'url'
  * property and additional options.
@@ -190,7 +401,7 @@ function Client(opts) {
  *
  * @api public
  */
-exports.connect = function(opts) {
+exports.connect = function(opts?: ConnectionOptions) {
     return new Client(opts);
 };
 
@@ -206,16 +417,8 @@ util.inherits(Client, events.EventEmitter);
  */
 Client.prototype.createInbox = createInbox;
 
-Client.prototype.assignOption = function(opts, prop, assign) {
-    if (assign === undefined) {
-        assign = prop;
-    }
-    if (opts[prop] !== undefined) {
-        this.options[assign] = opts[prop];
-    }
-};
 
-function shuffle(array) {
+function shuffle(array: object[]) {
     for (var i = array.length - 1; i > 0; i--) {
         var j = Math.floor(Math.random() * (i + 1));
         var temp = array[i];
@@ -231,123 +434,47 @@ function shuffle(array) {
  * @param {Mixed} [opts]
  * @api private
  */
-Client.prototype.parseOptions = function(opts) {
-    var options = this.options = {
-        verbose: false,
-        pedantic: false,
-        reconnect: true,
-        maxReconnectAttempts: DEFAULT_MAX_RECONNECT_ATTEMPTS,
-        reconnectTimeWait: DEFAULT_RECONNECT_TIME_WAIT,
-        encoding: 'utf8',
-        tls: false,
-        waitOnFirstConnect: false,
-        pingInterval: DEFAULT_PING_INTERVAL,
-        maxPingOut: DEFAULT_MAX_PING_OUT,
-        useOldRequestStyle: false
-    };
-
-    if (undefined === opts) {
-        options.url = DEFAULT_URI;
-    } else if ('number' === typeof opts) {
-        options.url = DEFAULT_PRE + opts;
-    } else if ('string' === typeof opts) {
-        options.url = opts;
-    } else if ('object' === typeof opts) {
-        if (opts.port !== undefined) {
-            options.url = DEFAULT_PRE + opts.port;
-        }
-        // Pull out various options here
-        this.assignOption(opts, 'url');
-        this.assignOption(opts, 'uri', 'url');
-        this.assignOption(opts, 'user');
-        this.assignOption(opts, 'pass');
-        this.assignOption(opts, 'token');
-        this.assignOption(opts, 'password', 'pass');
-        this.assignOption(opts, 'verbose');
-        this.assignOption(opts, 'pedantic');
-        this.assignOption(opts, 'reconnect');
-        this.assignOption(opts, 'maxReconnectAttempts');
-        this.assignOption(opts, 'reconnectTimeWait');
-        this.assignOption(opts, 'servers');
-        this.assignOption(opts, 'urls', 'servers');
-        this.assignOption(opts, 'noRandomize');
-        this.assignOption(opts, 'NoRandomize', 'noRandomize');
-        this.assignOption(opts, 'dontRandomize', 'noRandomize');
-        this.assignOption(opts, 'encoding');
-        this.assignOption(opts, 'tls');
-        this.assignOption(opts, 'secure', 'tls');
-        this.assignOption(opts, 'name');
-        this.assignOption(opts, 'client', 'name');
-        this.assignOption(opts, 'yieldTime');
-        this.assignOption(opts, 'waitOnFirstConnect');
-        this.assignOption(opts, 'json');
-        this.assignOption(opts, 'preserveBuffers');
-        this.assignOption(opts, 'pingInterval');
-        this.assignOption(opts, 'maxPingOut');
-        this.assignOption(opts, 'useOldRequestStyle');
+Client.prototype.parseOptions = function(opts: string | number | ConnectionOptions): void {
+    switch(typeof opts) {
+        case 'number':
+            this.options.url = DEFAULT_PRE + opts;
+            break;
+        case 'string':
+            this.options.url = opts.toString();
+            break;
+        case 'object':
+            let uopts = opts as ConnectionOptions;
+            if(uopts.port !== undefined) {
+                this.options.url = DEFAULT_PRE + uopts.port;
+            }
+            // override defaults with provided uopts
+            // uri, password, urls, NoRandomize, dontRandomize, secure, client
+            _.extend(this.options, uopts);
+            break;
+        default:
+            // shouldn't happen
     }
 
-    var client = this;
 
     // Set user/pass as needed if in options.
-    client.user = options.user;
-    client.pass = options.pass;
+    this.user = this.options.user;
+    this.pass = this.options.pass;
 
     // Set token as needed if in options.
-    client.token = options.token;
+    this.token = this.options.token;
 
     // Authentication - make sure authentication is valid.
-    if (client.user && client.token) {
+    if (this.user && this.token) {
         throw (new NatsError(BAD_AUTHENTICATION_MSG, BAD_AUTHENTICATION));
     }
 
     // Encoding - make sure its valid.
-    if (Buffer.isEncoding(options.encoding)) {
-        client.encoding = options.encoding;
+    let bufEncoding = this.options.encoding as BufferEncoding;
+    if (Buffer.isEncoding(bufEncoding)) {
+        this.encoding = bufEncoding;
     } else {
-        throw new NatsError(INVALID_ENCODING_MSG_PREFIX + options.encoding, INVALID_ENCODING);
+        throw new NatsError(INVALID_ENCODING_MSG_PREFIX + this.options.encoding, INVALID_ENCODING);
     }
-    // For cluster support
-    client.servers = [];
-
-    if (Array.isArray(options.servers)) {
-        options.servers.forEach(function(server) {
-            client.servers.push(new Server(url.parse(server)));
-        });
-      // Randomize if needed
-      if (options.noRandomize !== true) {
-        shuffle(client.servers);
-      }
-
-      // if they gave an URL we should add it if different
-      if(options.url !== undefined && client.servers.indexOf(options.url) === -1) {
-        //make url first element so it is attempted first
-        client.servers.unshift(new Server(url.parse(options.url)));
-      }
-    } else {
-        if (undefined === options.url) {
-            options.url = DEFAULT_URI;
-        }
-        client.servers.push(new Server(url.parse(options.url)));
-    }
-};
-
-/**
- * Create a new server.
- *
- * @api private
- */
-function Server(url) {
-    this.url = url;
-    this.didConnect = false;
-    this.reconnects = 0;
-}
-
-/**
- * @api private
- */
-Server.prototype.toString = function() {
-  return this.url.href;
 };
 
 /**
@@ -359,28 +486,27 @@ Server.prototype.toString = function() {
  * @api private
  */
 Client.prototype.selectServer = function() {
-    var client = this;
-    var server = client.servers.shift();
+    let server = this.servers.selectServer();
+    if(server === undefined) {
+        return;
+    }
 
     // Place in client context.
-    client.currentServer = server;
-    client.url = server.url;
-    if ('auth' in server.url && !!server.url.auth) {
-        var auth = server.url.auth.split(':');
+    this.currentServer = server;
+    this.url = server.url;
+    let auth = server.getCredentials();
+    if(auth) {
         if (auth.length !== 1) {
-            if (client.options.user === undefined) {
-                client.user = auth[0];
+            if (this.options.user === undefined) {
+                this.user = auth[0];
             }
-            if (client.options.pass === undefined) {
-                client.pass = auth[1];
+            if (this.options.pass === undefined) {
+                this.pass = auth[1];
             }
-        } else {
-            if (client.options.token === undefined) {
-                client.token = auth[0];
-            }
+        } else if (this.options.token === undefined) {
+            this.token = auth[0];
         }
     }
-    client.servers.push(server);
 };
 
 /**
@@ -511,13 +637,13 @@ Client.prototype.setupHandlers = function() {
                 // Pretend to move us into a reconnect state.
                 client.currentServer.didConnect = true;
             } else {
-                client.servers.splice(client.servers.length - 1, 1);
+                client.servers.removeCurrentServer();
             }
         }
 
         // Only bubble up error if we never had connected
         // to the server and we only have one.
-        if (client.wasConnected === false && client.servers.length === 0) {
+        if (client.wasConnected === false && client.servers.length() === 0) {
             client.emit('error', new NatsError(CONN_ERR_MSG_PREFIX + exception, CONN_ERR, exception));
         }
         client.closeStream();
@@ -881,7 +1007,10 @@ Client.prototype.processInbound = function() {
                     }
 
                     // Always try to read the connect_urls from info
-                    client.processServerUpdate();
+                    let newServers = client.servers.processServerUpdate(client.info);
+                    if(newServers.length > 0) {
+                        client.emit('serversDiscovered', newServers);
+                    }
 
                     // Process first INFO
                     if (client.infoReceived === false) {
@@ -1008,56 +1137,6 @@ Client.prototype.processInbound = function() {
     }
 };
 
-/**
- * Process server updates in info object
- * @api internal
- */
-Client.prototype.processServerUpdate = function() {
-  var client = this;
-  if (client.info.connect_urls && client.info.connect_urls.length > 0) {
-    // parse the infos
-    var tmp = {};
-    client.info.connect_urls.forEach(function(server) {
-      var u = 'nats://' + server;
-      var s = new Server(url.parse(u));
-      // implicit servers are ones added via the info connect_urls
-      s.implicit = true;
-      tmp[s.url.href] = s;
-    });
-
-    // remove implicit servers that are no longer reported
-    var toDelete = [];
-    client.servers.forEach(function(s, index) {
-      var u = s.url.href;
-      if(s.implicit && client.currentServer.url.href !== u && tmp[u] === undefined) {
-        // server was removed
-        toDelete.push(index);
-      }
-      // remove this entry from reported
-      delete tmp[u];
-    });
-
-    // perform the deletion
-    toDelete.reverse();
-    toDelete.forEach(function(index) {
-      client.servers.splice(index, 1);
-    });
-
-    // remaining servers are new
-    var newURLs = [];
-    for(var k in tmp) {
-      if(tmp.hasOwnProperty(k)) {
-        client.servers.push(tmp[k]);
-        newURLs.push(k);
-      }
-    }
-
-    if(newURLs.length) {
-      // new reported servers useful for tests
-      client.emit('serversDiscovered', newURLs);
-    }
-  }
-};
 
 /**
  * Process a delivered message and deliver to appropriate subscriber.
@@ -1124,19 +1203,6 @@ Client.prototype.processErr = function(s) {
     }
 };
 
-/**
- * Push a new cluster server.
- *
- * @param {String} uri
- * @api public
- */
-Client.prototype.addServer = function(uri) {
-    this.servers.push(new Server(url.parse(uri)));
-
-    if (this.options.noRandomize !== true) {
-        shuffle(this.servers);
-    }
-};
 
 /**
  * Flush outbound queue to server and call optional callback when server has processed
@@ -1664,7 +1730,7 @@ Client.prototype.reconnect = function() {
 Client.prototype.scheduleReconnect = function() {
     var client = this;
     // Just return if no more servers
-    if (client.servers.length === 0) {
+    if (client.servers.length() === 0) {
         return;
     }
     // Don't set reconnecting state if we are just trying
@@ -1674,7 +1740,7 @@ Client.prototype.scheduleReconnect = function() {
     }
     // Only stall if we have connected before.
     var wait = 0;
-    if (client.servers[0].didConnect === true) {
+    if (client.servers.next().didConnect === true) {
         wait = this.options.reconnectTimeWait;
     }
     setTimeout(function() {
