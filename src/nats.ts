@@ -15,7 +15,9 @@ import net = require('net');
 import tls = require('tls');
 import nuid = require('nuid');
 import _ = require('lodash');
-import {UrlWithStringQuery} from "url";
+import {UrlObject, UrlWithStringQuery} from "url";
+import {ConnectionOptions} from "tls";
+import {isNumber} from "util";
 
 export const VERSION = '0.8.6';
 
@@ -139,7 +141,7 @@ interface ServerInfo {
 
 
 class Server {
-    url: UrlWithStringQuery;
+    url: url.Url;
     didConnect: boolean;
     reconnects: number;
     implicit: boolean;
@@ -270,57 +272,112 @@ class Servers {
     }
 }
 
-export interface ConnectionOptions {
-    encoding?: BufferEncoding,
-    json?: boolean,
-    maxPingOut?: number,
-    maxReconnectAttempts?: number,
-    name?: string,
-    noRandomize?: boolean,
-    pass?: string,
-    pedantic?: boolean,
-    pingInterval?: number,
-    port?: number,
-    preserveBuffers?: boolean,
-    reconnect?: boolean,
-    reconnectTimeWait?: number,
-    servers?: Array<string>,
-    tls?: boolean | tls.TlsOptions,
-    token?: string,
-    url?: string,
-    useOldRequestStyle?: boolean
-    user?: string,
-    verbose?: boolean,
-    waitOnFirstConnect?: boolean,
-    yieldTime?: number,
+export interface NatsConnectionOptions {
+    url: string;
+    encoding?: BufferEncoding;
+    json?: boolean;
+    maxPingOut: number;
+    maxReconnectAttempts: number;
+    name?: string;
+    noRandomize?: boolean;
+    pass?: string;
+    pedantic?: boolean;
+    pingInterval?: number;
+    port?: number;
+    preserveBuffers?: boolean;
+    reconnect?: boolean;
+    reconnectTimeWait?: number;
+    servers?: Array<string>;
+    tls?: boolean | tls.TlsOptions;
+    token?: string;
+    useOldRequestStyle?: boolean;
+    user?: string;
+    verbose?: boolean;
+    waitOnFirstConnect?: boolean;
+    yieldTime?: number;
+}
+
+function parseOptions(options?: string | number | NatsConnectionOptions | void): NatsConnectionOptions {
+    if(options === undefined || options === null) {
+        options = {} as NatsConnectionOptions;
+    }
+
+    let args;
+    if(typeof options === 'number') {
+        args = {url: DEFAULT_PRE + options} as NatsConnectionOptions;
+    } else if(typeof options === 'string') {
+        args = {url: options.toString()} as NatsConnectionOptions;
+    } else if(typeof options === 'object') {
+        args = options;
+        if(args.port !== undefined) {
+            args.url = DEFAULT_PRE + args.port;
+        }
+    }
+    // override defaults with provided options.
+    // non-standard aliases are not handled
+    // uri, password, urls, NoRandomize, dontRandomize, secure, client
+    return _.extend(Client.defaultOptions(), args);
 }
 
 class Client extends events.EventEmitter {
-    currentServer?: Server;
-    encoding?: BufferEncoding;
-    info: ServerInfo;
-    options: ConnectionOptions;
-    pass?: string;
-    servers: Servers;
-    token?: string;
-    url?: url.Url | null;
-    user?: string;
-    reconnecting: boolean = false;
-    reconnects: number = 0;
-    wasConnected: boolean = false;
-    pingTimer?: number;
-    pout?:number;
     closed?: boolean;
-    stream?: net.Socket;
-    pong: any[] = [];
-    pending: any[] = [];
+    connected: boolean = false;
+    currentServer!: Server;
+    encoding?: BufferEncoding;
+    inbound!: Buffer;
+    info: ServerInfo = {} as ServerInfo;
+    infoReceived: boolean = false;
+    options: NatsConnectionOptions;
+    pass?: string;
+    pending: (string & Buffer)[] | null = [];
+    pingTimer?: number;
+    pongs: any[] | null = [];
+    pout:number = 0;
     pSize: number = 0;
     pstate: ParserState = ParserState.CLOSED;
+    reconnecting: boolean = false;
+    reconnects: number = 0;
+    servers: Servers;
+    subs: {[key: number]: any} | null = {};
+    ssid: number = 1;
+    stream!: net.Socket;
+    token?: string;
+    url!: url.UrlObject;
+    user?: string;
+    wasConnected: boolean = false;
+    
 
-    constructor(options?: string | number | Partial<ConnectionOptions> | void) {
+    constructor(options?: string | number | NatsConnectionOptions | void) {
         super();
         events.EventEmitter.call(this);
-        this.options = {
+
+        this.options = parseOptions(options);
+
+        // Set user/pass/token as needed if in options.
+        this.user = this.options.user;
+        this.pass = this.options.pass;
+        this.token = this.options.token;
+
+        // Authentication - make sure authentication is valid.
+        if (this.user && this.token) {
+            throw (new NatsError(BAD_AUTHENTICATION_MSG, BAD_AUTHENTICATION));
+        }
+
+        // Encoding - make sure its valid.
+        let bufEncoding = this.options.encoding as BufferEncoding;
+        if (Buffer.isEncoding(bufEncoding)) {
+            this.encoding = bufEncoding;
+        } else {
+            throw new NatsError(INVALID_ENCODING_MSG_PREFIX + this.options.encoding, INVALID_ENCODING);
+        }
+
+        this.servers = new Servers(true, this.options.servers || [], this.options.url);
+        this.initState();
+        this.createConnection();
+    }
+
+    static defaultOptions() : ConnectionOptions {
+        return {
             verbose: false,
             pedantic: false,
             reconnect: true,
@@ -332,18 +389,7 @@ class Client extends events.EventEmitter {
             pingInterval: DEFAULT_PING_INTERVAL,
             maxPingOut: DEFAULT_MAX_PING_OUT,
             useOldRequestStyle: false
-        } as ConnectionOptions;
-        this.url = null;
-        this.info = {} as ServerInfo;
-
-        if(options === undefined){
-            options = {} as ConnectionOptions;
-        }
-
-        this.parseOptions(options);
-        this.servers = new Servers(true, this.options.servers || [], this.options.url);
-        this.initState();
-        this.createConnection();
+        } as ConnectionOptions
     }
 }
 
@@ -353,20 +399,16 @@ export interface SubscribeOptions {
 }
 
 interface ClientInternal {
-    parseOptions(opts: string | number | ConnectionOptions) : void
     initState() : void
     createConnection() : void
     checkTLSMismatch() : boolean
-}
-
-interface Client extends ClientInternal {
     createInbox() : string
-    selectServer() : void
     connectCB() : void
+    sendConnect() : void
+    selectServer() : void
     scheduleHeartbeat() : void
     setupHandlers() : void
-    sendConnect() : void
-    close() : void
+    scheduleReconnect() : void
     closeStream() : void
     flushPending() : void
     stripPendingSubs() : void
@@ -374,6 +416,11 @@ interface Client extends ClientInternal {
     sendSubscription() : void
     processInbound() : void
     processErr(err: string) : void
+}
+
+interface Client extends ClientInternal {
+    close() : void
+
     flush(opt_callback?: Function) : void
 
     publish(callback: Function):void;
@@ -403,14 +450,10 @@ var createInbox = exports.createInbox = function() {
  *
  * @api public
  */
-exports.connect = function(opts?: ConnectionOptions) {
+exports.connect = function(opts?: NatsConnectionOptions) {
     return new Client(opts);
 };
 
-/**
- * Connected clients are event emitters.
- */
-util.inherits(Client, events.EventEmitter);
 
 /**
  * Allow createInbox to be called on a client.
@@ -430,54 +473,6 @@ function shuffle(array: object[]) {
     return array;
 }
 
-/**
- * Parse the conctructor/connect options.
- *
- * @param {Mixed} [opts]
- * @api private
- */
-Client.prototype.parseOptions = function(opts: string | number | ConnectionOptions): void {
-    switch(typeof opts) {
-        case 'number':
-            this.options.url = DEFAULT_PRE + opts;
-            break;
-        case 'string':
-            this.options.url = opts.toString();
-            break;
-        case 'object':
-            let uopts = opts as ConnectionOptions;
-            if(uopts.port !== undefined) {
-                this.options.url = DEFAULT_PRE + uopts.port;
-            }
-            // override defaults with provided uopts
-            // uri, password, urls, NoRandomize, dontRandomize, secure, client
-            _.extend(this.options, uopts);
-            break;
-        default:
-            // shouldn't happen
-    }
-
-
-    // Set user/pass as needed if in options.
-    this.user = this.options.user;
-    this.pass = this.options.pass;
-
-    // Set token as needed if in options.
-    this.token = this.options.token;
-
-    // Authentication - make sure authentication is valid.
-    if (this.user && this.token) {
-        throw (new NatsError(BAD_AUTHENTICATION_MSG, BAD_AUTHENTICATION));
-    }
-
-    // Encoding - make sure its valid.
-    let bufEncoding = this.options.encoding as BufferEncoding;
-    if (Buffer.isEncoding(bufEncoding)) {
-        this.encoding = bufEncoding;
-    } else {
-        throw new NatsError(INVALID_ENCODING_MSG_PREFIX + this.options.encoding, INVALID_ENCODING);
-    }
-};
 
 /**
  * Properly select the next server.
@@ -672,13 +667,13 @@ Client.prototype.setupHandlers = function() {
  */
 Client.prototype.sendConnect = function() {
     // Queue the connect command.
-    var cs = {
+    let cs : {[key: string]: any} = {
         'lang': 'node',
         'version': VERSION,
         'verbose': this.options.verbose,
         'pedantic': this.options.pedantic,
         'protocol': 1
-    };
+    }
     if (this.user !== undefined) {
         cs.user = this.user;
         cs.pass = this.pass;
@@ -711,17 +706,17 @@ Client.prototype.createConnection = function() {
     // via callbacks, would have to track the client's internal connection state,
     // and may have to double buffer messages (which we are already doing) if they
     // wanted to ensure their messages reach the server.
-    var pong = [];
-    var pend = [];
-    var pSize = 0;
-    var client = this;
+    let pong = [] as string[];
+    let pend = [] as (string & Buffer)[];
+    let pSize = 0;
+    let client = this;
     if (client.pending !== null) {
-        var pongIndex = 0;
-        client.pending.forEach(function(cmd) {
-            var cmdLen = Buffer.isBuffer(cmd) ? cmd.length : Buffer.byteLength(cmd);
+        let pongIndex = 0;
+        client.pending.forEach(cmd => {
+            let cmdLen = Buffer.isBuffer(cmd) ? cmd.length : Buffer.byteLength(cmd);
             if (cmd === PING_REQUEST && client.pongs !== null && pongIndex < client.pongs.length) {
                 // filter out any useless ping requests (no pong callback, nop flush)
-                var p = client.pongs[pongIndex++];
+                let p = client.pongs[pongIndex++];
                 if (p !== undefined) {
                     pend.push(cmd);
                     pSize += cmdLen;
@@ -740,7 +735,7 @@ Client.prototype.createConnection = function() {
     this.pstate = ParserState.AWAITING_CONTROL;
 
     // Clear info processing.
-    this.info = null;
+    this.info = {} as ServerInfo;
     this.infoReceived = false;
 
     // Select a server to connect to.
@@ -752,9 +747,13 @@ Client.prototype.createConnection = function() {
         this.stream.end();
     }
     // Create the stream
-    this.stream = net.createConnection(this.url.port, this.url.hostname);
-    // Setup the proper handlers.
-    this.setupHandlers();
+    if(this.url && this.url.hostname && this.url.port) {
+        // ts compiler requires this to be a number
+        let port = isNumber(this.url.port) ? this.url.port : parseInt(this.url.port, 10);
+        this.stream = net.createConnection(port, this.url.hostname);
+        // Setup the proper handlers.
+        this.setupHandlers();
+    }
 };
 
 /**
@@ -763,13 +762,6 @@ Client.prototype.createConnection = function() {
  * @api private
  */
 Client.prototype.initState = function() {
-    this.ssid = 1;
-    this.subs = {};
-    this.reconnects = 0;
-    this.connected = false;
-    this.wasConnected = false;
-    this.reconnecting = false;
-    this.server = null;
     this.pending = [];
     this.pout = 0;
 };
