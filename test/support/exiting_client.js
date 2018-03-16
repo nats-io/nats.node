@@ -18,8 +18,8 @@
 /* jslint node: true */
 'use strict';
 
-const NATS = require('../..');
-const fs = require('fs');
+var NATS = require('../..');
+var fs = require('fs');
 
 var count = process.argv.length;
 var port = parseInt(process.argv[count-1], 10);
@@ -27,10 +27,8 @@ var nats = NATS.connect({port: port});
 
 
 nats.on('connect', function() {
-    fs.writeFile('/tmp/existing_client.log', 'connected\n')
+    fs.writeFile('/tmp/existing_client.log', 'connected\n');
 });
-
-
 
 
 /* eslint-disable no-console */
