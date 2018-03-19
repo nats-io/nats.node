@@ -332,7 +332,7 @@ class Client extends events.EventEmitter {
     connected: boolean = false;
     currentServer!: Server;
     encoding?: BufferEncoding;
-    inbound!: Buffer;
+    inbound!: Buffer | null;
     info: ServerInfo = {} as ServerInfo;
     infoReceived: boolean = false;
     options: NatsConnectionOptions;
@@ -348,7 +348,7 @@ class Client extends events.EventEmitter {
     servers: Servers;
     subs: {[key: number]: any} | null = {};
     ssid: number = 1;
-    stream!: net.Socket;
+    stream!: net.Socket | null;
     token?: string;
     url!: url.UrlObject;
     user?: string;
@@ -599,7 +599,7 @@ Client.prototype.setupHandlers = function() {
     var client = this;
     var stream = client.stream;
 
-    if (undefined === stream) {
+    if (stream === null) {
         return;
     }
 
@@ -695,7 +695,9 @@ Client.prototype.sendConnect = function() {
     // If we enqueued requests before we received INFO from the server, or we
     // reconnected, there be other data pending, write this immediately instead
     // of adding it to the queue.
-    this.stream.write(CONNECT + SPC + JSON.stringify(cs) + CR_LF);
+    if(this.stream !== null) {
+        this.stream.write(CONNECT + SPC + JSON.stringify(cs) + CR_LF);
+    }
 };
 
 /**
@@ -822,15 +824,17 @@ Client.prototype.closeStream = function() {
  * @api private
  */
 Client.prototype.flushPending = function() {
-    if (this.connected === false ||
-        this.pending === null ||
-        this.pending.length === 0 ||
-        this.infoReceived !== true) {
+    let client = this;
+
+    if (client.connected === false ||
+        client.pending === null ||
+        client.pending.length === 0 ||
+        client.infoReceived !== true ||
+        client.stream === null) {
         return;
     }
 
-    var client = this;
-    var write = function(data) {
+    let write = function(data: string | Buffer) {
         client.pending = [];
         client.pSize = 0;
         return client.stream.write(data);
@@ -840,8 +844,8 @@ Client.prototype.flushPending = function() {
         return write(this.pending.join(EMPTY));
     } else {
         // We have some or all Buffers. Figure out if we can optimize.
-        var allBufs = true;
-        for (var i = 0; i < this.pending.length; i++) {
+        let allBufs = true;
+        for (let i = 0; i < this.pending.length; i++) {
             if (!Buffer.isBuffer(this.pending[i])) {
                 allBufs = false;
                 break;
@@ -856,7 +860,7 @@ Client.prototype.flushPending = function() {
             this.pending = [];
             this.pSize = 0;
             var result = true;
-            for (i = 0; i < pending.length; i++) {
+            for (let i = 0; i < pending.length; i++) {
                 result = this.stream.write(pending[i]) && result;
             }
             return result;
