@@ -66,7 +66,6 @@ describe('Dynamic Cluster - Connect URLs', function() {
                         // give some time for the server to send infos
                         setTimeout(function() {
                             // we should know of 3 servers - the one we connected and the 2 we added
-                            console.log(nc.servers.servers);
                             should(nc.servers.length()).be.equal(3);
                             done();
                         }, 1000);
@@ -99,7 +98,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
             });
             nc.on('connect', function() {
               var found = [];
-              nc.servers.forEach(function(s) {
+              nc.servers.getServers().forEach(function(s) {
                 found.push(s.url.href);
               });
 
@@ -132,7 +131,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
                 });
                 nc.on('connect', function() {
                     var have = [];
-                    nc.servers.forEach(function(s) {
+                    nc.servers.getServers().forEach(function(s) {
                         have.push(s.url.port);
                     });
 
@@ -186,7 +185,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
       });
 
       nc.on('connect', function (c) {
-          c.servers.should.have.length(10);
+          c.servers.getServers().should.have.length(10);
           setTimeout(function() { c.close(); }, 0);
           done();
       });
@@ -200,14 +199,14 @@ describe('Dynamic Cluster - Connect URLs', function() {
 
     servers = nsc.start_cluster(ports, route_port, function() {
       var nc = NATS.connect({
-        uri: "nats://127.0.0.1:" + port,
+        url: "nats://127.0.0.1:" + port,
         reconnectTimeWait: 100,
         servers: ["nats://127.0.0.1:" + (port+1)]
       });
 
       function countImplicit(c) {
         var count = 0;
-        c.servers.forEach(function(s) {
+        c.servers.getServers().forEach(function(s) {
           if(s.implicit) {
             count++;
           }
@@ -217,7 +216,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
 
       nc.on('serversDiscovered', function() {
         if(countImplicit(nc) === 1) {
-          var found = nc.servers.find(function(s) {
+          var found = nc.servers.getServers().find(function(s) {
             return s.url.href === "nats://127.0.0.1:" + (port+3);
           });
           if(found) {
@@ -230,7 +229,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
         if(!testVersion("1.0.7", nc)) {
           done();
         }
-        nc.servers.should.have.length(3);
+        nc.servers.getServers().should.have.length(3);
         countImplicit(nc).should.be.equal(1);
 
         // remove the implicit one

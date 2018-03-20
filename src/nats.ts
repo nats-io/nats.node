@@ -23,7 +23,6 @@ import net = require('net');
 import tls = require('tls');
 import nuid = require('nuid');
 import _ = require('lodash');
-import {UrlObject, UrlWithStringQuery} from "url";
 import {ConnectionOptions} from "tls";
 import {isNumber} from "util";
 
@@ -237,6 +236,10 @@ class Servers {
         return this.servers.length ? this.servers[0] : undefined;
     }
 
+    getServers(): Server[] {
+        return this.servers;
+    }
+
 
     processServerUpdate(info: ServerInfo): string[] {
         let newURLs = [];
@@ -245,8 +248,8 @@ class Servers {
             let discovered : {[key: string]: Server} = {};
 
             info.connect_urls.forEach(server => {
-                var u = 'nats://' + server;
-                var s = new Server(u, true);
+                let u = 'nats://' + server;
+                let s = new Server(u, true);
                 discovered[s.toString()] = s;
             });
 
@@ -287,7 +290,7 @@ export interface NatsConnectionOptions {
     maxPingOut: number;
     maxReconnectAttempts: number;
     name?: string;
-    noRandomize?: boolean;
+    noRandomize: boolean;
     pass?: string;
     pedantic?: boolean;
     pingInterval?: number;
@@ -307,24 +310,24 @@ export interface NatsConnectionOptions {
 
 function parseOptions(options?: string | number | NatsConnectionOptions | void): NatsConnectionOptions {
     if(options === undefined || options === null) {
-        options = {} as NatsConnectionOptions;
+        options = {url: DEFAULT_URI} as NatsConnectionOptions;
     }
 
-    let args;
     if(typeof options === 'number') {
-        args = {url: DEFAULT_PRE + options} as NatsConnectionOptions;
+        options = {url: DEFAULT_PRE + options} as NatsConnectionOptions;
     } else if(typeof options === 'string') {
-        args = {url: options.toString()} as NatsConnectionOptions;
+        options = {url: options.toString()} as NatsConnectionOptions;
     } else if(typeof options === 'object') {
-        args = options;
-        if(args.port !== undefined) {
-            args.url = DEFAULT_PRE + args.port;
+        options = options;
+        if(options.port !== undefined) {
+            options.url = DEFAULT_PRE + options.port;
         }
     }
     // override defaults with provided options.
     // non-standard aliases are not handled
+    // FIXME: may need to add uri and pass
     // uri, password, urls, NoRandomize, dontRandomize, secure, client
-    return _.extend(Client.defaultOptions(), args);
+    return _.extend(Client.defaultOptions(), options);
 }
 
 class Client extends events.EventEmitter {
@@ -355,11 +358,11 @@ class Client extends events.EventEmitter {
     wasConnected: boolean = false;
     
 
-    constructor(options?: string | number | NatsConnectionOptions | void) {
+    constructor(arg?: string | number | NatsConnectionOptions | void) {
         super();
         events.EventEmitter.call(this);
 
-        this.options = parseOptions(options);
+        this.options = parseOptions(arg);
 
         // Set user/pass/token as needed if in options.
         this.user = this.options.user;
@@ -379,24 +382,25 @@ class Client extends events.EventEmitter {
             throw new NatsError(INVALID_ENCODING_MSG_PREFIX + this.options.encoding, INVALID_ENCODING);
         }
 
-        this.servers = new Servers(true, this.options.servers || [], this.options.url);
+        this.servers = new Servers(!this.options.noRandomize, this.options.servers || [], this.options.url);
         this.initState();
         this.createConnection();
     }
 
     static defaultOptions() : ConnectionOptions {
         return {
-            verbose: false,
-            pedantic: false,
-            reconnect: true,
-            maxReconnectAttempts: DEFAULT_MAX_RECONNECT_ATTEMPTS,
-            reconnectTimeWait: DEFAULT_RECONNECT_TIME_WAIT,
             encoding: "utf8",
-            tls: false,
-            waitOnFirstConnect: false,
-            pingInterval: DEFAULT_PING_INTERVAL,
             maxPingOut: DEFAULT_MAX_PING_OUT,
-            useOldRequestStyle: false
+            maxReconnectAttempts: DEFAULT_MAX_RECONNECT_ATTEMPTS,
+            noRandomize: false,
+            pedantic: false,
+            pingInterval: DEFAULT_PING_INTERVAL,
+            reconnect: true,
+            reconnectTimeWait: DEFAULT_RECONNECT_TIME_WAIT,
+            tls: false,
+            useOldRequestStyle: false,
+            verbose: false,
+            waitOnFirstConnect: false
         } as ConnectionOptions
     }
 }
@@ -534,7 +538,12 @@ Client.prototype.checkTLSMismatch = function() {
         return true;
     }
 
-    if (this.info.tls_verify === true && typeof this.options.tls === 'object' && this.options.tls.cert === undefined) {
+
+    let cert = false;
+    if(this.options.tls && typeof this.options.tls === 'object') {
+        cert = this.options.tls.cert != null;
+    }
+    if (this.info.tls_verify === true && !cert) {
         this.emit('error', new NatsError(CLIENT_CERT_REQ_MSG, CLIENT_CERT_REQ));
         this.closeStream();
         return true;
