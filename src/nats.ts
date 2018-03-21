@@ -415,6 +415,12 @@ class Client extends events.EventEmitter {
     }
 }
 
+interface Subscription {
+    subject: string;
+    callback: Function
+    received: number
+}
+
 export interface SubscribeOptions {
     queue?: string,
     max?: number
@@ -430,14 +436,16 @@ interface ClientInternal {
     initState() : void
     processErr(err: string) : void
     processInbound() : void
+    processMsg(): void
     scheduleHeartbeat() : void
     scheduleReconnect() : void
     selectServer() : void
-    sendCommand(cmd : string) : void
+    sendCommand(cmd : string | Buffer) : void
     sendConnect() : void
     sendSubscriptions(): void
     setupHandlers() : void
     stripPendingSubs() : void
+    cancelMuxRequest(sid: number): void
 }
 
 interface Client extends ClientInternal {
@@ -452,6 +460,10 @@ interface Client extends ClientInternal {
 
     subscribe(subject: string, callback: Function): number;
     subscribe(subject: string, opts: SubscribeOptions, callback: Function): number;
+
+    unsubscribe(sid: number, max?: number):void;
+
+    timeout(sid: number, timeout: number, expected: number, callback: Function):void
 }
 
 /**
@@ -1188,42 +1200,45 @@ Client.prototype.processInbound = function() {
  * @api private
  */
 Client.prototype.processMsg = function() {
-    var sub = this.subs[this.payload.sid];
-    if (sub !== undefined) {
-        sub.received += 1;
-        // Check for a timeout, and cancel if received >= expected
-        if (sub.timeout) {
-            if (sub.received >= sub.expected) {
-                clearTimeout(sub.timeout);
-                sub.timeout = null;
-            }
+    if(!this.subs || !this.payload) {
+        return;
+    }
+    let sub = this.subs[this.payload.sid];
+    if(!sub) {
+        return;
+    }
+    sub.received += 1;
+    // Check for a timeout, and cancel if received >= expected
+    if (sub.timeout) {
+        if (sub.received >= sub.expected) {
+            clearTimeout(sub.timeout);
+            sub.timeout = null;
         }
-        // Check for auto-unsubscribe
-        if (sub.max !== undefined) {
-            if (sub.received === sub.max) {
-                delete this.subs[this.payload.sid];
-                this.emit('unsubscribe', this.payload.sid, sub.subject);
-            } else if (sub.received > sub.max) {
-                this.unsubscribe(this.payload.sid);
-                sub.callback = null;
-            }
+    }
+    // Check for auto-unsubscribe
+    if (sub.max !== undefined) {
+        if (sub.received === sub.max) {
+            delete this.subs[this.payload.sid];
+            this.emit('unsubscribe', this.payload.sid, sub.subject);
+        } else if (sub.received > sub.max) {
+            this.unsubscribe(this.payload.sid);
+            sub.callback = null;
         }
+    }
 
-        if (sub.callback) {
-            var msg = this.payload.msg;
-            if (this.options.json) {
-                try {
-                    if (this.options.preserveBuffers) {
-                        msg = JSON.parse(this.payload.msg.toString());
-                    } else {
-                        msg = JSON.parse(this.payload.msg.toString(this.options.encoding));
-                    }
-                } catch (e) {
-                    msg = e;
-                }
+    if (sub.callback) {
+        let msg = this.payload.msg;
+        if (this.options.json && msg) {
+            if(msg instanceof Buffer) {
+                msg = msg.toString(this.options.encoding);
             }
-            sub.callback(msg, this.payload.reply, this.payload.subj, this.payload.sid);
+            try {
+                msg = JSON.parse(msg);
+            } catch (e) {
+                msg = e;
+            }
         }
+        sub.callback(msg, this.payload.reply, this.payload.subj, this.payload.sid);
     }
 };
 
@@ -1280,11 +1295,11 @@ Client.prototype.flush = function(opt_callback) {
  * @param {Function} [opt_callback]
  * @api public
  */
-Client.prototype.publish = function(subject, msg, opt_reply, opt_callback) {
+Client.prototype.publish = function(subject: string, msg: string|Buffer, opt_reply: string, opt_callback: Function):void {
     // They only supplied a callback function.
     if (typeof subject === 'function') {
         opt_callback = subject;
-        subject = undefined;
+        subject = "";
     }
     if (!msg) {
         msg = EMPTY;
@@ -1303,7 +1318,7 @@ Client.prototype.publish = function(subject, msg, opt_reply, opt_callback) {
         }
         opt_callback = msg;
         msg = EMPTY;
-        opt_reply = undefined;
+        opt_reply = "";
     }
     if (typeof opt_reply === 'function') {
         if (opt_callback) {
@@ -1311,11 +1326,11 @@ Client.prototype.publish = function(subject, msg, opt_reply, opt_callback) {
             return;
         }
         opt_callback = opt_reply;
-        opt_reply = undefined;
+        opt_reply = "";
     }
 
     // Hold PUB SUB [REPLY]
-    var psub;
+    let psub;
     if (opt_reply === undefined) {
         psub = 'PUB ' + subject + SPC;
     } else {
@@ -1324,7 +1339,7 @@ Client.prototype.publish = function(subject, msg, opt_reply, opt_callback) {
 
     // Need to treat sending buffers different.
     if (!Buffer.isBuffer(msg)) {
-        var str = msg;
+        let str = msg;
         if (this.options.json) {
             if (typeof msg !== 'object') {
                 throw (new NatsError(BAD_JSON_MSG, BAD_JSON));
@@ -1337,8 +1352,8 @@ Client.prototype.publish = function(subject, msg, opt_reply, opt_callback) {
         }
         this.sendCommand(psub + Buffer.byteLength(str) + CR_LF + str + CR_LF);
     } else {
-        var b = new Buffer(psub.length + msg.length + (2 * CR_LF_LEN) + msg.length.toString().length);
-        var len = b.write(psub + msg.length + CR_LF);
+        let b = new Buffer(psub.length + msg.length + (2 * CR_LF_LEN) + msg.length.toString().length);
+        let len = b.write(psub + msg.length + CR_LF);
         msg.copy(b, len);
         b.write(CR_LF, len + msg.length);
         this.sendCommand(b);
@@ -1361,27 +1376,29 @@ Client.prototype.publish = function(subject, msg, opt_reply, opt_callback) {
  * @return {Number}
  * @api public
  */
-Client.prototype.subscribe = function(subject, opts, callback) {
+Client.prototype.subscribe = function(subject: string, opts: SubscribeOptions, callback: Function):number {
     if (this.closed) {
         throw (new NatsError(CONN_CLOSED_MSG, CONN_CLOSED));
     }
-    var qgroup, max;
+    let qgroup, max;
     if (typeof opts === 'function') {
         callback = opts;
-        opts = undefined;
+        opts = {} as SubscribeOptions;
     } else if (opts && typeof opts === 'object') {
         // FIXME, check exists, error otherwise..
         qgroup = opts.queue;
         max = opts.max;
     }
+
+    this.subs = this.subs || [];
     this.ssid += 1;
     this.subs[this.ssid] = {
-        'subject': subject,
-        'callback': callback,
-        'received': 0
+        subject: subject,
+        callback: callback,
+        received: 0
     };
 
-    var proto;
+    let proto;
     if (typeof qgroup === 'string') {
         this.subs[this.ssid].qgroup = qgroup;
         proto = [SUB, subject, qgroup, this.ssid + CR_LF];
@@ -1428,7 +1445,8 @@ Client.prototype.unsubscribe = function(sid, opt_max) {
     }
     this.sendCommand(proto.join(SPC));
 
-    var sub = this.subs[sid];
+    this.subs = this.subs || [];
+    let sub = this.subs[sid];
     if (sub === undefined) {
         return;
     }
@@ -1457,7 +1475,7 @@ Client.prototype.unsubscribe = function(sid, opt_max) {
  * @param {Function} callback
  * @api public
  */
-Client.prototype.timeout = function(sid, timeout, expected, callback) {
+Client.prototype.timeout = function(sid: number, timeout: number, expected: number, callback: Function):void {
     if (!sid) {
         return;
     }
