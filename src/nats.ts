@@ -256,7 +256,7 @@ class Servers {
             // remove implicit servers that are no longer reported
             let toDelete: number[] = [];
             this.servers.forEach((s, index) => {
-                var u = s.toString();
+                let u = s.toString();
                 if(s.implicit && this.currentServer.url.href !== u && discovered[u] === undefined) {
                     // server was removed
                     toDelete.push(index);
@@ -308,26 +308,25 @@ export interface NatsConnectionOptions {
     yieldTime?: number;
 }
 
-function parseOptions(options?: string | number | NatsConnectionOptions | void): NatsConnectionOptions {
-    if(options === undefined || options === null) {
-        options = {url: DEFAULT_URI} as NatsConnectionOptions;
+function parseOptions(args?: string | number | NatsConnectionOptions | void): NatsConnectionOptions {
+    if(args === undefined || args === null) {
+        args = {url: DEFAULT_URI} as NatsConnectionOptions;
     }
 
-    if(typeof options === 'number') {
-        options = {url: DEFAULT_PRE + options} as NatsConnectionOptions;
-    } else if(typeof options === 'string') {
-        options = {url: options.toString()} as NatsConnectionOptions;
-    } else if(typeof options === 'object') {
-        options = options;
-        if(options.port !== undefined) {
-            options.url = DEFAULT_PRE + options.port;
+    if(typeof args === 'number') {
+        args = {url: DEFAULT_PRE + args} as NatsConnectionOptions;
+    } else if(typeof args === 'string') {
+        args = {url: args.toString()} as NatsConnectionOptions;
+    } else if(typeof args === 'object') {
+        if(args.port !== undefined) {
+            args.url = DEFAULT_PRE + args.port;
         }
     }
     // override defaults with provided options.
     // non-standard aliases are not handled
     // FIXME: may need to add uri and pass
     // uri, password, urls, NoRandomize, dontRandomize, secure, client
-    return _.extend(Client.defaultOptions(), options);
+    return _.extend(Client.defaultOptions(), args);
 }
 
 class Client extends events.EventEmitter {
@@ -345,6 +344,7 @@ class Client extends events.EventEmitter {
     pongs: any[] | null = [];
     pout:number = 0;
     pSize: number = 0;
+    pBufs: boolean = false;
     pstate: ParserState = ParserState.CLOSED;
     reconnecting: boolean = false;
     reconnects: number = 0;
@@ -690,7 +690,7 @@ Client.prototype.sendConnect = function() {
         'verbose': this.options.verbose,
         'pedantic': this.options.pedantic,
         'protocol': 1
-    }
+    };
     if (this.user !== undefined) {
         cs.user = this.user;
         cs.pass = this.pass;
@@ -833,46 +833,53 @@ Client.prototype.closeStream = function() {
  * @api private
  */
 Client.prototype.flushPending = function() {
-    let client = this;
 
-    if (client.connected === false ||
-        client.pending === null ||
-        client.pending.length === 0 ||
-        client.infoReceived !== true ||
-        client.stream === null) {
+    if (this.connected === false ||
+        this.pending === null ||
+        this.pending.length === 0 ||
+        this.infoReceived !== true ||
+        this.stream === null) {
         return;
     }
 
+    let client = this;
     let write = function(data: string | Buffer) {
+        if(! client.stream) {
+            return;
+        }
         client.pending = [];
         client.pSize = 0;
         return client.stream.write(data);
     };
+
     if (!this.pBufs) {
         // All strings, fastest for now.
-        return write(this.pending.join(EMPTY));
+            return write(this.pending.join(EMPTY));
     } else {
-        // We have some or all Buffers. Figure out if we can optimize.
-        let allBufs = true;
-        for (let i = 0; i < this.pending.length; i++) {
-            if (!Buffer.isBuffer(this.pending[i])) {
-                allBufs = false;
-                break;
+        if(this.pending) {
+            // We have some or all Buffers. Figure out if we can optimize.
+            let allBuffs = true;
+            for (let i = 0; i < this.pending.length; i++) {
+                if (!Buffer.isBuffer(this.pending[i])) {
+                    allBuffs = false;
+                    break;
+                }
             }
-        }
-        // If all buffers, concat together and write once.
-        if (allBufs) {
-            return write(Buffer.concat(this.pending, this.pSize));
-        } else {
-            // We have a mix, so write each one individually.
-            var pending = this.pending;
-            this.pending = [];
-            this.pSize = 0;
-            var result = true;
-            for (let i = 0; i < pending.length; i++) {
-                result = this.stream.write(pending[i]) && result;
+
+            // If all buffers, concat together and write once.
+            if (allBuffs) {
+                return write(Buffer.concat(this.pending, this.pSize));
+            } else {
+                // We have a mix, so write each one individually.
+                let pending = this.pending;
+                this.pending = [];
+                this.pSize = 0;
+                let result = true;
+                for (let i = 0; i < pending.length; i++) {
+                    result = this.stream.write(pending[i]) && result;
+                }
+                return result;
             }
-            return result;
         }
     }
 };
