@@ -339,7 +339,7 @@ class Client extends events.EventEmitter {
     infoReceived: boolean = false;
     options: NatsConnectionOptions;
     pass?: string;
-    pending: (string & Buffer)[] | null = [];
+    pending: any[] | null = [];
     pingTimer?: number;
     pongs: any[] | null = [];
     pout:number = 0;
@@ -849,12 +849,13 @@ Client.prototype.flushPending = function() {
         }
         client.pending = [];
         client.pSize = 0;
-        return client.stream.write(data);
+        client.stream.write(data);
     };
 
     if (!this.pBufs) {
         // All strings, fastest for now.
-            return write(this.pending.join(EMPTY));
+            write(this.pending.join(EMPTY));
+            return;
     } else {
         if(this.pending) {
             // We have some or all Buffers. Figure out if we can optimize.
@@ -874,11 +875,10 @@ Client.prototype.flushPending = function() {
                 let pending = this.pending;
                 this.pending = [];
                 this.pSize = 0;
-                let result = true;
                 for (let i = 0; i < pending.length; i++) {
-                    result = this.stream.write(pending[i]) && result;
+                    this.stream.write(pending[i]);
                 }
-                return result;
+                return;
             }
         }
     }
@@ -891,10 +891,13 @@ Client.prototype.flushPending = function() {
  * @api private
  */
 Client.prototype.stripPendingSubs = function() {
-    var pending = this.pending;
+    if(! this.pending) {
+        return;
+    }
+    let pending = this.pending;
     this.pending = [];
     this.pSize = 0;
-    for (var i = 0; i < pending.length; i++) {
+    for (let i = 0; i < pending.length; i++) {
         if (!SUBRE.test(pending[i])) {
             // Re-queue the command.
             this.sendCommand(pending[i]);
