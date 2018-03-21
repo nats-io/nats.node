@@ -23,7 +23,7 @@ import net = require('net');
 import tls = require('tls');
 import nuid = require('nuid');
 import _ = require('lodash');
-import {ConnectionOptions} from "tls";
+import {ConnectionOptions, SecureContextOptions, TlsOptions, TLSSocket} from "tls";
 import {isNumber} from "util";
 
 export const VERSION = '0.8.6';
@@ -334,6 +334,8 @@ interface Payload {
     reply?:string;
     size: number;
     psize: number;
+    chunks?: Buffer[];
+    msg?:string|Buffer;
 }
 
 class Client extends events.EventEmitter {
@@ -346,7 +348,7 @@ class Client extends events.EventEmitter {
     infoReceived: boolean = false;
     options: NatsConnectionOptions;
     pass?: string;
-    payload?: Payload;
+    payload?: Payload | null;
     pBufs: boolean = false;
     pending: any[] | null = [];
     pingTimer?: number;
@@ -358,7 +360,7 @@ class Client extends events.EventEmitter {
     reconnects: number = 0;
     servers: Servers;
     ssid: number = 1;
-    stream!: net.Socket | null;
+    stream!: net.Socket | TLSSocket | null;
     subs: {[key: number]: any} | null = {};
     token?: string;
     url!: url.UrlObject;
@@ -1047,16 +1049,22 @@ Client.prototype.processInbound = function() {
                     // Process first INFO
                     if (client.infoReceived === false) {
                         // Switch over to TLS as needed.
-                        if (client.options.tls !== false &&
-                            client.stream.encrypted !== true) {
-                            var tlsOpts = {
-                                socket: client.stream
-                            };
+
+                        // are we a tls socket?
+                        let encrypted = false;
+                        if(client.stream instanceof TLSSocket) {
+                            encrypted = client.stream.encrypted;
+                        }
+
+                        if (client.options.tls !== false && encrypted !== true) {
+                            let tlsOpts;
                             if ('object' === typeof client.options.tls) {
-                                for (var key in client.options.tls) {
-                                    tlsOpts[key] = client.options.tls[key];
-                                }
+                                tlsOpts = client.options.tls as ConnectionOptions
+                            } else {
+                                tlsOpts = {} as ConnectionOptions
                             }
+                            tlsOpts.socket = client.stream;
+
                             // if we have a stream, this is from an old connection, reap it
                             if (client.stream) {
                                 client.stream.removeAllListeners();
@@ -1072,6 +1080,7 @@ Client.prototype.processInbound = function() {
                         client.sendConnect();
                         client.sendSubscriptions();
 
+                        client.pongs = client.pongs || [];
                         client.pongs.unshift(function() {
                             client.connectCB();
                         });
@@ -1090,6 +1099,9 @@ Client.prototype.processInbound = function() {
                 break;
 
             case ParserState.AWAITING_MSG_PAYLOAD:
+                if(! client.payload) {
+                    break;
+                }
 
                 // If we do not have the complete message, hold onto the chunks
                 // and assemble when we have all we need. This optimizes for
@@ -1145,7 +1157,7 @@ Client.prototype.processInbound = function() {
                 client.payload = null;
 
                 // Check to see if we have an option to yield for other events after yieldTime.
-                if (start !== undefined) {
+                if (start !== undefined && client.options && client.options.yieldTime) {
                     if ((Date.now() - start) > client.options.yieldTime) {
                         client.stream.pause();
                         setImmediate(client.processInbound.bind(this));
@@ -1156,9 +1168,9 @@ Client.prototype.processInbound = function() {
         }
 
         // This is applicable for a regex match to eat the bytes we used from a control line.
-        if (m && !this.closed) {
+        if (m && !this.closed && client.inbound) {
             // Chop inbound
-            var psize = m[0].length;
+            let psize = m[0].length;
             if (psize >= client.inbound.length) {
                 client.inbound = null;
             } else {
