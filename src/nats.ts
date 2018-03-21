@@ -366,6 +366,7 @@ class Client extends events.EventEmitter {
     url!: url.UrlObject;
     user?: string;
     wasConnected: boolean = false;
+    respmux?:RespMux;
     
 
     constructor(arg?: string | number | NatsConnectionOptions | void) {
@@ -417,13 +418,35 @@ class Client extends events.EventEmitter {
 
 interface Subscription {
     subject: string;
-    callback: Function
-    received: number
+    callback: Function;
+    received: number;
+}
+
+interface RequestConfiguration {
+    token: string
+    callback: Function;
+    inbox: string;
+    id: number;
+    received: number;
+    expected?: number;
 }
 
 export interface SubscribeOptions {
-    queue?: string,
-    max?: number
+    queue?: string;
+    max?: number;
+}
+
+export interface RequestOptions {
+    max?: number;
+    timeout?: number;
+}
+
+interface RespMux {
+    inbox: string;
+    inboxPrefixLen: number;
+    subscriptionID: number;
+    requestMap: {[key: number]:RequestConfiguration};
+    nextID: number;
 }
 
 interface ClientInternal {
@@ -446,6 +469,8 @@ interface ClientInternal {
     setupHandlers() : void
     stripPendingSubs() : void
     cancelMuxRequest(sid: number): void
+    initMuxRequestDetails(callback: Function, expected: number): void
+    createResponseMux():void
 }
 
 interface Client extends ClientInternal {
@@ -455,8 +480,8 @@ interface Client extends ClientInternal {
 
     publish(callback: Function):void;
     publish(subject: string, callback: Function):void;
-    publish(subject: string, msg: string | Buffer, callback: Function):void;
-    publish(subject: string, msg?: string | Buffer, reply?: string, callback?: Function):void;
+    publish(subject: string, msg: string | Buffer | object, callback: Function):void;
+    publish(subject: string, msg?: string | Buffer | object, reply?: string, callback?: Function):void;
 
     subscribe(subject: string, callback: Function): number;
     subscribe(subject: string, opts: SubscribeOptions, callback: Function): number;
@@ -464,6 +489,8 @@ interface Client extends ClientInternal {
     unsubscribe(sid: number, max?: number):void;
 
     timeout(sid: number, timeout: number, expected: number, callback: Function):void
+
+    request(subject: string, opt_msg?: string |Buffer  |object, opt_options?: RequestOptions, callback?: Function): void
 }
 
 /**
@@ -1525,18 +1552,18 @@ Client.prototype.timeout = function(sid: number, timeout: number, expected: numb
  * @return {Number}
  * @api public
  */
-Client.prototype.request = function(subject, opt_msg, opt_options, callback) {
+Client.prototype.request = function(subject: string, opt_msg: string | Buffer | object, opt_options?: RequestOptions, callback?: Function): number {
     if(this.options.useOldRequestStyle) {
         return this.oldRequest(subject, opt_msg, opt_options, callback);
     }
     if (typeof opt_msg === 'function') {
         callback = opt_msg;
         opt_msg = EMPTY;
-        opt_options = null;
+        opt_options = undefined;
     }
     if (typeof opt_options === 'function') {
         callback = opt_options;
-        opt_options = null;
+        opt_options = undefined;
     }
 
     opt_options = opt_options || {};
@@ -1659,12 +1686,14 @@ Client.prototype.createResponseMux = function() {
                 }
             }
         });
-        this.respmux = {};
-        this.respmux.inbox = inbox;
-        this.respmux.inboxPrefixLen = inbox.length + 1;
-        this.respmux.subscriptionID = sid;
-        this.respmux.requestMap = {};
-        this.respmux.nextID = -1;
+
+        this.respmux = {
+            inbox: inbox,
+            inboxPrefixLen: inbox.length + 1,
+            subscriptionID: sid,
+            requestMap: {} as {[key: number]:RequestConfiguration},
+            nextID: -1
+        } as RespMux;
     }
     return this.respmux.inbox;
 };
@@ -1679,7 +1708,12 @@ Client.prototype.initMuxRequestDetails = function(callback, expected) {
     var token = nuid.next();
     var inbox = ginbox + '.' + token;
 
-    var conf = {token: token, callback: callback, inbox: inbox, id: this.respmux.nextID--, received: 0};
+    var conf = {token: token,
+        callback: callback,
+        inbox: inbox,
+        id: this.respmux.nextID--,
+        received: 0
+    } as RequestConfiguration;
     if(expected > 0) {
         conf.expected = expected;
     }
