@@ -146,7 +146,6 @@ interface ServerInfo {
     connect_urls?: string[];
 }
 
-
 class Server {
     url: url.Url;
     didConnect: boolean;
@@ -329,6 +328,14 @@ function parseOptions(args?: string | number | NatsConnectionOptions | void): Na
     return _.extend(Client.defaultOptions(), args);
 }
 
+interface Payload {
+    subj: string;
+    sid: number;
+    reply?:string;
+    size: number;
+    psize: number;
+}
+
 class Client extends events.EventEmitter {
     closed?: boolean;
     connected: boolean = false;
@@ -339,19 +346,20 @@ class Client extends events.EventEmitter {
     infoReceived: boolean = false;
     options: NatsConnectionOptions;
     pass?: string;
-    pending: (string & Buffer)[] | null = [];
+    payload?: Payload;
+    pBufs: boolean = false;
+    pending: any[] | null = [];
     pingTimer?: number;
     pongs: any[] | null = [];
     pout:number = 0;
     pSize: number = 0;
-    pBufs: boolean = false;
     pstate: ParserState = ParserState.CLOSED;
     reconnecting: boolean = false;
     reconnects: number = 0;
     servers: Servers;
-    subs: {[key: number]: any} | null = {};
     ssid: number = 1;
     stream!: net.Socket | null;
+    subs: {[key: number]: any} | null = {};
     token?: string;
     url!: url.UrlObject;
     user?: string;
@@ -411,23 +419,23 @@ export interface SubscribeOptions {
 }
 
 interface ClientInternal {
-    initState() : void
-    createConnection() : void
     checkTLSMismatch() : boolean
-    createInbox() : string
-    connectCB() : void
-    sendConnect() : void
-    selectServer() : void
-    scheduleHeartbeat() : void
-    setupHandlers() : void
-    scheduleReconnect() : void
     closeStream() : void
+    connectCB() : void
+    createConnection() : void
+    createInbox() : string
     flushPending() : void
-    stripPendingSubs() : void
-    sendCommand(cmd : string) : void
-    sendSubscription() : void
-    processInbound() : void
+    initState() : void
     processErr(err: string) : void
+    processInbound() : void
+    scheduleHeartbeat() : void
+    scheduleReconnect() : void
+    selectServer() : void
+    sendCommand(cmd : string) : void
+    sendConnect() : void
+    sendSubscriptions(): void
+    setupHandlers() : void
+    stripPendingSubs() : void
 }
 
 interface Client extends ClientInternal {
@@ -832,29 +840,29 @@ Client.prototype.closeStream = function() {
  *
  * @api private
  */
-Client.prototype.flushPending = function() {
-    let client = this;
-
-    if (client.connected === false ||
-        client.pending === null ||
-        client.pending.length === 0 ||
-        client.infoReceived !== true ||
-        client.stream === null) {
+Client.prototype.flushPending = function():void {
+    if (this.connected === false ||
+        this.pending === null ||
+        this.pending.length === 0 ||
+        this.infoReceived !== true ||
+        this.stream === null) {
         return;
     }
 
-    let write = function(data: string | Buffer) {
+    let client = this;
+    let write = function(data: string | Buffer):void {
         if(! client.stream) {
             return;
         }
         client.pending = [];
         client.pSize = 0;
-        return client.stream.write(data);
+        client.stream.write(data);
     };
 
     if (!this.pBufs) {
         // All strings, fastest for now.
-            return write(this.pending.join(EMPTY));
+            write(this.pending.join(EMPTY));
+            return
     } else {
         if(this.pending) {
             // We have some or all Buffers. Figure out if we can optimize.
@@ -871,14 +879,13 @@ Client.prototype.flushPending = function() {
                 return write(Buffer.concat(this.pending, this.pSize));
             } else {
                 // We have a mix, so write each one individually.
-                var pending = this.pending;
+                let pending = this.pending;
                 this.pending = [];
                 this.pSize = 0;
-                var result = true;
                 for (let i = 0; i < pending.length; i++) {
-                    result = this.stream.write(pending[i]) && result;
+                    this.stream.write(pending[i]);
                 }
-                return result;
+                return;
             }
         }
     }
@@ -891,6 +898,9 @@ Client.prototype.flushPending = function() {
  * @api private
  */
 Client.prototype.stripPendingSubs = function() {
+    if(!this.pending) {
+        return;
+    }
     var pending = this.pending;
     this.pending = [];
     this.pSize = 0;
@@ -942,22 +952,24 @@ Client.prototype.sendCommand = function(cmd) {
  *
  * @api private
  */
-Client.prototype.sendSubscriptions = function() {
-    var protos = "";
-    for (var sid in this.subs) {
+Client.prototype.sendSubscriptions = function():void {
+    if(!this.subs || !this.stream) {
+        return;
+    }
+
+    let protocols = "";
+    for (let sid in this.subs) {
         if (this.subs.hasOwnProperty(sid)) {
-            var sub = this.subs[sid];
-            var proto;
+            let sub = this.subs[sid];
             if (sub.qgroup) {
-                proto = [SUB, sub.subject, sub.qgroup, sid + CR_LF];
+                protocols += [SUB, sub.subject, sub.qgroup, sid + CR_LF].join(SPC);
             } else {
-                proto = [SUB, sub.subject, sid + CR_LF];
+                protocols += [SUB, sub.subject, sid + CR_LF].join(SPC);
             }
-            protos += proto.join(SPC);
         }
     }
-    if (protos.length > 0) {
-        this.stream.write(protos);
+    if (protocols.length > 0) {
+        this.stream.write(protocols);
     }
 };
 
@@ -967,13 +979,13 @@ Client.prototype.sendSubscriptions = function() {
  * @api private
  */
 Client.prototype.processInbound = function() {
-    var client = this;
+    let client = this;
 
     // Hold any regex matches.
-    var m;
+    let m;
 
     // For optional yield
-    var start;
+    let start;
 
     if (!client.stream) {
         // if we are here, the stream was reaped and errors raised
@@ -1003,7 +1015,7 @@ Client.prototype.processInbound = function() {
                         sid: parseInt(m[2], 10),
                         reply: m[4],
                         size: parseInt(m[5], 10)
-                    };
+                    } as Payload;
                     client.payload.psize = client.payload.size + CR_LF_LEN;
                     client.pstate = ParserState.AWAITING_MSG_PAYLOAD;
                 } else if ((m = OK.exec(buf)) !== null) {
