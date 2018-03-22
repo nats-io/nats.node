@@ -412,9 +412,21 @@ class Client extends events.EventEmitter {
             tls: false,
             useOldRequestStyle: false,
             verbose: false,
-            waitOnFirstConnect: false
+            waitOnFirstConnect: false,
         } as ConnectionOptions
     }
+}
+
+interface FlushCallback {
+    (err?: NatsError): void;
+}
+
+interface RequestCallback {
+    (msg: string | Buffer | object, inbox?: string):void;
+}
+
+interface SubscriptionCallback {
+    (msg: string | Buffer | object, inbox?: string, subject: string):void;
 }
 
 interface Subscription {
@@ -576,6 +588,8 @@ interface ClientInternal {
     stripPendingSubs() : void
     initMuxRequestDetails(callback: Function, expected: number): void
     createResponseMux():void
+    reconnect():void
+    oldRequest(subject: string, opt_msg?: string | Buffer | object, opt_options?: RequestOptions, callback: RequestCallback)
 }
 
 interface Client extends ClientInternal {
@@ -1402,7 +1416,7 @@ Client.prototype.processErr = function(s) {
  * @param {Function} [opt_callback]
  * @api public
  */
-Client.prototype.flush = function(opt_callback) {
+Client.prototype.flush = function(opt_callback?: FlushCallback) {
     if (this.closed) {
         if (typeof opt_callback === 'function') {
             opt_callback(new NatsError(CONN_CLOSED_MSG, CONN_CLOSED));
@@ -1660,7 +1674,7 @@ Client.prototype.timeout = function(sid: number, timeout: number, expected: numb
  * @return {Number}
  * @api public
  */
-Client.prototype.request = function(subject: string, opt_msg: string | Buffer | object, opt_options?: RequestOptions, callback?: Function): number {
+Client.prototype.request = function(subject: string, opt_msg: string | Buffer | object, opt_options?: RequestOptions, callback?: RequestCallback): number {
     if(this.options.useOldRequestStyle) {
         return this.oldRequest(subject, opt_msg, opt_options, callback);
     }
@@ -1701,7 +1715,7 @@ Client.prototype.request = function(subject: string, opt_msg: string | Buffer | 
  * @deprecated
  * @api private
  */
-Client.prototype.oldRequest = function(subject: string, opt_msg?: string | Buffer | object, opt_options?: RequestOptions, callback: Function): number {
+Client.prototype.oldRequest = function(subject: string, opt_msg?: string | Buffer | object, opt_options?: RequestOptions, callback: RequestCallback): number {
     if (typeof opt_msg === 'function') {
         callback = opt_msg;
         opt_msg = EMPTY;
@@ -1711,10 +1725,8 @@ Client.prototype.oldRequest = function(subject: string, opt_msg?: string | Buffe
         callback = opt_options;
         opt_options = undefined;
     }
-    var inbox = createInbox();
-    var s = this.subscribe(inbox, opt_options, function(msg, reply) {
-        callback(msg, reply);
-    });
+    let inbox = createInbox();
+    let s = this.subscribe(inbox, opt_options, callback);
     this.publish(subject, opt_msg, inbox);
     return s;
 };
@@ -1738,7 +1750,7 @@ Client.prototype.oldRequest = function(subject: string, opt_msg?: string | Buffe
  * @return {Number}
  * @api public
  */
-Client.prototype.requestOne = function(subject, opt_msg, opt_options, timeout, callback) {
+Client.prototype.requestOne = function(subject: string, opt_msg?:string | Buffer | object, opt_options?: RequestOptions, timeout?: number, callback?: RequestCallback) {
     if(this.options.useOldRequestStyle) {
         return this.oldRequestOne(subject, opt_msg, opt_options, timeout, callback);
     }
@@ -1746,14 +1758,14 @@ Client.prototype.requestOne = function(subject, opt_msg, opt_options, timeout, c
     if (typeof opt_msg === 'number') {
         callback = opt_options;
         timeout = opt_msg;
-        opt_options = null;
+        opt_options = undefined;
         opt_msg = EMPTY;
     }
 
     if (typeof opt_options === 'number') {
         callback = timeout;
         timeout = opt_options;
-        opt_options = null;
+        opt_options = undefined;
     }
 
     opt_options = opt_options || {};
@@ -1846,8 +1858,9 @@ Client.prototype.scheduleReconnect = function() {
         client.reconnecting = true;
     }
     // Only stall if we have connected before.
-    var wait = 0;
-    if (client.servers.next().didConnect === true) {
+    let wait = 0;
+    let s = client.servers.next()
+    if (s && s.didConnect === true && this.options.reconnectTimeWait !== undefined) {
         wait = this.options.reconnectTimeWait;
     }
     setTimeout(function() {
