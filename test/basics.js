@@ -502,7 +502,7 @@ describe('Basics', function() {
             sid.should.be.below(0);
 
             // this cancel returns the config
-            var conf = nc.cancelMuxRequest(sid);
+            var conf = nc.respmux.cancelMuxRequest(sid);
 
             // after cancel it shouldn't exit
             nc.respmux.requestMap.should.not.have.ownProperty(conf.token);

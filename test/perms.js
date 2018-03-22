@@ -50,6 +50,7 @@ describe('Auth Basics', function() {
             }
         };
         var cf = path.resolve(os.tmpdir(), 'conf-' + nuid.next() + '.conf');
+        console.log(cf);
         fs.writeFile(cf, ncu.j(conf), function(err) {
             if(err) {
                 done(err);
@@ -68,8 +69,9 @@ describe('Auth Basics', function() {
         var nc = NATS.connect({
             port: PORT,
             user: 'bar',
-            password: 'bar'
+            pass: 'bar'
         });
+
 
         var perms = 0;
         nc.on('permission_error', function() {
