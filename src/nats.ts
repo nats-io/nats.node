@@ -1183,7 +1183,7 @@ class Client extends events.EventEmitter {
      * @param {Function} [opt_callback]
      * @api public
      */
-    publish(subject: string, msg: string|Buffer, opt_reply: string, opt_callback: Function):void {
+    publish(subject: string, msg?: string | Buffer | object, opt_reply?: string, opt_callback?: FlushCallback):void {
         // They only supplied a callback function.
         if (typeof subject === 'function') {
             opt_callback = subject;
@@ -1264,7 +1264,7 @@ class Client extends events.EventEmitter {
      * @return {Number}
      * @api public
      */
-    subscribe(subject: string, opts: SubscribeOptions, callback: Function):number {
+    subscribe(subject: string, opts?: SubscribeOptions, callback?: Function):number {
         if (this.closed) {
             throw (new NatsError(CONN_CLOSED_MSG, CONN_CLOSED));
         }
@@ -1416,7 +1416,7 @@ class Client extends events.EventEmitter {
      * @return {Number}
      * @api public
      */
-    request(subject: string, opt_msg: string | Buffer | object, opt_options?: RequestOptions, callback?: RequestCallback): number {
+    request(subject: string, opt_msg?: string | Buffer | object, opt_options?: RequestOptions, callback?: RequestCallback): number {
         if(this.options.useOldRequestStyle) {
             return this.oldRequest(subject, opt_msg, opt_options, callback);
         }
@@ -1434,7 +1434,7 @@ class Client extends events.EventEmitter {
             this.respmux = new RespMux(this);
         }
 
-        opt_options = opt_options || {};
+        opt_options = opt_options || {} as RequestOptions;
         let conf = this.respmux.initMuxRequestDetails(callback, opt_options.max);
         this.publish(subject, opt_msg, conf.inbox);
 
@@ -1457,7 +1457,7 @@ class Client extends events.EventEmitter {
      * @deprecated
      * @api private
      */
-    private oldRequest(subject: string, opt_msg?: string | Buffer | object, opt_options?: RequestOptions, callback: RequestCallback): number {
+    private oldRequest(subject: string, opt_msg?: string | Buffer | object, opt_options?: RequestOptions, callback?: RequestCallback): number {
         if (typeof opt_msg === 'function') {
             callback = opt_msg;
             opt_msg = EMPTY;
@@ -1533,9 +1533,9 @@ class Client extends events.EventEmitter {
      * @deprecated
      * @api private
      */
-    private oldRequestOne(subject: string, opt_msg?: string | Buffer | object, opt_options?: RequestOptions, timeout: number, callback?: RequestCallback) {
+    private oldRequestOne(subject: string, opt_msg?: string | Buffer | object, opt_options?: RequestOptions, timeout?: number, callback?: RequestCallback) {
         if (typeof opt_msg === 'number') {
-            callback = opt_options;
+            callback = opt_options as RequestCallback;
             timeout = opt_msg;
             opt_options = undefined;
             opt_msg = EMPTY;
@@ -1691,7 +1691,7 @@ class RespMux {
         this.inbox = client.createInbox();
         this.inboxPrefixLen = this.inbox.length + 1;
         let ginbox = this.inbox + ".*";
-        this.subscriptionID = client.subscribe(ginbox, (msg?: string | Buffer | object, reply: string, subject: string) => {
+        this.subscriptionID = client.subscribe(ginbox, {} as SubscribeOptions, (msg?: string | Buffer | object, reply?: string, subject: string) => {
             let token = this.extractToken(subject);
             let conf = this.getMuxRequestConfig(token);
             if(conf) {
