@@ -34,19 +34,16 @@
     "test": "npm run depcheck && npm run depcheck:unused && npm run lint && npm run test:unit",
     "coveralls": "npm run cover -- --report lcovonly && cat ./reports/coverage/lcov.info | coveralls",
     "cover": "istanbul cover _mocha",
-    "lint": "if-node-version '>=4' eslint ./examples ./benchmark ./test",
+    "lint": "if-node-version >=4 eslint ./lib ./examples ./benchmark ./test",
     "fmt": "js-beautify -n --config crockford.jscsrc -r lib/* test/*.js test/support/*.js examples/* benchmark/*.js"
   },
   "engines": {
     "node": ">= 0.10.x"
   },
   "dependencies": {
-    "lodash": "^4.17.5",
     "nuid": ">=0.6.8"
   },
   "devDependencies": {
-    "@types/node": "^9.4.7",
-    "@types/lodash": "^4.14.104",
     "coveralls": "^2.11.2",
     "dependency-check": "2.5.x",
     "eslint": "^3.19.0",
@@ -58,8 +55,7 @@
     "mocha": "2.5.x",
     "mocha-lcov-reporter": "1.2.x",
     "mocha-multi": "0.9.x",
-    "should": ">= 9.0.0",
-    "typescript": "^2.7.2"
+    "should": ">= 9.0.0"
   },
   "typings": "./index.d.ts"
 }

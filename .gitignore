@@ -4,7 +4,6 @@ npm-debug.log
 .DS_Store
 .idea
 .settings/
-lib/*
 
 *.log
 *.heapsnapshot
