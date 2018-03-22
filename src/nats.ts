@@ -25,6 +25,7 @@ import nuid = require('nuid');
 import _ = require('lodash');
 import {ConnectionOptions, SecureContextOptions, TlsOptions, TLSSocket} from "tls";
 import {isNumber} from "util";
+import Timer = NodeJS.Timer;
 
 export const VERSION = '0.8.6';
 
@@ -429,6 +430,7 @@ interface RequestConfiguration {
     id: number;
     received: number;
     expected?: number;
+    timeout?: Timer;
 }
 
 export interface SubscribeOptions {
@@ -441,12 +443,116 @@ export interface RequestOptions {
     timeout?: number;
 }
 
-interface RespMux {
+class RespMux {
+    client: Client;
     inbox: string;
     inboxPrefixLen: number;
     subscriptionID: number;
-    requestMap: {[key: number]:RequestConfiguration};
-    nextID: number;
+    requestMap: {[key: string]:RequestConfiguration} = {};
+    nextID: number = -1;
+
+    constructor(client: Client) {
+        this.client = client;
+        this.inbox = client.createInbox();
+        this.inboxPrefixLen = this.inbox.length + 1;
+        let ginbox = this.inbox + ".*";
+        this.subscriptionID = client.subscribe(ginbox, (msg?: string | Buffer | object, reply: string, subject: string) => {
+            let token = this.extractToken(subject);
+            let conf = this.getMuxRequestConfig(token);
+            if(conf) {
+                if(conf.hasOwnProperty('expected')) {
+                    conf.received++;
+                    if (conf.expected !== undefined && conf.received >= conf.expected) {
+                        this.cancelMuxRequest(token);
+                    }
+                }
+                if(conf.callback) {
+                    conf.callback(msg, reply);
+                }
+            }
+        });
+    }
+
+    /**
+     * Returns the mux request configuration
+     * @param token
+     * @returns Object
+     */
+    getMuxRequestConfig(token: string | number):RequestConfiguration {
+        // if the token is a number, we have a fake sid, find the request
+        if (typeof token === 'number') {
+            let entry = null;
+            for (let p in this.requestMap) {
+                if (this.requestMap.hasOwnProperty(p)) {
+                    let v = this.requestMap[p];
+                    if (v.id === token) {
+                        entry = v;
+                        break;
+                    }
+                }
+            }
+            if (entry) {
+                token = entry.token;
+            }
+        }
+        return this.requestMap[token];
+    }
+
+    /**
+     * Stores the request callback and other details
+     *
+     * @api private
+     */
+    initMuxRequestDetails(callback?: Function, expected?: number): RequestConfiguration {
+        if(arguments.length === 1) {
+            if(typeof callback === 'number') {
+                expected = callback;
+                callback = undefined;
+            }
+        }
+        let token = nuid.next();
+        let inbox = this.inbox + '.' + token;
+
+        let conf = {token: token,
+            callback: callback,
+            inbox: inbox,
+            id: this.nextID--,
+            received: 0
+        } as RequestConfiguration;
+        if(expected !== undefined && expected > 0) {
+            conf.expected = expected;
+        }
+
+        this.requestMap[token] = conf;
+        return conf;
+    };
+
+    /**
+     * Cancels the mux request
+     *
+     * @api private
+     */
+    cancelMuxRequest(token: string | number) {
+        var conf = this.getMuxRequestConfig(token);
+        if (conf) {
+            if(conf.timeout) {
+                clearTimeout(conf.timeout);
+            }
+            // the token could be sid, so use the one in the conf
+            delete this.requestMap[conf.token];
+        }
+        return conf;
+    };
+
+    /**
+     * Strips the prefix of the request reply to derive the token.
+     * This is internal and only used by the new requestOne.
+     *
+     * @api private
+     */
+    extractToken(subject: string) {
+        return subject.substr(this.inboxPrefixLen);
+    }
 }
 
 interface ClientInternal {
@@ -468,7 +574,6 @@ interface ClientInternal {
     sendSubscriptions(): void
     setupHandlers() : void
     stripPendingSubs() : void
-    cancelMuxRequest(sid: number): void
     initMuxRequestDetails(callback: Function, expected: number): void
     createResponseMux():void
 }
@@ -484,7 +589,7 @@ interface Client extends ClientInternal {
     publish(subject: string, msg?: string | Buffer | object, reply?: string, callback?: Function):void;
 
     subscribe(subject: string, callback: Function): number;
-    subscribe(subject: string, opts: SubscribeOptions, callback: Function): number;
+    subscribe(subject: string, opts?: SubscribeOptions, callback: Function): number;
 
     unsubscribe(sid: number, max?: number):void;
 
@@ -1460,7 +1565,9 @@ Client.prototype.unsubscribe = function(sid, opt_max) {
     // an unsubscribe with the returned 'sid'. Intercept that and clear
     // the request configuration. Mux requests are always negative numbers
     if(sid < 0) {
-        this.cancelMuxRequest(sid);
+        if(this.respmux) {
+            this.respmux.cancelMuxRequest(sid);
+        }
         return;
     }
 
@@ -1506,26 +1613,27 @@ Client.prototype.timeout = function(sid: number, timeout: number, expected: numb
     if (!sid) {
         return;
     }
-    var sub = null;
+    let sub = null;
     // check the sid is not a mux sid - which is always negative
     if(sid < 0) {
-        var conf = this.getMuxRequestConfig(sid);
-        if(conf && conf.timeout) {
-            // clear auto-set timeout
-            clearTimeout(conf.timeout);
+        if(this.respmux) {
+            let conf = this.respmux.getMuxRequestConfig(sid);
+            if (conf && conf.timeout) {
+                // clear auto-set timeout
+                clearTimeout(conf.timeout);
+            }
+            sub = conf;
         }
-        sub = conf;
-    } else {
+    } else if(this.subs) {
         sub = this.subs[sid];
     }
 
     if(sub) {
         sub.expected = expected;
-        var that = this;
-        sub.timeout = setTimeout(function () {
+        sub.timeout = setTimeout(()=> {
             callback(sid);
             // if callback fails unsubscribe will leak
-            that.unsubscribe(sid);
+            this.unsubscribe(sid);
         }, timeout);
     }
 };
@@ -1566,17 +1674,22 @@ Client.prototype.request = function(subject: string, opt_msg: string | Buffer | 
         opt_options = undefined;
     }
 
+    if(!this.respmux) {
+        this.respmux = new RespMux(this);
+    }
+
     opt_options = opt_options || {};
-    var conf = this.initMuxRequestDetails(callback, opt_options.max);
+    let conf = this.respmux.initMuxRequestDetails(callback, opt_options.max);
     this.publish(subject, opt_msg, conf.inbox);
 
     if(opt_options.timeout) {
-        var client = this;
-        conf.timeout = setTimeout(function() {
+        conf.timeout = setTimeout(() => {
             if(conf.callback) {
                 conf.callback(new NatsError(REQ_TIMEOUT_MSG_PREFIX + conf.id, REQ_TIMEOUT));
             }
-            client.cancelMuxRequest(conf.token);
+            if(this.respmux) {
+                this.respmux.cancelMuxRequest(conf.token);
+            }
         }, opt_options.timeout);
     }
 
@@ -1588,15 +1701,15 @@ Client.prototype.request = function(subject: string, opt_msg: string | Buffer | 
  * @deprecated
  * @api private
  */
-Client.prototype.oldRequest = function(subject, opt_msg, opt_options, callback) {
+Client.prototype.oldRequest = function(subject: string, opt_msg?: string | Buffer | object, opt_options?: RequestOptions, callback: Function): number {
     if (typeof opt_msg === 'function') {
         callback = opt_msg;
         opt_msg = EMPTY;
-        opt_options = null;
+        opt_options = undefined;
     }
     if (typeof opt_options === 'function') {
         callback = opt_options;
-        opt_options = null;
+        opt_options = undefined;
     }
     var inbox = createInbox();
     var s = this.subscribe(inbox, opt_options, function(msg, reply) {
@@ -1650,119 +1763,17 @@ Client.prototype.requestOne = function(subject, opt_msg, opt_options, timeout, c
     return this.request(subject, opt_msg, opt_options, callback);
 };
 
-/**
- * Strips the prefix of the request reply to derive the token.
- * This is internal and only used by the new requestOne.
- *
- * @api private
- */
-Client.prototype.extractToken = function(subject) {
-    return subject.substr(this.respmux.inboxPrefixLen);
-};
 
 /**
- * Creates a subscription for the global inbox in the new requestOne.
- * Request tokens, timer, and callbacks are tracked here.
- *
  * @api private
  */
-Client.prototype.createResponseMux = function() {
+Client.prototype.createResponseMux = function():string {
     if(!this.respmux) {
-        var client = this;
-        var inbox = createInbox();
-        var ginbox = inbox + ".*";
-        var sid = this.subscribe(ginbox, function(msg, reply, subject) {
-            var token = client.extractToken(subject);
-            var conf = client.getMuxRequestConfig(token);
-            if(conf) {
-                if(conf.hasOwnProperty('expected')) {
-                    conf.received++;
-                    if (conf.received >= conf.expected) {
-                        client.cancelMuxRequest(token);
-                    }
-                }
-                if(conf.callback) {
-                    conf.callback(msg, reply);
-                }
-            }
-        });
-
-        this.respmux = {
-            inbox: inbox,
-            inboxPrefixLen: inbox.length + 1,
-            subscriptionID: sid,
-            requestMap: {} as {[key: number]:RequestConfiguration},
-            nextID: -1
-        } as RespMux;
+        this.respmux = new RespMux(this);
     }
     return this.respmux.inbox;
 };
 
-/**
- * Stores the request callback and other details
- *
- * @api private
- */
-Client.prototype.initMuxRequestDetails = function(callback, expected) {
-    var ginbox = this.createResponseMux();
-    var token = nuid.next();
-    var inbox = ginbox + '.' + token;
-
-    var conf = {token: token,
-        callback: callback,
-        inbox: inbox,
-        id: this.respmux.nextID--,
-        received: 0
-    } as RequestConfiguration;
-    if(expected > 0) {
-        conf.expected = expected;
-    }
-
-    this.respmux.requestMap[token] = conf;
-    return conf;
-};
-
-/**
- * Returns the mux request configuration
- * @param token
- * @returns Object
- */
-Client.prototype.getMuxRequestConfig = function(token) {
-    // if the token is a number, we have a fake sid, find the request
-    if (typeof token === 'number') {
-        var entry = null;
-        for (var p in this.respmux.requestMap) {
-            if (this.respmux.requestMap.hasOwnProperty(p)) {
-                var v = this.respmux.requestMap[p];
-                if (v.id === token) {
-                    entry = v;
-                    break;
-                }
-            }
-        }
-        if (entry) {
-            token = entry.token;
-        }
-    }
-    return this.respmux.requestMap[token];
-};
-
-/**
- * Cancels the mux request
- *
- * @api private
- */
-Client.prototype.cancelMuxRequest = function(token) {
-    var conf = this.getMuxRequestConfig(token);
-    if (conf) {
-        if(conf.timeout) {
-            clearTimeout(conf.timeout);
-        }
-        // the token could be sid, so use the one in the conf
-        delete this.respmux.requestMap[conf.token];
-    }
-    return conf;
-};
 
 /**
  * @deprecated
