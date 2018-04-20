@@ -47,7 +47,7 @@ nats.request('help', null, {'max':1}, function(response) {
 // Request for single response with timeout.
 nats.requestOne('help', null, {}, 1000, function(response) {
   // `NATS` is the library.
-  if(response.code && response.code === NATS.REQ_TIMEOUT) {
+  if(response instanceof NATS.NatsError && response.code === NATS.REQ_TIMEOUT) {
     console.log('Request for help timed out.');
     return;
   }
