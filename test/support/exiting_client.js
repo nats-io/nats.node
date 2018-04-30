@@ -27,7 +27,9 @@ var nats = NATS.connect({port: port});
 
 
 nats.on('connect', function() {
-    fs.writeFile('/tmp/existing_client.log', 'connected\n');
+    fs.writeFile('/tmp/existing_client.log', 'connected\n', function(err) {
+        console.error(err);
+    });
 });
 
 

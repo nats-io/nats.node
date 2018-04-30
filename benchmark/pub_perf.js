@@ -17,7 +17,7 @@ nats.on('connect', function () {
 
   var start = new Date();
 
-  var invalid2octet = new Buffer('\xc3\x28', 'binary');
+  var invalid2octet = Buffer.from('\xc3\x28', 'binary');
 
   for (var i = 0; i < loop; i++) {
     nats.publish('test', invalid2octet);

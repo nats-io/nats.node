@@ -40,14 +40,14 @@ describe('Binary', function() {
 
     function binaryDataTests(done, nc) {
         // try some invalid utf-8 byte sequences
-        var invalid2octet = new Buffer('\xc3\x28', 'binary');
-        var invalidsequenceidentifier = new Buffer('\xa0\xa1', 'binary');
-        var invalid3octet = new Buffer('\xe2\x28\xa1', 'binary');
-        var invalid4octet = new Buffer('\xf0\x90\x28\xbc', 'binary');
+        var invalid2octet = Buffer.from('\xc3\x28', 'binary');
+        var invalidsequenceidentifier = Buffer.from('\xa0\xa1', 'binary');
+        var invalid3octet = Buffer.from('\xe2\x28\xa1', 'binary');
+        var invalid4octet = Buffer.from('\xf0\x90\x28\xbc', 'binary');
         var bigBuffer = crypto.randomBytes(128 * 1024);
 
         // make sure embedded nulls don't cause truncation
-        var embeddednull = new Buffer('\x00\xf0\x00\x28\x00\x00\xf0\x9f\x92\xa9\x00', 'binary');
+        var embeddednull = Buffer.from('\x00\xf0\x00\x28\x00\x00\xf0\x9f\x92\xa9\x00', 'binary');
 
         var count = 6;
         var finished = function() {
