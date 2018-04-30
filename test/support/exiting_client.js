@@ -37,18 +37,24 @@ nats.on('connect', function() {
 /* eslint-disable no-process-exit */
 
 nats.on('error', function(e) {
-    fs.appendFile('/tmp/existing_client.log', 'got error\n' + e);
+    fs.appendFile('/tmp/existing_client.log', 'got error\n' + e, function(err) {
+        console.error(err);
+    });
     process.exit(1);
 });
 
 nats.subscribe("close", function(msg, replyTo) {
-    fs.appendFile('/tmp/existing_client.log', 'got close\n');
+    fs.appendFile('/tmp/existing_client.log', 'got close\n', function(err) {
+        console.error(err);
+    });
     if(replyTo) {
         nats.publish(replyTo, "closing");
     }
     nats.flush(function() {
         nats.close();
-        fs.appendFile('/tmp/existing_client.log', 'closed\n');
+        fs.appendFile('/tmp/existing_client.log', 'closed\n', function(err) {
+            console.error(err);
+        });
     });
 });
 
