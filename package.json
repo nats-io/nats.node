@@ -1,6 +1,6 @@
 {
   "name": "nats",
-  "version": "0.8.10",
+  "version": "1.0.0",
   "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
     "nats",
@@ -38,10 +38,10 @@
     "fmt": "js-beautify -n --config crockford.jscsrc -r lib/* test/*.js test/support/*.js examples/* benchmark/*.js"
   },
   "engines": {
-    "node": ">= 0.10.x"
+    "node": ">= 4.5.0"
   },
   "dependencies": {
-    "nuid": ">=0.6.14"
+    "nuid": "^1.0.0"
   },
   "devDependencies": {
     "coveralls": "^2.11.2",
