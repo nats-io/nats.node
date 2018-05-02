@@ -37,36 +37,41 @@ describe('JSON payloads', function() {
         nsc.stop_server(server, done);
     });
 
+    function test(input, checkResult) {
+        if (!(checkResult instanceof Function)) {
+            checkResult = function(msg) {
+                should.equal(typeof msg, typeof input);
+                should.equal(msg, input);
+            };
+        }
 
-    it('should pub/sub with json', function(done) {
+        return function(done) {
+            var nc = NATS.connect({
+                json: true,
+                port: PORT
+            });
+            nc.subscribe('foo', function(msg, reply, subj, sid) {
+                checkResult(msg);
+                nc.unsubscribe(sid);
+                nc.close();
+                done();
+            });
+
+            nc.publish('foo', input);
+        };
+    }
+
+    it('should pub/sub fail with circular json', function(done) {
         var nc = NATS.connect({
             json: true,
             port: PORT
         });
-        nc.subscribe('foo', function(msg, reply, subj, sid) {
-            should.ok(typeof msg !== 'string');
-            should.exist(msg.field);
-            msg.field.should.be.equal('hello');
-            should.exist(msg.body);
-            msg.body.should.be.equal('world');
-            nc.unsubscribe(sid);
-            nc.close();
-            done();
-        });
 
-        nc.publish('foo', {
-            field: 'hello',
-            body: 'world'
-        });
-    });
+        var a = {};
+        a.a = a;
 
-    it('should pub/sub fail not json', function(done) {
-        var nc = NATS.connect({
-            json: true,
-            port: PORT
-        });
         try {
-            nc.publish('foo', 'hi');
+            nc.publish('foo', a);
         } catch (err) {
             nc.close();
             err.message.should.be.equal('Message should be a JSON object');
@@ -74,19 +79,41 @@ describe('JSON payloads', function() {
         }
     });
 
-    it('should pub/sub array with json', function(done) {
-        var nc = NATS.connect({
-            json: true,
-            port: PORT
+    it('should pub/sub object with json', test({
+        field: 'hello',
+        body: 'world'
+    }, function(msg) {
+        should.deepEqual(msg, {
+            field: 'hello',
+            body: 'world'
         });
-        nc.subscribe('foo', function(msg, reply, subj, sid) {
-            should.ok(typeof msg !== 'string');
-            msg.should.be.instanceof(Array).and.have.lengthOf(3);
-            nc.unsubscribe(sid);
-            nc.close();
-            done();
-        });
+    }));
 
-        nc.publish('foo', ['one', 'two', 'three']);
-    });
+    it('should pub/sub empty object with json', test({}, function(msg) {
+        should.deepEqual(msg, {});
+    }));
+
+    it('should pub/sub array with json',
+        test(['one', 'two', 'three'], function(msg) {
+            msg.should.be.instanceof(Array).and.have.lengthOf(3);
+        })
+    );
+
+    it('should pub/sub empty array with json', test([], function(msg) {
+        msg.should.be.instanceof(Array).and.have.lengthOf(0);
+    }));
+
+    it('should pub/sub true with json', test(true));
+
+    it('should pub/sub false with json', test(false));
+
+    it('should pub/sub number with json', test(-Number.MAX_VALUE));
+
+    it('should pub/sub string with json', test('one'));
+
+    it('should pub/sub empty string with json', test(''));
+
+    it('should pub/sub null with json', test(null, function(msg) {
+        should.equal(msg, null);
+    }));
 });
