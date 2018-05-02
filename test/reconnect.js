@@ -248,7 +248,7 @@ describe('Reconnect functionality', function() {
                     server = nsc.start_server(PORT);
                 });
             });
-            var b = new Buffer(4096).toString();
+            var b = Buffer.alloc(4096).toString();
             for (var i = 0; i < 1000; i++) {
                 nc.publish('foo', b);
             }

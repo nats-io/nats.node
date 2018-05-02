@@ -42,7 +42,7 @@ describe('Buffer', function() {
             'preserveBuffers': true
         });
 
-        var validBuffer = new Buffer('foo-bar');
+        var validBuffer = Buffer.from('foo-bar');
 
         nc.subscribe('validBuffer', function(msg) {
 
@@ -63,7 +63,7 @@ describe('Buffer', function() {
         });
 
         var jsonString = '{ "foo-bar": true }';
-        var validBuffer = new Buffer(jsonString);
+        var validBuffer = Buffer.from(jsonString);
 
         nc.subscribe('validBuffer', function(msg) {
 

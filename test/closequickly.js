@@ -68,7 +68,7 @@ describe('Close functionality', function() {
             }
             nc.close();
             if(code !== 0) {
-                done("Process didn't return a zero code: ", code, signal);
+                done("Process didn't return a zero code: [" + code + "]", signal);
             } else {
                 done();
             }
