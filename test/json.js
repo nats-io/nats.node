@@ -14,41 +14,42 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
-describe('JSON payloads', function() {
-
-    var PORT = 1423;
-    var server;
+describe('JSON payloads', () => {
+    const PORT = 1423;
+    let server;
 
     // Start up our own nats-server
-    before(function(done) {
+    before((done) => {
         server = nsc.start_server(PORT, done);
     });
 
     // Shutdown our server
-    after(function(done) {
+    after((done) => {
         nsc.stop_server(server, done);
     });
 
-    function testPubSub(input) {
-        return function(done) {
-            var nc = NATS.connect({
+    function testPubSub({ input, expected }) {
+        if (expected === undefined) {
+            expected = input;
+        }
+
+        return (done) => {
+            const nc = NATS.connect({
                 json: true,
                 port: PORT
             });
 
-            nc.subscribe('pubsub', function(msg, reply, subj, sid) {
+            nc.subscribe('pubsub', (msg, reply, subj, sid) => {
                 if (msg instanceof Object) {
-                    msg.should.deepEqual(input);
+                    msg.should.deepEqual(expected);
                 } else {
-                    should.equal(msg, input);
+                    should.strictEqual(msg, expected);
                 }
                 nc.unsubscribe(sid);
                 nc.close();
@@ -60,23 +61,27 @@ describe('JSON payloads', function() {
         };
     }
 
-    function testReqRep(input, useOldRequestStyle) {
-        return function(done) {
-            var nc = NATS.connect({
+    function testReqRep({ input, expected, useOldRequestStyle }) {
+        if (expected === undefined) {
+            expected = input;
+        }
+
+        return (done) => {
+            const nc = NATS.connect({
                 json: true,
                 port: PORT,
                 useOldRequestStyle: useOldRequestStyle === true
             });
 
-            nc.subscribe('reqrep', { max: 1 }, function(msg, reply) {
+            nc.subscribe('reqrep', { max: 1 }, (msg, reply) => {
                 nc.publish(reply, msg);
             });
 
-            nc.request('reqrep', input, function(msg) {
+            nc.request('reqrep', input, (msg) => {
                 if (msg instanceof Object) {
-                    msg.should.deepEqual(input);
+                    msg.should.deepEqual(expected);
                 } else {
-                    should.equal(msg, input);
+                    should.strictEqual(msg, expected);
                 }
                 nc.close();
 
@@ -86,8 +91,8 @@ describe('JSON payloads', function() {
     }
 
     function testFail(input) {
-        return function(done) {
-            var nc = NATS.connect({
+        return (done) => {
+            const nc = NATS.connect({
                 json: true,
                 port: PORT
             });
@@ -101,16 +106,15 @@ describe('JSON payloads', function() {
                 );
                 done();
             }
-        }
-    };
+        };
+    }
 
-    var a = {};
+    const a = {};
     a.a = a;
 
     it('should pub/sub fail with circular json', testFail(a));
-    it('should pub/sub fail with undefined', testFail(undefined));
 
-    var testInputs = {
+    const testInputs = {
         json: {
             field: 'hello',
             body: 'world'
@@ -125,11 +129,25 @@ describe('JSON payloads', function() {
         string: 'abc'
     };
 
-    for (var name of Object.getOwnPropertyNames(testInputs)) {
-        it(`should pub/sub with ${name}`, testPubSub(testInputs[name]));
-        it(`should req/rep with ${name}`, testReqRep(testInputs[name]));
-        it(`should req/rep with ${name} oldrr`,
-            testReqRep(testInputs[name], true)
-        );
+    // Cannot use Object.entries because it's behind a flag in Node 6
+    for (const name of Object.getOwnPropertyNames(testInputs)) {
+        it(`should pub/sub with ${name}`, testPubSub({
+            input: testInputs[name]
+        }));
+        it(`should req/rep with ${name}`, testReqRep({
+            input: testInputs[name]
+        }));
+        it(`should req/rep with ${name} oldrr`, testReqRep({
+            input: testInputs[name],
+            useOldRequestStyle: true
+        }));
     }
+
+    // undefined must be serialized as null
+    it('should pub/sub with undefined', testPubSub({ expected: null }));
+    it('should req/rep with undefined', testReqRep({ expected: null }));
+    it('should req/rep with undefined oldrr', testReqRep({
+        expected: null,
+        useOldRequestStyle: true
+    }));
 });
