@@ -37,27 +37,51 @@ describe('JSON payloads', function() {
         nsc.stop_server(server, done);
     });
 
-    function test(input, checkResult) {
-        if (!(checkResult instanceof Function)) {
-            checkResult = function(msg) {
-                should.equal(typeof msg, typeof input);
-                should.equal(msg, input);
-            };
-        }
-
+    function testPubSub(input) {
         return function(done) {
             var nc = NATS.connect({
                 json: true,
                 port: PORT
             });
-            nc.subscribe('foo', function(msg, reply, subj, sid) {
-                checkResult(msg);
+
+            nc.subscribe('pubsub', function(msg, reply, subj, sid) {
+                if (msg instanceof Object) {
+                    msg.should.deepEqual(input);
+                } else {
+                    should.equal(msg, input);
+                }
                 nc.unsubscribe(sid);
                 nc.close();
+
                 done();
             });
 
-            nc.publish('foo', input);
+            nc.publish('pubsub', input);
+        };
+    }
+
+    function testReqRep(input, useOldRequestStyle) {
+        return function(done) {
+            var nc = NATS.connect({
+                json: true,
+                port: PORT,
+                useOldRequestStyle: useOldRequestStyle === true
+            });
+
+            nc.subscribe('reqrep', { max: 1 }, function(msg, reply) {
+                nc.publish(reply, msg);
+            });
+
+            nc.request('reqrep', input, function(msg) {
+                if (msg instanceof Object) {
+                    msg.should.deepEqual(input);
+                } else {
+                    should.equal(msg, input);
+                }
+                nc.close();
+
+                done();
+            });
         };
     }
 
@@ -74,46 +98,33 @@ describe('JSON payloads', function() {
             nc.publish('foo', a);
         } catch (err) {
             nc.close();
-            err.message.should.be.equal('Message should be a JSON object');
+            err.message.should.be.equal(
+                'Message should be a non-circular JSON object'
+            );
             done();
         }
     });
 
-    it('should pub/sub object with json', test({
-        field: 'hello',
-        body: 'world'
-    }, function(msg) {
-        should.deepEqual(msg, {
+    var testInputs = {
+        json: {
             field: 'hello',
             body: 'world'
-        });
-    }));
+        },
+        'empty array': [],
+        array: [1, -2.3, 'foo', false],
+        true: true,
+        false: false,
+        null: null,
+        number: -123.45,
+        'empty string': '',
+        string: 'abc'
+    };
 
-    it('should pub/sub empty object with json', test({}, function(msg) {
-        should.deepEqual(msg, {});
-    }));
-
-    it('should pub/sub array with json',
-        test(['one', 'two', 'three'], function(msg) {
-            msg.should.be.instanceof(Array).and.have.lengthOf(3);
-        })
-    );
-
-    it('should pub/sub empty array with json', test([], function(msg) {
-        msg.should.be.instanceof(Array).and.have.lengthOf(0);
-    }));
-
-    it('should pub/sub true with json', test(true));
-
-    it('should pub/sub false with json', test(false));
-
-    it('should pub/sub number with json', test(-Number.MAX_VALUE));
-
-    it('should pub/sub string with json', test('one'));
-
-    it('should pub/sub empty string with json', test(''));
-
-    it('should pub/sub null with json', test(null, function(msg) {
-        should.equal(msg, null);
-    }));
+    for (var name of Object.getOwnPropertyNames(testInputs)) {
+        it(`should pub/sub with ${name}`, testPubSub(testInputs[name]));
+        it(`should req/rep with ${name}`, testReqRep(testInputs[name]));
+        it(`should req/rep with ${name} oldrr`,
+            testReqRep(testInputs[name], true)
+        );
+    }
 });
