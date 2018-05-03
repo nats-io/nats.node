@@ -85,25 +85,30 @@ describe('JSON payloads', function() {
         };
     }
 
-    it('should pub/sub fail with circular json', function(done) {
-        var nc = NATS.connect({
-            json: true,
-            port: PORT
-        });
+    function testFail(input) {
+        return function(done) {
+            var nc = NATS.connect({
+                json: true,
+                port: PORT
+            });
 
-        var a = {};
-        a.a = a;
-
-        try {
-            nc.publish('foo', a);
-        } catch (err) {
-            nc.close();
-            err.message.should.be.equal(
-                'Message should be a non-circular JSON object'
-            );
-            done();
+            try {
+                nc.publish('foo', input);
+            } catch (err) {
+                nc.close();
+                err.message.should.be.equal(
+                    'Message should be a non-circular JSON-serializable value'
+                );
+                done();
+            }
         }
-    });
+    };
+
+    var a = {};
+    a.a = a;
+
+    it('should pub/sub fail with circular json', testFail(a));
+    it('should pub/sub fail with undefined', testFail(undefined));
 
     var testInputs = {
         json: {
