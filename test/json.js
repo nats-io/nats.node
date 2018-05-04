@@ -34,7 +34,7 @@ describe('JSON payloads', () => {
         nsc.stop_server(server, done);
     });
 
-    function testPubSub({ input, expected }) {
+    function testPubSub(input, expected) {
         if (expected === undefined) {
             expected = input;
         }
@@ -61,7 +61,7 @@ describe('JSON payloads', () => {
         };
     }
 
-    function testReqRep({ input, expected, useOldRequestStyle }) {
+    function testReqRep(input, expected, useOldRequestStyle) {
         if (expected === undefined) {
             expected = input;
         }
@@ -131,23 +131,17 @@ describe('JSON payloads', () => {
 
     // Cannot use Object.entries because it's behind a flag in Node 6
     for (const name of Object.getOwnPropertyNames(testInputs)) {
-        it(`should pub/sub with ${name}`, testPubSub({
-            input: testInputs[name]
-        }));
-        it(`should req/rep with ${name}`, testReqRep({
-            input: testInputs[name]
-        }));
-        it(`should req/rep with ${name} oldrr`, testReqRep({
-            input: testInputs[name],
-            useOldRequestStyle: true
-        }));
+        it(`should pub/sub with ${name}`, testPubSub(testInputs[name]));
+        it(`should req/rep with ${name}`, testReqRep(testInputs[name]));
+        it(`should req/rep with ${name} oldrr`, testReqRep(
+            testInputs[name], undefined, true
+        ));
     }
 
     // undefined must be serialized as null
-    it('should pub/sub with undefined', testPubSub({ expected: null }));
-    it('should req/rep with undefined', testReqRep({ expected: null }));
-    it('should req/rep with undefined oldrr', testReqRep({
-        expected: null,
-        useOldRequestStyle: true
-    }));
+    it('should pub/sub with undefined', testPubSub(undefined, null));
+    it('should req/rep with undefined', testReqRep(undefined, null));
+    it('should req/rep with undefined oldrr', testReqRep(
+        undefined, null, true
+    ));
 });
