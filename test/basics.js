@@ -298,58 +298,6 @@ describe('Basics', function() {
         nc.publish('foo2', utf8msg);
     });
 
-    it('should validate json messages before publishing', function (done) {
-        var config = {
-            port: PORT,
-            json: true
-        };
-        var nc = NATS.connect(config);
-        var error;
-
-        try {
-            nc.publish('foo3', 'not JSON');
-        } catch (e) {
-            error = e;
-        }
-        if (!error) {
-            nc.close();
-            return done('Should not accept string as message when JSON switch is turned on');
-        }
-
-        try {
-            nc.publish('foo3', 1);
-        } catch (e) {
-            error = e;
-        }
-        if (!error) {
-            nc.close();
-            return done('Should not accept number as message when JSON switch is turned on');
-        }
-
-        try {
-            nc.publish('foo3', false);
-        } catch (e) {
-            error = e;
-        }
-        if (!error) {
-            nc.close();
-            return done('Should not accept boolean as message when JSON switch is turned on');
-        }
-
-        try {
-            nc.publish('foo3', []);
-        } catch (e) {
-            error = e;
-        }
-        if (!error) {
-            nc.close();
-            return done('Should not accept array as message when JSON switch is turned on');
-        }
-
-        nc.close();
-        done();
-    });
-
     function requestOneGetsReply(nc, done) {
         var initMsg = 'Hello World';
         var replyMsg = 'Hello Back!';

@@ -14,79 +14,134 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
-describe('JSON payloads', function() {
-
-    var PORT = 1423;
-    var server;
+describe('JSON payloads', () => {
+    const PORT = 1423;
+    let server;
 
     // Start up our own nats-server
-    before(function(done) {
+    before((done) => {
         server = nsc.start_server(PORT, done);
     });
 
     // Shutdown our server
-    after(function(done) {
+    after((done) => {
         nsc.stop_server(server, done);
     });
 
+    function testPubSub(input, expected) {
+        if (expected === undefined) {
+            expected = input;
+        }
 
-    it('should pub/sub with json', function(done) {
-        var nc = NATS.connect({
-            json: true,
-            port: PORT
-        });
-        nc.subscribe('foo', function(msg, reply, subj, sid) {
-            should.ok(typeof msg !== 'string');
-            should.exist(msg.field);
-            msg.field.should.be.equal('hello');
-            should.exist(msg.body);
-            msg.body.should.be.equal('world');
-            nc.unsubscribe(sid);
-            nc.close();
-            done();
-        });
+        return (done) => {
+            const nc = NATS.connect({
+                json: true,
+                port: PORT
+            });
 
-        nc.publish('foo', {
+            nc.subscribe('pubsub', (msg, reply, subj, sid) => {
+                if (msg instanceof Object) {
+                    msg.should.deepEqual(expected);
+                } else {
+                    should.strictEqual(msg, expected);
+                }
+                nc.unsubscribe(sid);
+                nc.close();
+
+                done();
+            });
+
+            nc.publish('pubsub', input);
+        };
+    }
+
+    function testReqRep(input, expected, useOldRequestStyle) {
+        if (expected === undefined) {
+            expected = input;
+        }
+
+        return (done) => {
+            const nc = NATS.connect({
+                json: true,
+                port: PORT,
+                useOldRequestStyle: useOldRequestStyle === true
+            });
+
+            nc.subscribe('reqrep', { max: 1 }, (msg, reply) => {
+                nc.publish(reply, msg);
+            });
+
+            nc.request('reqrep', input, (msg) => {
+                if (msg instanceof Object) {
+                    msg.should.deepEqual(expected);
+                } else {
+                    should.strictEqual(msg, expected);
+                }
+                nc.close();
+
+                done();
+            });
+        };
+    }
+
+    function testFail(input) {
+        return (done) => {
+            const nc = NATS.connect({
+                json: true,
+                port: PORT
+            });
+
+            try {
+                nc.publish('foo', input);
+            } catch (err) {
+                nc.close();
+                err.message.should.be.equal(
+                    'Message should be a non-circular JSON-serializable value'
+                );
+                done();
+            }
+        };
+    }
+
+    const a = {};
+    a.a = a;
+
+    it('should pub/sub fail with circular json', testFail(a));
+
+    const testInputs = {
+        json: {
             field: 'hello',
             body: 'world'
-        });
-    });
+        },
+        'empty array': [],
+        array: [1, -2.3, 'foo', false],
+        true: true,
+        false: false,
+        null: null,
+        number: -123.45,
+        'empty string': '',
+        string: 'abc'
+    };
 
-    it('should pub/sub fail not json', function(done) {
-        var nc = NATS.connect({
-            json: true,
-            port: PORT
-        });
-        try {
-            nc.publish('foo', 'hi');
-        } catch (err) {
-            nc.close();
-            err.message.should.be.equal('Message should be a JSON object');
-            done();
-        }
-    });
+    // Cannot use Object.entries because it's behind a flag in Node 6
+    for (const name of Object.getOwnPropertyNames(testInputs)) {
+        it(`should pub/sub with ${name}`, testPubSub(testInputs[name]));
+        it(`should req/rep with ${name}`, testReqRep(testInputs[name]));
+        it(`should req/rep with ${name} oldrr`, testReqRep(
+            testInputs[name], undefined, true
+        ));
+    }
 
-    it('should pub/sub array with json', function(done) {
-        var nc = NATS.connect({
-            json: true,
-            port: PORT
-        });
-        nc.subscribe('foo', function(msg, reply, subj, sid) {
-            should.ok(typeof msg !== 'string');
-            msg.should.be.instanceof(Array).and.have.lengthOf(3);
-            nc.unsubscribe(sid);
-            nc.close();
-            done();
-        });
-
-        nc.publish('foo', ['one', 'two', 'three']);
-    });
+    // undefined must be serialized as null
+    it('should pub/sub with undefined', testPubSub(undefined, null));
+    it('should req/rep with undefined', testReqRep(undefined, null));
+    it('should req/rep with undefined oldrr', testReqRep(
+        undefined, null, true
+    ));
 });
