@@ -82,7 +82,7 @@ export interface ClientOpts {
 	json?: boolean,
 	preserveBuffers?: boolean,
 	token?: string,
-	pintInterval?: number,
+	pingInterval?: number,
 	maxPingOut?: number,
 	useOldRequestStyle?: boolean
 }
