@@ -80,7 +80,11 @@ export interface ClientOpts {
 	yieldTime?: number,
 	waitOnFirstConnect?: boolean,
 	json?: boolean,
-	preserveBuffers?: boolean
+	preserveBuffers?: boolean,
+	token?: string,
+	pintInterval?: number,
+	maxPingOut?: number,
+	useOldRequestStyle?: boolean
 }
 
 export interface SubscribeOptions {
