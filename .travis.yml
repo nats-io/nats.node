@@ -11,7 +11,7 @@ git:
   depth: false
 
 env:
-  - NATS_VERSION=v1.0.6
+  - NATS_VERSION=v1.2.0
 
 before_script:
   - wget "https://github.com/nats-io/gnatsd/releases/download/$NATS_VERSION/gnatsd-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
