@@ -125,4 +125,16 @@ describe('Errors', function() {
         should.equal(err.name, 'NatsError');
     });
 
+    it('should emit error on exception during handler', function (done) {
+        var nc = NATS.connect(PORT);
+        nc.on('error', function(err) {
+            err.message.should.equal('die');
+            done();
+        });
+        nc.subscribe('*', function () {
+            throw new Error("die");
+        });
+        nc.publish('baz');
+    });
+
 });

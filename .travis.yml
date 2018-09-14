@@ -4,7 +4,6 @@ sudo: false
 node_js:
   - "6"
   - "8"
-  - "9"
   - "10"
 
 git:
@@ -21,5 +20,4 @@ before_script:
 script:
   - if [[ "$TRAVIS_NODE_VERSION" == 6 ]]; then npm test; fi
   - if [[ "$TRAVIS_NODE_VERSION" == 8 ]]; then npm test; fi
-  - if [[ "$TRAVIS_NODE_VERSION" == 9 ]]; then npm test; fi
   - if [[ "$TRAVIS_NODE_VERSION" == 10 ]]; then npm run coveralls; fi
