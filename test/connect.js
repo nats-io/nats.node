@@ -93,6 +93,7 @@ describe('Basic Connectivity', function() {
         });
         setTimeout(function() {
             connectingEvents.should.equal(5);
+            nc.close();
             done();
         }, 550);
     });
@@ -163,6 +164,7 @@ describe('Basic Connectivity', function() {
                 }
             });
             contains.should.equal(servers.length);
+            nc.close();
             done();
         });
     });

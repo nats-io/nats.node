@@ -78,6 +78,7 @@ describe('Authorization', function() {
             'servers': [authUrl]
         });
         nc.on('connect', function(nc) {
+            nc.close();
             setTimeout(done, 100);
         });
     });
@@ -140,6 +141,7 @@ describe('Token Authorization', function() {
             'servers': [authUrl]
         });
         nc.on('connect', function(nc) {
+            nc.close();
             setTimeout(done, 100);
         });
     });

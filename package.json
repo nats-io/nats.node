@@ -41,20 +41,21 @@
     "node": ">= 4.5.0"
   },
   "dependencies": {
-    "nuid": "^1.0.0"
+    "nuid": "^1.0.0",
+    "why-is-node-running": "^2.0.3"
   },
   "devDependencies": {
-    "coveralls": "^2.11.2",
-    "dependency-check": "2.5.x",
-    "eslint": "^3.19.0",
+    "coveralls": "^3.0.2",
+    "dependency-check": "^3.2.1",
+    "eslint": "^5.9.0",
     "if-node-version": "^1.1.1",
-    "istanbul": "0.4.x",
+    "istanbul": "^0.4.5",
     "js-beautify": "^1.6.12",
-    "jshint": "2.9.x",
+    "jshint": "^2.9.6",
     "jshint-stylish": "2.2.x",
-    "mocha": "2.5.x",
+    "mocha": "^5.2.0",
     "mocha-lcov-reporter": "1.2.x",
-    "mocha-multi": "0.9.x",
+    "mocha-multi": "^1.0.1",
     "should": ">= 9.0.0"
   },
   "typings": "./index.d.ts"

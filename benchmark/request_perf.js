@@ -37,7 +37,7 @@ nc1.on('connect', function() {
                     var latmicros = ((stop - start) * 1000) / (loop * 2);
                     var lat = parseInt(latmicros, 10); // Request=2, Reponse=2 RTs
                     console.log('Avg roundtrip latency: ' + lat + ' microseconds');
-                    log("rr", loop, stop-start, latmicros);
+                    log("rr", loop, stop - start, latmicros);
                 } else if (received % hash === 0) {
                     process.stdout.write('+');
                 }
@@ -45,13 +45,13 @@ nc1.on('connect', function() {
         }
     });
 
-  function log(op, count, time, latmicros) {
-    fs.appendFile('rr.csv', [op, count, time, new Date().toDateString(), NATS.version, latmicros].join(",") + "\n", function(err) {
-      if(err) {
-        console.log(err);
-      }
-      process.exit();
-    });
-  }
+    function log(op, count, time, latmicros) {
+        fs.appendFile('rr.csv', [op, count, time, new Date().toDateString(), NATS.version, latmicros].join(",") + "\n", function(err) {
+            if (err) {
+                console.log(err);
+            }
+            process.exit();
+        });
+    }
 
 });

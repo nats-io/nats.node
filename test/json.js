@@ -73,7 +73,9 @@ describe('JSON payloads', () => {
                 useOldRequestStyle: useOldRequestStyle === true
             });
 
-            nc.subscribe('reqrep', { max: 1 }, (msg, reply) => {
+            nc.subscribe('reqrep', {
+                max: 1
+            }, (msg, reply) => {
                 nc.publish(reply, msg);
             });
 

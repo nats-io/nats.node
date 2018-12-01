@@ -3,8 +3,8 @@
 A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
 [![license](https://img.shields.io/github/license/nats-io/node-nats.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Travis branch](https://img.shields.io/travis/nats-io/node-nats/master.svg)]()
-[![Coveralls github branch](https://img.shields.io/coveralls/github/nats-io/node-nats/master.svg)]()
+[![Build Status](https://travis-ci.org/nats-io/node-nats.svg?branch=master)](https://travis-ci.org/nats-io/node-nats)
+[![Coveralls](https://img.shields.io/coveralls/github/nats-io/node-nats/master.svg)]()
 [![npm](https://img.shields.io/npm/v/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dm/nats.svg)](https://www.npmjs.com/package/nats)
 
@@ -217,7 +217,7 @@ nc = nats.connect({'servers':servers, 'encoding': 'ascii'});
 
 // PreserveBuffers
 
-// To prevent payload conversion from a Buffer to a string, set the 
+// To prevent payload conversion from a Buffer to a string, set the
 // preserveBuffers option to true. Message payload return will be a Buffer.
 
 nc = nats.connect({'preserveBuffers': true});
@@ -228,7 +228,7 @@ nc = nats.connect({'preserveBuffers': true});
 // waiting 2 seconds between reconnect attempts. If the maximum number of
 // retries is reached, the client will close the connection.
 // To change the default behaviour specify the max number of connection
-// attempts in `maxReconnectAttempts` (set to -1 to retry forever), and the 
+// attempts in `maxReconnectAttempts` (set to -1 to retry forever), and the
 // time in milliseconds between reconnects in `reconnectTimeWait`.
 
 nc = nats.connect({'maxReconnectAttempts': -1, 'reconnectTimeWait': 250});
@@ -287,18 +287,14 @@ The following is the list of connection options and default values.
 | `user`                 |                                              |                           | Sets the username for a connection
 | `verbose`              |                                              | `false`                   | Turns on `+OK` protocol acknowledgements
 | `waitOnFirstConnect`   |                                              | `false`                   | If `true` the server will fall back to a reconnect mode if it fails its first connection attempt.
-| `yieldTime`            |                                              |                           | If set, processing will yield at least the specified number of milliseconds to IO callbacks before processing inbound messages 
+| `yieldTime`            |                                              |                           | If set, processing will yield at least the specified number of milliseconds to IO callbacks before processing inbound messages
 
 
-  
-  
 
-## Supported Node Versions    
+## Supported Node Versions
 
-Support policy for Nodejs versions follows 
-[Nodejs release support]( https://github.com/nodejs/Release).
-We will support and build node-nats on even Nodejs versions that are current 
-or in maintenance.
+Our support policy for Nodejs versions follows [Nodejs release support]( https://github.com/nodejs/Release).
+We will support and build node-nats on even-numbered Nodejs versions that are current or in LTS.
 
 
 ## License

@@ -22,8 +22,10 @@ var NATS = require('../..');
 var fs = require('fs');
 
 var count = process.argv.length;
-var port = parseInt(process.argv[count-1], 10);
-var nats = NATS.connect({port: port});
+var port = parseInt(process.argv[count - 1], 10);
+var nats = NATS.connect({
+    port: port
+});
 
 
 nats.on('connect', function() {
@@ -47,7 +49,7 @@ nats.subscribe("close", function(msg, replyTo) {
     fs.appendFile('/tmp/existing_client.log', 'got close\n', function(err) {
         console.error(err);
     });
-    if(replyTo) {
+    if (replyTo) {
         nats.publish(replyTo, "closing");
     }
     nats.flush(function() {

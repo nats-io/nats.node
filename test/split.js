@@ -72,6 +72,7 @@ describe('Split Messages', function() {
             msg.length.should.equal(data.length);
             received += 1;
             if (received == expected) {
+                nc.close();
                 done();
             }
         });

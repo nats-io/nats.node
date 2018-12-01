@@ -67,6 +67,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
                         setTimeout(function() {
                             // we should know of 3 servers - the one we connected and the 2 we added
                             should(nc.servers.length).be.equal(3);
+                            nc.close();
                             done();
                         }, 1000);
                     });
@@ -89,7 +90,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
             // added in order
             var uris = [];
             ports.forEach(function(p) {
-              uris.push("nats://127.0.0.1:" + p);
+                uris.push("nats://127.0.0.1:" + p);
             });
 
             var nc = NATS.connect({
@@ -97,14 +98,15 @@ describe('Dynamic Cluster - Connect URLs', function() {
                 servers: uris
             });
             nc.on('connect', function() {
-              var found = [];
-              nc.servers.forEach(function(s) {
-                found.push(s.url.href);
-              });
+                var found = [];
+                nc.servers.forEach(function(s) {
+                    found.push(s.url.href);
+                });
 
-              should.notDeepEqual(found, ports, 'ports shouldnt be in the same order');
-              should.equal(found.length, ports.length, 'ports count should match');
-              done();
+                should.notDeepEqual(found, ports, 'ports shouldnt be in the same order');
+                should.equal(found.length, ports.length, 'ports count should match');
+                nc.close();
+                done();
             });
         });
     });
@@ -162,108 +164,110 @@ describe('Dynamic Cluster - Connect URLs', function() {
     });
 
 
-  it('joins url and servers', function(done) {
-    var route_port = 54320;
-    var port = 54321;
-    // start a cluster of one server
-    var ports = [];
-    for (var i = 0; i < 10; i++) {
-      ports.push(port + i);
-    }
-
-    // Add 5 of the servers we know. One added in the 'uri'
-    var urls = [];
-    for (i=1; i < 4; i++) {
-        urls.push("nats://127.0.0.1:" + (port+i));
-    }
-    servers = nsc.start_cluster(ports, route_port, function() {
-
-      var nc = NATS.connect({
-        uri: "nats://127.0.0.1:" + port,
-        reconnectTimeWait: 100,
-        servers: urls
-      });
-
-      nc.on('connect', function (c) {
-          c.servers.should.have.length(10);
-          setTimeout(function() { c.close(); }, 0);
-          done();
-      });
-    });
-  });
-
-  it('discovered servers', function(done) {
-    var route_port = 12892;
-    var port = 14526;
-    var ports = [port, port+1, port+2];
-
-    servers = nsc.start_cluster(ports, route_port, function() {
-      var nc = NATS.connect({
-        uri: "nats://127.0.0.1:" + port,
-        reconnectTimeWait: 100,
-        servers: ["nats://127.0.0.1:" + (port+1)]
-      });
-
-      function countImplicit(c) {
-        var count = 0;
-        c.servers.forEach(function(s) {
-          if(s.implicit) {
-            count++;
-          }
-        });
-        return count;
-      }
-
-      nc.on('serversDiscovered', function() {
-        if(countImplicit(nc) === 1) {
-          var found = nc.servers.find(function(s) {
-            return s.url.href === "nats://127.0.0.1:" + (port+3);
-          });
-          if(found) {
-            done();
-          }
+    it('joins url and servers', function(done) {
+        var route_port = 54320;
+        var port = 54321;
+        // start a cluster of one server
+        var ports = [];
+        for (var i = 0; i < 10; i++) {
+            ports.push(port + i);
         }
-      });
 
-      nc.on('connect', function() {
-        if(!testVersion("1.0.7", nc)) {
-          done();
+        // Add 5 of the servers we know. One added in the 'uri'
+        var urls = [];
+        for (i = 1; i < 4; i++) {
+            urls.push("nats://127.0.0.1:" + (port + i));
         }
-        nc.servers.should.have.length(3);
-        countImplicit(nc).should.be.equal(1);
+        servers = nsc.start_cluster(ports, route_port, function() {
 
-        // remove the implicit one
-        process.nextTick(function() {
-          var s2 = nsc.find_server(port + 2, servers);
-          nsc.stop_server(s2, function () {
-            // add another
-            var added = nsc.add_member(port + 3, route_port, port + 1003);
-            servers.push(added);
-          });
+            var nc = NATS.connect({
+                uri: "nats://127.0.0.1:" + port,
+                reconnectTimeWait: 100,
+                servers: urls
+            });
+
+            nc.on('connect', function(c) {
+                c.servers.should.have.length(10);
+                setTimeout(function() {
+                    c.close();
+                }, 0);
+                done();
+            });
         });
-      });
     });
-  });
+
+    it('discovered servers', function(done) {
+        var route_port = 12892;
+        var port = 14526;
+        var ports = [port, port + 1, port + 2];
+
+        servers = nsc.start_cluster(ports, route_port, function() {
+            var nc = NATS.connect({
+                uri: "nats://127.0.0.1:" + port,
+                reconnectTimeWait: 100,
+                servers: ["nats://127.0.0.1:" + (port + 1)]
+            });
+
+            function countImplicit(c) {
+                var count = 0;
+                c.servers.forEach(function(s) {
+                    if (s.implicit) {
+                        count++;
+                    }
+                });
+                return count;
+            }
+
+            nc.on('serversDiscovered', function() {
+                if (countImplicit(nc) === 1) {
+                    var found = nc.servers.find(function(s) {
+                        return s.url.href === "nats://127.0.0.1:" + (port + 3);
+                    });
+                    if (found) {
+                        nc.close();
+                        done();
+                    }
+                }
+            });
+
+            nc.on('connect', function() {
+                if (!testVersion("1.0.7", nc)) {
+                    nc.close();
+                    done();
+                }
+                nc.servers.should.have.length(3);
+                countImplicit(nc).should.be.equal(1);
+
+                // remove the implicit one
+                process.nextTick(function() {
+                    var s2 = nsc.find_server(port + 2, servers);
+                    nsc.stop_server(s2, function() {
+                        // add another
+                        var added = nsc.add_member(port + 3, route_port, port + 1003);
+                        servers.push(added);
+                    });
+                });
+            });
+        });
+    });
 });
 
 
 function parseVersion(verstr) {
-  // this will break
-  var a = verstr.split(".");
-  if(a.length > 3) {
-    a.splice(3, a.length - 3);
-  }
-  a[0] *= 100;
-  a[1] *= 10;
+    // this will break
+    var a = verstr.split(".");
+    if (a.length > 3) {
+        a.splice(3, a.length - 3);
+    }
+    a[0] *= 100;
+    a[1] *= 10;
 
-  return a[0] + a[1] + a[2];
+    return a[0] + a[1] + a[2];
 }
 
 function testVersion(required, nc) {
-  var vers = parseVersion(nc.info.version);
-  var req = parseVersion(required);
+    var vers = parseVersion(nc.info.version);
+    var req = parseVersion(required);
 
-  return vers >= req;
+    return vers >= req;
 }
-
-

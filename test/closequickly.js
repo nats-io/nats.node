@@ -46,28 +46,28 @@ describe('Close functionality', function() {
         var timer;
 
         nc.flush(function() {
-           nc.subscribe("started", function(m) {
-               nc.publish("close");
-           });
+            nc.subscribe("started", function(m) {
+                nc.publish("close");
+            });
             timer = setTimeout(function() {
                 done(new Error("process didn't exit quickly"));
             }, 10000);
         });
 
         var child = child_process.execFile('node', ['./test/support/exiting_client.js', PORT], function(error) {
-            if(error) {
+            if (error) {
                 nc.close();
                 done(error);
             }
         });
 
         child.on('exit', function(code, signal) {
-            if(timer) {
+            if (timer) {
                 clearTimeout(timer);
                 timer = null;
             }
             nc.close();
-            if(code !== 0) {
+            if (code !== 0) {
                 done("Process didn't return a zero code: [" + code + "]", signal);
             } else {
                 done();
