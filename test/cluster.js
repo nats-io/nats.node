@@ -166,13 +166,13 @@ describe('Cluster', function() {
         var startTime;
         var numAttempts = 0;
         nc.on('connect', function() {
-            nsc.stop_server(s1, function(){
+            nsc.stop_server(s1, function() {
                 s1 = null;
                 startTime = new Date();
             });
         });
         nc.on('reconnect', function() {
-            nsc.stop_server(s2, function(){
+            nsc.stop_server(s2, function() {
                 s2 = null;
             });
         });

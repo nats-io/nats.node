@@ -119,12 +119,12 @@ function start_server(port, opt_flags, done) {
 exports.start_server = start_server;
 
 function wait_stop(server, done) {
-    if(server.killed) {
-        if(done) {
+    if (server.killed) {
+        if (done) {
             done();
         }
     } else {
-        setTimeout(function () {
+        setTimeout(function() {
             wait_stop(server, done);
         });
     }
@@ -134,7 +134,7 @@ function stop_server(server, done) {
     if (server) {
         server.kill();
         wait_stop(server, done);
-    } else if(done) {
+    } else if (done) {
         done();
     }
 }
@@ -212,9 +212,10 @@ exports.add_member = add_member;
 
 exports.stop_cluster = function(servers, done) {
     var count = servers.length;
+
     function latch() {
         count--;
-        if(count === 0) {
+        if (count === 0) {
             done();
         }
     }
@@ -224,7 +225,7 @@ exports.stop_cluster = function(servers, done) {
 };
 
 exports.find_server = function(port, servers) {
-  return servers.find(function(s) {
-    return s.spawnargs[2] === port;
-  });
+    return servers.find(function(s) {
+        return s.spawnargs[2] === port;
+    });
 };

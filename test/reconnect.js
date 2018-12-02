@@ -64,7 +64,7 @@ describe('Reconnect functionality', function() {
         var startTime;
         should.exist(nc);
         nc.on('connect', function() {
-            nsc.stop_server(server, function(){
+            nsc.stop_server(server, function() {
                 startTime = new Date();
             });
         });
@@ -89,7 +89,7 @@ describe('Reconnect functionality', function() {
         var startTime;
         var numAttempts = 0;
         nc.on('connect', function() {
-            nsc.stop_server(server, function(){
+            nsc.stop_server(server, function() {
                 startTime = new Date();
             });
         });
@@ -124,7 +124,7 @@ describe('Reconnect functionality', function() {
         }, 1000);
 
         nc.on('connect', function() {
-            nsc.stop_server(server, function(){
+            nsc.stop_server(server, function() {
                 server = null;
             });
         });
@@ -153,7 +153,7 @@ describe('Reconnect functionality', function() {
         });
         // Kill server after first successful contact
         nc.flush(function() {
-            nsc.stop_server(server, function(){
+            nsc.stop_server(server, function() {
                 server = null;
             });
         });
@@ -178,7 +178,7 @@ describe('Reconnect functionality', function() {
         });
         // Kill server after first successful contact
         nc.flush(function() {
-            nsc.stop_server(server, function(){
+            nsc.stop_server(server, function() {
                 server = null;
             });
         });
@@ -204,7 +204,7 @@ describe('Reconnect functionality', function() {
         });
         // Kill server after first successful contact
         nc.flush(function() {
-            nsc.stop_server(server, function(){
+            nsc.stop_server(server, function() {
                 server = null;
             });
         });
@@ -243,7 +243,7 @@ describe('Reconnect functionality', function() {
         nc.on('connect', function() {
             var sid = nc.subscribe('foo', function() {
                 // Kill server on first message, inbound should still be full.
-                nsc.stop_server(server, function(){
+                nsc.stop_server(server, function() {
                     nc.unsubscribe(sid);
                     server = nsc.start_server(PORT);
                 });
@@ -270,7 +270,7 @@ describe('Reconnect functionality', function() {
         var startTime;
         should.exist(nc);
         nc.on('connect', function() {
-            nsc.stop_server(server, function(){
+            nsc.stop_server(server, function() {
                 startTime = new Date();
             });
         });

@@ -84,6 +84,7 @@ describe('Timeout and max received events for subscriptions', function() {
             nc.flush();
             setTimeout(function() {
                 // terminate the test
+                nc.close();
                 done();
             }, 1500);
         });
@@ -114,7 +115,10 @@ describe('Timeout and max received events for subscriptions', function() {
     it('should perform simple timeouts on requests', function(done) {
         var nc = NATS.connect(PORT);
         nc.on('connect', function() {
-            nc.request('foo', null, {max: 1, timeout: 1000}, function(err) {
+            nc.request('foo', null, {
+                max: 1,
+                timeout: 1000
+            }, function(err) {
                 err.should.be.instanceof(NATS.NatsError);
                 err.should.have.property('code', NATS.REQ_TIMEOUT);
                 nc.close();
@@ -131,8 +135,11 @@ describe('Timeout and max received events for subscriptions', function() {
             });
 
             var responses = 0;
-            nc.request('foo', null, {max: 2, timeout: 1000}, function(err) {
-                if(!err.hasOwnProperty('code')) {
+            nc.request('foo', null, {
+                max: 2,
+                timeout: 1000
+            }, function(err) {
+                if (!err.hasOwnProperty('code')) {
                     responses++;
                     return;
                 }
@@ -149,7 +156,10 @@ describe('Timeout and max received events for subscriptions', function() {
         var nc = NATS.connect(PORT);
         var calledOnRequestHandler = false;
         nc.on('connect', function() {
-            var sid = nc.request('foo', null, {max: 2, timeout: 1000}, function(err) {
+            var sid = nc.request('foo', null, {
+                max: 2,
+                timeout: 1000
+            }, function(err) {
                 calledOnRequestHandler = true;
             });
 

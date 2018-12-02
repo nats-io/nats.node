@@ -209,7 +209,10 @@ describe('Max responses and Auto-unsub', function() {
     });
 
     it('oldRequest should not leak subscriptions when using max', function(done) {
-        var nc = NATS.connect({port: PORT, useOldRequestStyle: true});
+        var nc = NATS.connect({
+            port: PORT,
+            useOldRequestStyle: true
+        });
         requestSubscriptions(nc, done);
     });
 
@@ -225,7 +228,9 @@ describe('Max responses and Auto-unsub', function() {
             nc.publish(reply, 'I can help!');
         });
 
-        nc.request('help', null, {max: 3}, function() {
+        nc.request('help', null, {
+            max: 3
+        }, function() {
             received++;
         });
 
@@ -246,7 +251,10 @@ describe('Max responses and Auto-unsub', function() {
 
     it('old request should received specified number of messages', function(done) {
         /* jshint loopfunc: true */
-        var nc = NATS.connect({port: PORT, useOldRequestStyle: true});
+        var nc = NATS.connect({
+            port: PORT,
+            useOldRequestStyle: true
+        });
         requestGetsWantedNumberOfMessages(nc, done);
     });
 

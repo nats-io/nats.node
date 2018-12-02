@@ -42,16 +42,15 @@ describe('Auth Basics', function() {
                     publish: "bar"
                 },
                 users: [{
-                        user: 'bar',
-                        password: 'bar',
-                        permission: '$SUB'
-                    }
-                ]
+                    user: 'bar',
+                    password: 'bar',
+                    permission: '$SUB'
+                }]
             }
         };
         var cf = path.resolve(os.tmpdir(), 'conf-' + nuid.next() + '.conf');
         fs.writeFile(cf, ncu.j(conf), function(err) {
-            if(err) {
+            if (err) {
                 done(err);
             } else {
                 server = nsc.start_server(PORT, ['-c', cf], done);
@@ -79,7 +78,7 @@ describe('Auth Basics', function() {
                 done();
             }
         });
-        nc.flush(function(){
+        nc.flush(function() {
             nc.subscribe('foo', function() {
                 nc.close();
                 done("Shouldn't be able to publish foo");
