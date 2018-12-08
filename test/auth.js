@@ -43,7 +43,7 @@ describe('Authorization', function() {
         var nc = NATS.connect(PORT);
         nc.on('error', function(err) {
             should.exist(err);
-            should.exist(/Authorization/.exec(err));
+            should.exist((/Authorization/).exec(err));
             nc.close();
             done();
         });
@@ -107,7 +107,7 @@ describe('Token Authorization', function() {
         var nc = NATS.connect(PORT);
         nc.on('error', function(err) {
             should.exist(err);
-            should.exist(/Authorization/.exec(err));
+            should.exist((/Authorization/).exec(err));
             nc.close();
             done();
         });

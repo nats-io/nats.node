@@ -4,7 +4,7 @@ A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://n
 
 [![license](https://img.shields.io/github/license/nats-io/node-nats.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Build Status](https://travis-ci.org/nats-io/node-nats.svg?branch=master)](https://travis-ci.org/nats-io/node-nats)
-[![Coveralls](https://img.shields.io/coveralls/github/nats-io/node-nats/master.svg)]()
+[![Coveralls](https://img.shields.io/coveralls/github/nats-io/node-nats/master.svg)](https://coveralls.io/r/nats-io/node-nats?branch=master)
 [![npm](https://img.shields.io/npm/v/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dm/nats.svg)](https://www.npmjs.com/package/nats)
 
@@ -147,7 +147,44 @@ var tlsOptions = {
 var nc = nats.connect({port: TLSPORT, tls: tlsOptions});
 
 ```
-## Authentication
+
+## New Authentication (Nkeys and User Credentials)
+See examples for more usage.
+```javascript
+// Simple connect using credentials file. This loads JWT and signing key
+// each time that NATS connects.
+var nc = NATS.connect('connect.ngs.global', NATS.creds("./myid.creds");
+
+// Setting nkey and signing callback directly.
+var nc = NATS.connect(url, {
+    nkey: 'UAH42UG6PV552P5SWLWTBP3H3S5BHAVCO2IEKEXUANJXR75J63RQ5WM6',
+    sigCB: function(nonce) {
+      return sk.sign(nonce);
+    }
+});
+
+// Setting user JWT statically.
+var nc = NATS.connect(url, {
+    userJWT: myJWT,
+    sigCB: function(nonce) {
+      return sk.sign(nonce);
+    }
+});
+
+// Having user JWT be a function that returns the JWT. Can be useful for
+// loading a new JWT.
+var nc = NATS.connect(url, {
+    userJWT: function() {
+      return myJWT;
+    },
+    sigCB: function(nonce) {
+      return sk.sign(nonce);
+    }
+});
+
+```
+
+## Basic Authentication
 ```javascript
 
 // Connect with username and password in the url

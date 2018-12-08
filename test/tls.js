@@ -63,17 +63,7 @@ describe('TLS', function() {
         });
         nc.on('error', function(err) {
             should.exist(err);
-            should.exist(/Server does not support a secure/.exec(err));
-            nc.close();
-            done();
-        });
-    });
-
-    it('should error if server requires TLS', function(done) {
-        var nc = NATS.connect(TLSPORT);
-        nc.on('error', function(err) {
-            should.exist(err);
-            should.exist(/Server requires a secure/.exec(err));
+            should.exist((/Server does not support a secure/).exec(err));
             nc.close();
             done();
         });
@@ -86,7 +76,7 @@ describe('TLS', function() {
         });
         nc.on('error', function(err) {
             should.exist(err);
-            should.exist(/unable to verify the first certificate/.exec(err));
+            should.exist((/unable to verify the first certificate/).exec(err));
             nc.close();
             done();
         });
@@ -133,14 +123,14 @@ describe('TLS', function() {
         });
         nc.on('error', function(err) {
             should.exist(err);
-            should.exist(/Server requires a client certificate/.exec(err));
+            should.exist((/Server requires a client certificate/).exec(err));
             nc.close();
             done();
         });
     });
 
 
-    it('should be authrorized with proper cert', function(done) {
+    it('should be authorized with proper cert', function(done) {
         var tlsOptions = {
             key: fs.readFileSync('./test/certs/client-key.pem'),
             cert: fs.readFileSync('./test/certs/client-cert.pem'),

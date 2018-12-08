@@ -1,6 +1,6 @@
 
 lint:
-	./node_modules/.bin/eslint ./test ./lib/nats.js ./examples ./benchmark
+	./node_modules/.bin/eslint ./test/*.js ./lib/nats.js ./benchmark ./examples/*
 
 test:
 	@NODE_ENV=test ./node_modules/.bin/mocha -c\

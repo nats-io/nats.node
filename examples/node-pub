@@ -3,22 +3,28 @@
 /* jslint node: true */
 'use strict';
 
-var nats = require('nats').connect();
+var nats = require('nats');
+var argv = require('minimist')(process.argv.slice(2));
 
-nats.on('error', function(e) {
-    console.log('Error [' + nats.options.url + ']: ' + e);
-    process.exit();
-});
-
-var subject = process.argv[2];
-var msg = process.argv[3] || '';
+var url = argv.s || nats.DEFAULT_URI;
+var creds = argv.creds;
+var subject = argv._[0];
+var msg = argv._[1] || '';
 
 if (!subject) {
-    console.log('Usage: node-pub <subject> [msg]');
+    console.log('Usage: node-pub  [-s server] [--creds file] <subject> [msg]');
     process.exit();
 }
 
-nats.publish(subject, msg, function() {
+// Connect to NATS server.
+var nc = nats.connect(url, nats.creds(creds));
+
+nc.publish(subject, msg, function() {
     console.log('Published [' + subject + '] : "' + msg + '"');
+    process.exit();
+});
+
+nc.on('error', function(e) {
+    console.log('Error [' + nats.options.url + ']: ' + e);
     process.exit();
 });
