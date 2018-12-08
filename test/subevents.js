@@ -99,7 +99,7 @@ describe('Subscription Events', function() {
         nc.publish(subj);
     });
 
-    it('should generate only unsubscribe events on auto-unsub', function(done) {
+    it('should generate only one unsubscribe events on auto-unsub', function(done) {
         var nc = NATS.connect(PORT);
         var subj = 'autounsub.event';
         var eventsReceived = 0;
@@ -115,6 +115,25 @@ describe('Subscription Events', function() {
         }
         nc.flush(function() {
             eventsReceived.should.equal(1);
+            nc.close();
+            done();
+        });
+    });
+
+    it('should generate unsubscribe events on request max', function(done) {
+        var nc = NATS.connect(PORT);
+        var subj = 'request.autounsub.event';
+
+        nc.subscribe(subj, function(subject, reply) {
+            nc.publish(reply, "OK");
+        });
+        nc.request(subj, null, {
+            max: 1
+        });
+
+        nc.on('unsubscribe', function(sid, subject) {
+            should.exist(sid);
+            should.exist(subject);
             nc.close();
             done();
         });

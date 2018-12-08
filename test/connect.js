@@ -37,7 +37,6 @@ describe('Basic Connectivity', function() {
         nsc.stop_server(server, done);
     });
 
-
     it('should perform basic connect with port', function() {
         var nc = NATS.connect(PORT);
         should.exist(nc);

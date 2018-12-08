@@ -18,9 +18,16 @@
 
 var spawn = require('child_process').spawn;
 var net = require('net');
+var sync = require('child_process').execSync;
 
 var SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
 var DEFAULT_PORT = 4222;
+
+function server_version() {
+    return sync(SERVER + ' -v', {
+        timeout: 1000
+    }).toString();
+}
 
 function start_server(port, opt_flags, done) {
     if (!port) {
@@ -36,9 +43,8 @@ function start_server(port, opt_flags, done) {
         flags = flags.concat(opt_flags);
     }
 
-
     if (process.env.PRINT_LAUNCH_CMD) {
-        console.log(flags.join(" "));
+        console.log(flags.join(' '));
     }
 
     var server = spawn(SERVER, flags);
@@ -117,6 +123,7 @@ function start_server(port, opt_flags, done) {
 }
 
 exports.start_server = start_server;
+exports.server_version = server_version;
 
 function wait_stop(server, done) {
     if (server.killed) {

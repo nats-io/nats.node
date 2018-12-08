@@ -8,29 +8,29 @@ var argv = require('minimist')(process.argv.slice(2));
 
 var url = argv.s || nats.DEFAULT_URI;
 var creds = argv.creds;
+var max = argv.n || 1;
 var subject = argv._[0];
+var msg = argv._[1] || '';
 
 if (!subject) {
-    console.log('Usage: node-sub [-s server] [--creds file] <subject>');
+    console.log('Usage: node-req  [-s server] [--creds file] [-n max_responses] <subject> [msg]');
     process.exit();
 }
+
+console.log("url is " + url);
 
 // Connect to NATS server.
 var nc = nats.connect(url, nats.creds(creds));
 
-nc.on('connect', function() {
-    nc.subscribe(subject, function(msg) {
-        console.log('Received "' + msg + '"');
-    });
-    console.log('Listening on [' + subject + ']');
+nc.request(subject, msg, {max:max}, function(response) {
+    console.log('Received: ' + response);
 });
 
-nc.on('error', function(e) {
-    console.log('Error [' + nats.options.url + ']: ' + e);
+nc.on('unsubscribe', function(e) {
     process.exit();
 });
 
-nc.on('close', function() {
-    console.log('CLOSED');
+nc.on('error', function(e) {
+    console.log('Error [' + nc.options.url + ']: ' + e);
     process.exit();
 });
