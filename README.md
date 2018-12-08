@@ -147,7 +147,44 @@ var tlsOptions = {
 var nc = nats.connect({port: TLSPORT, tls: tlsOptions});
 
 ```
-## Authentication
+
+## New Authentication (Nkeys and User Credentials)
+See examples for more usage.
+```javascript
+// Simple connect using credentials file. This loads JWT and signing key
+// each time that NATS connects.
+var nc = NATS.connect('connect.ngs.global', NATS.creds("./myid.creds");
+
+// Setting nkey and signing callback directly.
+var nc = NATS.connect(url, {
+    nkey: 'UAH42UG6PV552P5SWLWTBP3H3S5BHAVCO2IEKEXUANJXR75J63RQ5WM6',
+    sigCB: function(nonce) {
+      return sk.sign(nonce);
+    }
+});
+
+// Setting user JWT statically.
+var nc = NATS.connect(url, {
+    userJWT: myJWT,
+    sigCB: function(nonce) {
+      return sk.sign(nonce);
+    }
+});
+
+// Having user JWT be a function that returns the JWT. Can be useful for
+// loading a new JWT.
+var nc = NATS.connect(url, {
+    userJWT: function() {
+      return myJWT;
+    },
+    sigCB: function(nonce) {
+      return sk.sign(nonce);
+    }
+});
+
+```
+
+## Basic Authentication
 ```javascript
 
 // Connect with username and password in the url
