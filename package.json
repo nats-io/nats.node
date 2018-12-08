@@ -41,11 +41,11 @@
     "node": ">= 4.5.0"
   },
   "dependencies": {
-    "minimist": "^1.2.0",
     "nuid": "^1.0.0",
     "ts-nkeys": "^1.0.8"
   },
   "devDependencies": {
+    "minimist": "^1.2.0",
     "coveralls": "^3.0.2",
     "dependency-check": "^3.2.1",
     "eslint": "^5.10.0",
