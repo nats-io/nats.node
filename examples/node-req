@@ -17,8 +17,6 @@ if (!subject) {
     process.exit();
 }
 
-console.log("url is " + url);
-
 // Connect to NATS server.
 var nc = nats.connect(url, nats.creds(creds));
 
