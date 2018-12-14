@@ -20,7 +20,9 @@ if (!subject) {
 // Connect to NATS server.
 var nc = nats.connect(url, nats.creds(creds));
 
-nc.request(subject, msg, {max:max}, function(response) {
+nc.request(subject, msg, {
+    max: max
+}, function(response) {
     console.log('Received: ' + response);
 });
 
@@ -29,6 +31,6 @@ nc.on('unsubscribe', function(e) {
 });
 
 nc.on('error', function(e) {
-    console.log('Error [' + nc.options.url + ']: ' + e);
+    console.log('Error [' + nc.currentServer + ']: ' + e);
     process.exit();
 });
