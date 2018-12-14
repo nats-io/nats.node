@@ -25,6 +25,6 @@ nc.publish(subject, msg, function() {
 });
 
 nc.on('error', function(e) {
-    console.log('Error [' + nats.options.url + ']: ' + e);
+    console.log('Error [' + nc.currentServer + ']: ' + e);
     process.exit();
 });
