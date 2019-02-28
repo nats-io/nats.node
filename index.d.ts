@@ -91,7 +91,6 @@ export interface SubscribeOptions {
 	queue?: string,
 	max?: number
 }
-
 declare class Client extends events.EventEmitter {
 	/**
 	 * Create a properly formatted inbox subject.
@@ -114,8 +113,8 @@ declare class Client extends events.EventEmitter {
 	 */
 	publish(callback: Function):void;
 	publish(subject: string, callback: Function):void;
-	publish(subject: string, msg: string | Buffer, callback: Function):void;
-	publish(subject: string, msg?: string | Buffer, reply?: string, callback?: Function):void;
+	publish(subject: string, msg: any, callback: Function):void;
+	publish(subject: string, msg: any, reply: string, callback?: Function):void;
 
 	/**
 	 * Subscribe to a given subject, with optional options and callback. opts can be
@@ -142,8 +141,8 @@ declare class Client extends events.EventEmitter {
 	 * The Subscriber Id is returned.
 	 */
 	request(subject: string, callback: Function): number;
-	request(subject: string, msg: string | Buffer, callback: Function): number;
-	request(subject: string, msg?: string, options?: SubscribeOptions, callback?: Function): number;
+	request(subject: string, msg: any, callback: Function): number;
+	request(subject: string, msg: any, options: SubscribeOptions, callback: Function): number;
 
 	/**
 	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
@@ -153,7 +152,7 @@ declare class Client extends events.EventEmitter {
 	 * a timeout has been reached.
 	 * The Subscriber Id is returned.
 	 */
-	requestOne(subject: string, msg: string | Buffer, options?: SubscribeOptions, timeout?: number, callback?:Function) : number
+	requestOne(subject: string, msg: any, options: SubscribeOptions, timeout: number, callback?:Function) : number
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.
