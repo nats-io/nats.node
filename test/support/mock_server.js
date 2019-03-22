@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,19 +16,19 @@
 /*eslint-env es6, node*/
 "use strict";
 
-var net = require('net'),
+const net = require('net'),
     nuid = require('nuid'),
     events = require('events'),
     util = require('util');
 
-var MAX_CONTROL = 1048576;
+const MAX_CONTROL = 1048576;
 
-var PING = /^PING\r\n/i,
+const PING = /^PING\r\n/i,
     CONNECT = /^CONNECT\s+([^\r\n]+)\r\n/i;
 
 // default script handles a connect, and initial ping
 function defaultScript() {
-    var script = [];
+    const script = [];
     script.push({
         re: CONNECT,
         h: sendOk,
@@ -55,7 +55,7 @@ exports.ScriptedServer = ScriptedServer;
 util.inherits(ScriptedServer, events.EventEmitter);
 
 ScriptedServer.prototype.start = function() {
-    var that = this;
+    const that = this;
     this.stream = net.createServer(function(client) {
         that.emit('connect_request');
         sendInfo(that, client);
@@ -101,15 +101,15 @@ function handleData(server, client) {
         }
 
         // convert to string like node-nats does so we can test protocol
-        var buf = client.buffer.toString('binary', 0, MAX_CONTROL);
+        const buf = client.buffer.toString('binary', 0, MAX_CONTROL);
         if (client.script.length) {
-            var match = client.script[0].re.exec(buf);
+            const match = client.script[0].re.exec(buf);
             if (match) {
                 // if we have a match, execute the handler
                 client.script[0].h(client, match);
 
                 // prune the buffer without the processed request
-                var len = match[0].length;
+                const len = match[0].length;
                 if (len >= client.buffer.length) {
                     delete client.buffer;
                 } else {

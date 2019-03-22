@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,14 +17,14 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Subscription Events', function() {
 
-    var PORT = 9422;
-    var server;
+    const PORT = 9422;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -38,8 +38,8 @@ describe('Subscription Events', function() {
 
 
     it('should generate subscribe events', function(done) {
-        var nc = NATS.connect(PORT);
-        var subj = 'sub.event';
+        const nc = NATS.connect(PORT);
+        const subj = 'sub.event';
         nc.on('subscribe', function(sid, subject) {
             should.exist(sid);
             should.exist(subject);
@@ -51,9 +51,9 @@ describe('Subscription Events', function() {
     });
 
     it('should generate subscribe events with opts', function(done) {
-        var nc = NATS.connect(PORT);
-        var subj = 'sub.event';
-        var queuegroup = 'bar';
+        const nc = NATS.connect(PORT);
+        const subj = 'sub.event';
+        const queuegroup = 'bar';
         nc.on('subscribe', function(sid, subject, opts) {
             should.exist(sid);
             should.exist(subject);
@@ -70,8 +70,8 @@ describe('Subscription Events', function() {
     });
 
     it('should generate unsubscribe events', function(done) {
-        var nc = NATS.connect(PORT);
-        var subj = 'sub.event';
+        const nc = NATS.connect(PORT);
+        const subj = 'sub.event';
         nc.on('unsubscribe', function(sid, subject) {
             should.exist(sid);
             should.exist(subject);
@@ -84,8 +84,8 @@ describe('Subscription Events', function() {
     });
 
     it('should generate unsubscribe events on auto-unsub', function(done) {
-        var nc = NATS.connect(PORT);
-        var subj = 'autounsub.event';
+        const nc = NATS.connect(PORT);
+        const subj = 'autounsub.event';
         nc.on('unsubscribe', function(sid, subject) {
             should.exist(sid);
             should.exist(subject);
@@ -100,17 +100,17 @@ describe('Subscription Events', function() {
     });
 
     it('should generate only one unsubscribe events on auto-unsub', function(done) {
-        var nc = NATS.connect(PORT);
-        var subj = 'autounsub.event';
-        var eventsReceived = 0;
-        var want = 5;
+        const nc = NATS.connect(PORT);
+        const subj = 'autounsub.event';
+        let eventsReceived = 0;
+        const want = 5;
 
         nc.on('unsubscribe', function(sid, subject) {
             eventsReceived++;
         });
-        var sid = nc.subscribe(subj);
+        const sid = nc.subscribe(subj);
         nc.unsubscribe(sid, want);
-        for (var i = 0; i < want; i++) {
+        for (let i = 0; i < want; i++) {
             nc.publish(subj);
         }
         nc.flush(function() {
@@ -121,8 +121,8 @@ describe('Subscription Events', function() {
     });
 
     it('should generate unsubscribe events on request max', function(done) {
-        var nc = NATS.connect(PORT);
-        var subj = 'request.autounsub.event';
+        const nc = NATS.connect(PORT);
+        const subj = 'request.autounsub.event';
 
         nc.subscribe(subj, function(subject, reply) {
             nc.publish(reply, "OK");

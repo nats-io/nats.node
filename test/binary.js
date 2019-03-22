@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,15 +17,15 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     crypto = require('crypto'),
     should = require('should');
 
 describe('Binary', function() {
 
-    var PORT = 1432;
-    var server;
+    const PORT = 1432;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -40,17 +40,17 @@ describe('Binary', function() {
 
     function binaryDataTests(done, nc) {
         // try some invalid utf-8 byte sequences
-        var invalid2octet = Buffer.from('\xc3\x28', 'binary');
-        var invalidsequenceidentifier = Buffer.from('\xa0\xa1', 'binary');
-        var invalid3octet = Buffer.from('\xe2\x28\xa1', 'binary');
-        var invalid4octet = Buffer.from('\xf0\x90\x28\xbc', 'binary');
-        var bigBuffer = crypto.randomBytes(128 * 1024);
+        const invalid2octet = Buffer.from('\xc3\x28', 'binary');
+        const invalidsequenceidentifier = Buffer.from('\xa0\xa1', 'binary');
+        const invalid3octet = Buffer.from('\xe2\x28\xa1', 'binary');
+        const invalid4octet = Buffer.from('\xf0\x90\x28\xbc', 'binary');
+        const bigBuffer = crypto.randomBytes(128 * 1024);
 
         // make sure embedded nulls don't cause truncation
-        var embeddednull = Buffer.from('\x00\xf0\x00\x28\x00\x00\xf0\x9f\x92\xa9\x00', 'binary');
+        const embeddednull = Buffer.from('\x00\xf0\x00\x28\x00\x00\xf0\x9f\x92\xa9\x00', 'binary');
 
-        var count = 6;
-        var finished = function() {
+        let count = 6;
+        const finished = function () {
             if (--count <= 0) {
                 nc.close();
                 done();
@@ -127,7 +127,7 @@ describe('Binary', function() {
     }
 
     it('should allow sending and receiving binary data', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'url': 'nats://localhost:' + PORT,
             'encoding': 'binary'
         });
@@ -135,7 +135,7 @@ describe('Binary', function() {
     });
 
     it('should allow sending binary buffers', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'url': 'nats://localhost:' + PORT,
             'preserveBuffers': true
         });
@@ -143,14 +143,14 @@ describe('Binary', function() {
     });
 
     it('should not append control characters on chunk processing', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'url': 'nats://localhost:' + PORT,
             'preserveBuffers': true
         });
-        var buffer = crypto.randomBytes(1024);
+        const buffer = crypto.randomBytes(1024);
 
-        var count = 0;
-        var finished = function() {
+        let count = 0;
+        const finished = function () {
 
             if (++count === 100) {
                 nc.close();
@@ -163,7 +163,7 @@ describe('Binary', function() {
             finished();
         });
 
-        for (var i = 0; i <= 100; i++) {
+        for (let i = 0; i <= 100; i++) {
 
             nc.publish('trailingData', buffer);
         }

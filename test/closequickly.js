@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,15 +17,15 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     child_process = require('child_process'),
     should = require('should');
 
 describe('Close functionality', function() {
 
-    var PORT = 8459;
-    var server;
+    const PORT = 8459;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -38,12 +38,12 @@ describe('Close functionality', function() {
     });
 
     it('close quickly', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT
         });
 
 
-        var timer;
+        let timer;
 
         nc.flush(function() {
             nc.subscribe("started", function(m) {
@@ -54,7 +54,7 @@ describe('Close functionality', function() {
             }, 10000);
         });
 
-        var child = child_process.execFile('node', ['./test/support/exiting_client.js', PORT], function(error) {
+        const child = child_process.execFile('node', ['./test/support/exiting_client.js', PORT], function (error) {
             if (error) {
                 nc.close();
                 done(error);

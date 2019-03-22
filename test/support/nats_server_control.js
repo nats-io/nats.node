@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,12 +16,12 @@
 /* jslint node: true */
 'use strict';
 
-var spawn = require('child_process').spawn;
-var net = require('net');
-var sync = require('child_process').execSync;
+const spawn = require('child_process').spawn;
+const net = require('net');
+const sync = require('child_process').execSync;
 
-var SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
-var DEFAULT_PORT = 4222;
+const SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
+const DEFAULT_PORT = 4222;
 
 function server_version() {
     return sync(SERVER + ' -v', {
@@ -37,7 +37,7 @@ function start_server(port, opt_flags, done) {
         done = opt_flags;
         opt_flags = null;
     }
-    var flags = ['-p', port, '-a', '127.0.0.1'];
+    let flags = ['-p', port, '-a', '127.0.0.1'];
 
     if (opt_flags) {
         flags = flags.concat(opt_flags);
@@ -47,16 +47,16 @@ function start_server(port, opt_flags, done) {
         console.log(flags.join(' '));
     }
 
-    var server = spawn(SERVER, flags);
+    const server = spawn(SERVER, flags);
 
-    var start = new Date();
-    var wait = 0;
-    var maxWait = 5 * 1000; // 5 secs
-    var delta = 250;
-    var socket;
-    var timer;
+    const start = new Date();
+    let wait = 0;
+    const maxWait = 5 * 1000; // 5 secs
+    const delta = 250;
+    let socket;
+    let timer;
 
-    var resetSocket = function() {
+    const resetSocket = function () {
         if (socket !== undefined) {
             socket.removeAllListeners();
             socket.destroy();
@@ -64,7 +64,7 @@ function start_server(port, opt_flags, done) {
         }
     };
 
-    var finish = function(err) {
+    const finish = function (err) {
         resetSocket();
         if (timer !== undefined) {
             clearInterval(timer);
@@ -113,7 +113,7 @@ function start_server(port, opt_flags, done) {
 
     // Server does not exist..
     server.stderr.on('data', function(data) {
-        if (/^execvp\(\)/.test(data)) {
+        if ((/^execvp\(\)/).test(data)) {
             clearInterval(timer);
             finish(new Error('Can\'t find the ' + SERVER));
         }
@@ -155,9 +155,9 @@ function start_cluster(ports, route_port, opt_flags, done) {
         done = opt_flags;
         opt_flags = null;
     }
-    var servers = [];
-    var started = 0;
-    var server = add_member(ports[0], route_port, route_port, opt_flags, function() {
+    const servers = [];
+    let started = 0;
+    const server = add_member(ports[0], route_port, route_port, opt_flags, function () {
         started++;
         servers.push(server);
         if (started === ports.length) {
@@ -165,9 +165,9 @@ function start_cluster(ports, route_port, opt_flags, done) {
         }
     });
 
-    var others = ports.slice(1);
+    const others = ports.slice(1);
     others.forEach(function(p) {
-        var s = add_member(p, route_port, p + 1000, opt_flags, function() {
+        const s = add_member(p, route_port, p + 1000, opt_flags, function () {
             started++;
             servers.push(s);
             if (started === ports.length) {
@@ -185,10 +185,10 @@ function add_member_with_delay(ports, route_port, delay, opt_flags, done) {
         done = opt_flags;
         opt_flags = null;
     }
-    var servers = [];
+    const servers = [];
     ports.forEach(function(p, i) {
         setTimeout(function() {
-            var s = add_member(p, route_port, p + 1000, opt_flags, function() {
+            const s = add_member(p, route_port, p + 1000, opt_flags, function () {
                 servers.push(s);
                 if (servers.length === ports.length) {
                     done();
@@ -207,7 +207,7 @@ function add_member(port, route_port, cluster_port, opt_flags, done) {
         opt_flags = null;
     }
     opt_flags = opt_flags || [];
-    var opts = JSON.parse(JSON.stringify(opt_flags));
+    const opts = JSON.parse(JSON.stringify(opt_flags));
     opts.push('--routes', 'nats://localhost:' + route_port);
     opts.push('--cluster', 'nats://localhost:' + cluster_port);
 
@@ -218,7 +218,7 @@ exports.start_cluster = start_cluster;
 exports.add_member = add_member;
 
 exports.stop_cluster = function(servers, done) {
-    var count = servers.length;
+    let count = servers.length;
 
     function latch() {
         count--;

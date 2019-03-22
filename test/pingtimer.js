@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,14 +19,14 @@
 
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     mockserver = require('./support/mock_server'),
     should = require('should');
 
 describe('Ping Timer', function() {
     this.timeout(10000);
-    var PORT = 1966;
-    var server;
+    const PORT = 1966;
+    let server;
 
     before(function(done) {
         // default server simply sends connect and responds to one ping
@@ -40,7 +40,7 @@ describe('Ping Timer', function() {
     });
 
     it('should reconnect if server doesnt ping', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             pingInterval: 200,
             maxReconnectAttempts: 1
@@ -52,14 +52,14 @@ describe('Ping Timer', function() {
     });
 
     it('timer pings are sent', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             pingInterval: 200,
             maxPingOut: 5,
             maxReconnectAttempts: 1
         });
 
-        var pingTimerFired = false;
+        let pingTimerFired = false;
         nc.on('pingtimer', () => {
             pingTimerFired = true;
         });
@@ -73,14 +73,14 @@ describe('Ping Timer', function() {
 
 
     it('configured number of missed pings is honored', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             pingInterval: 200,
             maxPingOut: 5,
             maxReconnectAttempts: 1
         });
 
-        var maxOut = 0;
+        let maxOut = 0;
         nc.on('pingcount', (c) => {
             maxOut = Math.max(maxOut, c);
         });

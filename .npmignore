@@ -19,10 +19,12 @@ tmp/*
 benchmark/
 examples/
 test/
+coverage/
 .istanbul.yml
 .travis.yml
 .eslintrc.js
 .eslintignore
+.nyc_output/
 crockford.jscsrc
 Makefile
 TODO

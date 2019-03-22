@@ -16,3 +16,5 @@ xunit.xml
 logs/*
 reports/*
 tmp/*
+coverage/*
+.nyc_output/*

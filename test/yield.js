@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,14 +17,14 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     sleep = require('./support/sleep'),
     should = require('should');
 
 describe('Yield', function() {
-    var PORT = 1469;
-    var server;
+    const PORT = 1469;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -37,15 +37,15 @@ describe('Yield', function() {
     });
 
     it('should yield to other events', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             yieldTime: 5
         });
 
-        var start = Date.now();
+        const start = Date.now();
 
-        var timer = setInterval(function() {
-            var delta = Date.now() - start;
+        const timer = setInterval(function () {
+            const delta = Date.now() - start;
             nc.close();
             clearTimeout(timer);
             delta.should.within(10, 25);
@@ -56,7 +56,7 @@ describe('Yield', function() {
             sleep.sleep(1);
         });
 
-        for (var i = 0; i < 256; i++) {
+        for (let i = 0; i < 256; i++) {
             nc.publish('foo', 'hello world');
         }
     });

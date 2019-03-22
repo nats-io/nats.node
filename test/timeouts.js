@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,15 +17,15 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
-var PORT = 1428;
+const PORT = 1428;
 
 describe('Timeout and max received events for subscriptions', function() {
 
-    var server;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -38,12 +38,12 @@ describe('Timeout and max received events for subscriptions', function() {
     });
 
     it('should perform simple timeouts on subscriptions', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('connect', function() {
-            var startTime = new Date();
-            var sid = nc.subscribe('foo');
+            const startTime = new Date();
+            const sid = nc.subscribe('foo');
             nc.timeout(sid, 50, 1, function() {
-                var elapsed = new Date() - startTime;
+                const elapsed = new Date() - startTime;
                 should.exists(elapsed);
                 elapsed.should.be.within(45, 75);
                 nc.close();
@@ -53,9 +53,9 @@ describe('Timeout and max received events for subscriptions', function() {
     });
 
     it('should not timeout if exepected has been received', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('connect', function() {
-            var sid = nc.subscribe('foo');
+            const sid = nc.subscribe('foo');
             nc.timeout(sid, 50, 1, function() {
                 done(new Error('Timeout improperly called'));
             });
@@ -68,10 +68,10 @@ describe('Timeout and max received events for subscriptions', function() {
 
 
     it('should not timeout if unsubscribe is called', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('connect', function() {
-            var count = 0;
-            var sid = nc.subscribe('bar', function(m) {
+            let count = 0;
+            const sid = nc.subscribe('bar', function (m) {
                 count++;
                 if (count === 1) {
                     nc.unsubscribe(sid);
@@ -91,10 +91,10 @@ describe('Timeout and max received events for subscriptions', function() {
     });
 
     it('timeout should unsubscribe', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('connect', function() {
-            var count = 0;
-            var sid = nc.subscribe('bar', function(m) {
+            let count = 0;
+            const sid = nc.subscribe('bar', function (m) {
                 count++;
             });
             nc.timeout(sid, 250, 2, function() {
@@ -113,7 +113,7 @@ describe('Timeout and max received events for subscriptions', function() {
 
 
     it('should perform simple timeouts on requests', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('connect', function() {
             nc.request('foo', null, {
                 max: 1,
@@ -128,13 +128,13 @@ describe('Timeout and max received events for subscriptions', function() {
     });
 
     it('should perform simple timeouts on requests without specified number of messages', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('connect', function() {
             nc.subscribe('foo', function(msg, reply) {
                 nc.publish(reply);
             });
 
-            var responses = 0;
+            let responses = 0;
             nc.request('foo', null, {
                 max: 2,
                 timeout: 1000
@@ -153,13 +153,13 @@ describe('Timeout and max received events for subscriptions', function() {
     });
 
     it('should override request autoset timeouts', function(done) {
-        var nc = NATS.connect(PORT);
-        var calledOnRequestHandler = false;
+        const nc = NATS.connect(PORT);
+        let calledOnRequestHandler = false;
         nc.on('connect', function() {
-            var sid = nc.request('foo', null, {
+            const sid = nc.request('foo', null, {
                 max: 2,
                 timeout: 1000
-            }, function(err) {
+            }, function (err) {
                 calledOnRequestHandler = true;
             });
 

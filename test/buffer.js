@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,14 +17,14 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Buffer', function() {
 
-    var PORT = 1432;
-    var server;
+    const PORT = 1432;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -37,12 +37,12 @@ describe('Buffer', function() {
     });
 
     it('should allow sending and receiving raw buffers', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'url': 'nats://localhost:' + PORT,
             'preserveBuffers': true
         });
 
-        var validBuffer = Buffer.from('foo-bar');
+        const validBuffer = Buffer.from('foo-bar');
 
         nc.subscribe('validBuffer', function(msg) {
 
@@ -56,14 +56,14 @@ describe('Buffer', function() {
     });
 
     it('should allow parsing raw buffers to json', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'url': 'nats://localhost:' + PORT,
             'preserveBuffers': true,
             'json': true
         });
 
-        var jsonString = '{ "foo-bar": true }';
-        var validBuffer = Buffer.from(jsonString);
+        const jsonString = '{ "foo-bar": true }';
+        const validBuffer = Buffer.from(jsonString);
 
         nc.subscribe('validBuffer', function(msg) {
 

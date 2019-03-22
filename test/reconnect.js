@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,16 +17,16 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Reconnect functionality', function() {
 
-    var PORT = 1426;
-    var WAIT = 20;
-    var ATTEMPTS = 4;
-    var server;
+    const PORT = 1426;
+    const WAIT = 20;
+    const ATTEMPTS = 4;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -39,7 +39,7 @@ describe('Reconnect functionality', function() {
     });
 
     it('should not emit a reconnecting event if suppressed', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnect': false
         });
@@ -57,11 +57,11 @@ describe('Reconnect functionality', function() {
     });
 
     it('should emit a disconnect and a reconnecting event after proper delay', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': WAIT
         });
-        var startTime;
+        let startTime;
         should.exist(nc);
         nc.on('connect', function() {
             nsc.stop_server(server, function() {
@@ -69,32 +69,32 @@ describe('Reconnect functionality', function() {
             });
         });
         nc.on('reconnecting', function(client) {
-            var elapsed = new Date() - startTime;
+            const elapsed = new Date() - startTime;
             elapsed.should.be.within(WAIT, 5 * WAIT);
             nc.close();
             server = nsc.start_server(PORT, done);
         });
         nc.on('disconnect', function() {
-            var elapsed = new Date() - startTime;
+            const elapsed = new Date() - startTime;
             elapsed.should.be.within(0, 5 * WAIT);
         });
     });
 
     it('should emit multiple reconnecting events and fail after maxReconnectAttempts', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': WAIT,
             'maxReconnectAttempts': ATTEMPTS
         });
-        var startTime;
-        var numAttempts = 0;
+        let startTime;
+        let numAttempts = 0;
         nc.on('connect', function() {
             nsc.stop_server(server, function() {
                 startTime = new Date();
             });
         });
         nc.on('reconnecting', function(client) {
-            var elapsed = new Date() - startTime;
+            const elapsed = new Date() - startTime;
             elapsed.should.be.within(WAIT, 5 * WAIT);
             startTime = new Date();
             numAttempts += 1;
@@ -108,15 +108,15 @@ describe('Reconnect functionality', function() {
 
     it('should emit reconnecting events indefinitely if maxReconnectAttempts is set to -1', function(done) {
 
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': WAIT,
             'maxReconnectAttempts': -1
         });
-        var numAttempts = 0;
+        let numAttempts = 0;
 
         // stop trying after an arbitrary amount of elapsed time
-        var timeout = setTimeout(function() {
+        const timeout = setTimeout(function () {
             // restart server and make sure next flush works ok
             if (server === null) {
                 server = nsc.start_server(PORT);
@@ -147,7 +147,7 @@ describe('Reconnect functionality', function() {
     });
 
     it('should succesfully reconnect to new server', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': 100
         });
@@ -172,7 +172,7 @@ describe('Reconnect functionality', function() {
     });
 
     it('should succesfully reconnect to new server with subscriptions', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': 100
         });
@@ -198,7 +198,7 @@ describe('Reconnect functionality', function() {
     });
 
     it('should succesfully reconnect to new server with queue subscriptions correctly', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': 100
         });
@@ -208,12 +208,12 @@ describe('Reconnect functionality', function() {
                 server = null;
             });
         });
-        var received = 0;
+        let received = 0;
         // Multiple subscribers
-        var cb = function() {
+        const cb = function () {
             received += 1;
         };
-        for (var i = 0; i < 5; i++) {
+        for (let i = 0; i < 5; i++) {
             nc.subscribe('foo', {
                 'queue': 'myReconnectQueue'
             }, cb);
@@ -234,22 +234,22 @@ describe('Reconnect functionality', function() {
     });
 
     it('should properly resync with inbound buffer non-nil', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': 100
         });
 
         // Send lots of data to ourselves
         nc.on('connect', function() {
-            var sid = nc.subscribe('foo', function() {
+            const sid = nc.subscribe('foo', function () {
                 // Kill server on first message, inbound should still be full.
-                nsc.stop_server(server, function() {
+                nsc.stop_server(server, function () {
                     nc.unsubscribe(sid);
                     server = nsc.start_server(PORT);
                 });
             });
-            var b = Buffer.alloc(4096).toString();
-            for (var i = 0; i < 1000; i++) {
+            const b = Buffer.alloc(4096).toString();
+            for (let i = 0; i < 1000; i++) {
                 nc.publish('foo', b);
             }
         });
@@ -263,11 +263,11 @@ describe('Reconnect functionality', function() {
     });
 
     it('should not crash when sending a publish with a callback after connection loss', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': WAIT
         });
-        var startTime;
+        let startTime;
         should.exist(nc);
         nc.on('connect', function() {
             nsc.stop_server(server, function() {
@@ -289,7 +289,7 @@ describe('Reconnect functionality', function() {
     });
 
     it('should execute callbacks if published during reconnect', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': 100
         });
@@ -304,7 +304,7 @@ describe('Reconnect functionality', function() {
             }
         });
         nc.on('connect', function() {
-            var s = server;
+            const s = server;
             server = null;
             nsc.stop_server(s);
         });
@@ -314,7 +314,7 @@ describe('Reconnect functionality', function() {
         // This checks two things if the client publishes while reconnecting:
         // 1) the message is published when the client reconnects
         // 2) the client's subscriptions are synced before the message is published
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': 100
         });
@@ -330,18 +330,18 @@ describe('Reconnect functionality', function() {
             }
         });
         nc.on('connect', function() {
-            var s = server;
+            const s = server;
             server = null;
             nsc.stop_server(s);
         });
     });
 
     it('should emit reconnect before flush callbacks are called', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'port': PORT,
             'reconnectTimeWait': 100
         });
-        var reconnected = false;
+        let reconnected = false;
         nc.on('reconnecting', function() {
             // restart server
             if (server === null) {
@@ -359,7 +359,7 @@ describe('Reconnect functionality', function() {
             reconnected = true;
         });
         nc.on('connect', function() {
-            var s = server;
+            const s = server;
             server = null;
             nsc.stop_server(s);
         });

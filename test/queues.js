@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,14 +17,14 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Queues', function() {
 
-    var PORT = 1425;
-    var server;
+    const PORT = 1425;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -37,8 +37,8 @@ describe('Queues', function() {
     });
 
     it('should deliver a message to single member of a queue group', function(done) {
-        var nc = NATS.connect(PORT);
-        var received = 0;
+        const nc = NATS.connect(PORT);
+        let received = 0;
         nc.subscribe('foo', {
             'queue': 'myqueue'
         }, function() {
@@ -53,12 +53,12 @@ describe('Queues', function() {
     });
 
     it('should deliver a message to only one member of a queue group', function(done) {
-        var nc = NATS.connect(PORT);
-        var received = 0;
-        var cb = function() {
+        const nc = NATS.connect(PORT);
+        let received = 0;
+        const cb = function () {
             received += 1;
         };
-        for (var i = 0; i < 5; i++) {
+        for (let i = 0; i < 5; i++) {
             nc.subscribe('foo', {
                 'queue': 'myqueue'
             }, cb);
@@ -71,10 +71,10 @@ describe('Queues', function() {
     });
 
     it('should allow queue subscribers and normal subscribers to work together', function(done) {
-        var nc = NATS.connect(PORT);
-        var expected = 4;
-        var received = 0;
-        var recv = function() {
+        const nc = NATS.connect(PORT);
+        const expected = 4;
+        let received = 0;
+        const recv = function () {
             received += 1;
             if (received == expected) {
                 nc.close();
@@ -93,12 +93,12 @@ describe('Queues', function() {
 
     it('should spread messages out equally (given random)', function(done) {
         /* jshint loopfunc: true */
-        var nc = NATS.connect(PORT);
-        var total = 5000;
-        var numSubscribers = 10;
-        var avg = total / numSubscribers;
-        var allowedVariance = total * 0.05;
-        var received = new Array(numSubscribers);
+        const nc = NATS.connect(PORT);
+        const total = 5000;
+        const numSubscribers = 10;
+        const avg = total / numSubscribers;
+        const allowedVariance = total * 0.05;
+        const received = new Array(numSubscribers);
 
         for (var i = 0; i < numSubscribers; i++) {
             received[i] = 0;
@@ -116,7 +116,7 @@ describe('Queues', function() {
         }
 
         nc.flush(function() {
-            for (var i = 0; i < numSubscribers; i++) {
+            for (let i = 0; i < numSubscribers; i++) {
                 Math.abs(received[i] - avg).should.be.below(allowedVariance);
             }
             nc.close();
@@ -125,8 +125,8 @@ describe('Queues', function() {
     });
 
     it('should deliver only one mesage to queue subscriber regardless of wildcards', function(done) {
-        var nc = NATS.connect(PORT);
-        var received = 0;
+        const nc = NATS.connect(PORT);
+        let received = 0;
         nc.subscribe('foo.bar', {
             'queue': 'wcqueue'
         }, function() {
@@ -150,10 +150,10 @@ describe('Queues', function() {
     });
 
     it('should deliver to multiple queue groups', function(done) {
-        var nc = NATS.connect(PORT);
-        var received1 = 0;
-        var received2 = 0;
-        var num = 10;
+        const nc = NATS.connect(PORT);
+        let received1 = 0;
+        let received2 = 0;
+        const num = 10;
 
         nc.subscribe('foo.bar', {
             'queue': 'r1'
@@ -166,7 +166,7 @@ describe('Queues', function() {
             received2 += 1;
         });
 
-        for (var i = 0; i < num; i++) {
+        for (let i = 0; i < num; i++) {
             nc.publish('foo.bar');
         }
 

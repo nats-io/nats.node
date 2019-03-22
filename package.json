@@ -30,27 +30,28 @@
   "scripts": {
     "depcheck": "dependency-check . lib/*",
     "depcheck:unused": "dependency-check ./package.json --unused --no-dev lib/*",
-    "test:unit": "mkdir -p reports/ && NODE_ENV=test multi='spec=- xunit=reports/mocha-xunit.xml' istanbul cover _mocha -- -R mocha-multi --timeout 10000 --slow 750 && istanbul check-coverage",
+    "test:unit": "mkdir -p reports/ && NODE_ENV=test multi='spec=- xunit=reports/mocha-xunit.xml' nyc mocha --timeout 10000 --slow 750",
     "test": "npm run depcheck && npm run depcheck:unused && npm run lint && npm run test:unit",
-    "coveralls": "npm run cover -- --report lcovonly && cat ./reports/coverage/lcov.info | coveralls",
-    "cover": "istanbul cover _mocha",
-    "lint": "if-node-version >=4 eslint ./lib ./examples ./benchmark ./test",
+    "coveralls": "npm run test && nyc report --reporter=text-lcov | coveralls",
+    "cover": "nyc report --reporter=html && open coverage/index.html",
+    "lint": "if-node-version '>=4' eslint ./lib ./examples ./benchmark ./test",
     "fmt": "js-beautify -n --config crockford.jscsrc -r lib/* test/*.js test/support/*.js examples/* benchmark/*.js"
   },
   "engines": {
-    "node": ">= 4.5.0"
+    "node": ">= 6.5.0"
   },
   "dependencies": {
     "nuid": "^1.0.0",
     "ts-nkeys": "^1.0.8"
   },
   "devDependencies": {
+    "@types/node": "^11.11.6",
     "minimist": "^1.2.0",
     "coveralls": "^3.0.2",
     "dependency-check": "^3.2.1",
     "eslint": "^5.10.0",
     "if-node-version": "^1.1.1",
-    "istanbul": "^0.4.5",
+    "nyc": "^13.3.0",
     "js-beautify": "^1.6.12",
     "jshint": "^2.9.6",
     "jshint-stylish": "2.2.x",
@@ -59,5 +60,15 @@
     "mocha-multi": "^1.0.1",
     "should": ">= 9.0.0"
   },
-  "typings": "./index.d.ts"
+  "typings": "./index.d.ts",
+  "nyc": {
+    "include": [
+      "lib/**"
+    ],
+    "exclude": [
+      "test/**",
+      "examples/**",
+      "benchmark/**"
+    ]
+  }
 }

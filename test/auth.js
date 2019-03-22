@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,17 +17,17 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Authorization', function() {
 
-    var PORT = 1421;
-    var flags = ['--user', 'derek', '--pass', 'foobar'];
-    var authUrl = 'nats://derek:foobar@localhost:' + PORT;
-    var noAuthUrl = 'nats://localhost:' + PORT;
-    var server;
+    const PORT = 1421;
+    const flags = ['--user', 'derek', '--pass', 'foobar'];
+    const authUrl = 'nats://derek:foobar@localhost:' + PORT;
+    const noAuthUrl = 'nats://localhost:' + PORT;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -40,7 +40,7 @@ describe('Authorization', function() {
     });
 
     it('should fail to connect with no credentials ', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('error', function(err) {
             should.exist(err);
             should.exist((/Authorization/).exec(err));
@@ -50,7 +50,7 @@ describe('Authorization', function() {
     });
 
     it('should connect with proper credentials in url', function(done) {
-        var nc = NATS.connect(authUrl);
+        const nc = NATS.connect(authUrl);
         nc.on('connect', function(nc) {
             setTimeout(function() {
                 nc.close();
@@ -60,7 +60,7 @@ describe('Authorization', function() {
     });
 
     it('should connect with proper credentials as options', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'url': noAuthUrl,
             'user': 'derek',
             'pass': 'foobar'
@@ -74,7 +74,7 @@ describe('Authorization', function() {
     });
 
     it('should connect with proper credentials as server url', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'servers': [authUrl]
         });
         nc.on('connect', function(nc) {
@@ -87,11 +87,11 @@ describe('Authorization', function() {
 
 describe('Token Authorization', function() {
 
-    var PORT = 1421;
-    var flags = ['--auth', 'token1'];
-    var authUrl = 'nats://token1@localhost:' + PORT;
-    var noAuthUrl = 'nats://localhost:' + PORT;
-    var server;
+    const PORT = 1421;
+    const flags = ['--auth', 'token1'];
+    const authUrl = 'nats://token1@localhost:' + PORT;
+    const noAuthUrl = 'nats://localhost:' + PORT;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -104,7 +104,7 @@ describe('Token Authorization', function() {
     });
 
     it('should fail to connect with no credentials ', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('error', function(err) {
             should.exist(err);
             should.exist((/Authorization/).exec(err));
@@ -114,7 +114,7 @@ describe('Token Authorization', function() {
     });
 
     it('should connect with proper credentials in url', function(done) {
-        var nc = NATS.connect(authUrl);
+        const nc = NATS.connect(authUrl);
         nc.on('connect', function(nc) {
             setTimeout(function() {
                 nc.close();
@@ -124,7 +124,7 @@ describe('Token Authorization', function() {
     });
 
     it('should connect with proper credentials as options', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'url': noAuthUrl,
             'token': 'token1'
         });
@@ -137,7 +137,7 @@ describe('Token Authorization', function() {
     });
 
     it('should connect with proper credentials as server url', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'servers': [authUrl]
         });
         nc.on('connect', function(nc) {
