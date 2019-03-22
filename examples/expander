@@ -87,3 +87,4 @@ function expand(natsurl, type, callback) {
         callback(undefined, fun(records));
     });
 }
+
