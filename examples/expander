@@ -56,6 +56,15 @@ function mapSrv(u) {
 // resolved hosts for the record. It only supports "A" and "SRV" records,
 // but additional record types can be parsed by simply providing a new
 // mapping function.
+//
+// expand("nats://user:pass@host:4222", "A", function(err, values) {
+//     console.log(values);
+// });
+//
+// expand("nats://user:pass@host.com", "SRV", function(err, values) {
+//     console.log(values);
+// });
+//
 function expand(natsurl, type, callback) {
     var u = url.parse(natsurl);
     type = type.toUpperCase();
@@ -78,11 +87,3 @@ function expand(natsurl, type, callback) {
         callback(undefined, fun(records));
     });
 }
-
-expand("nats://user@test.albertoricart.com:4222", "A", function(err, values) {
-    console.log(values);
-});
-
-expand("nats://user@nats.albertoricart.com", "SRV", function(err, values) {
-    console.log(values);
-});
