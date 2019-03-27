@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,62 +18,62 @@
 /* jshint -W030 */
 'use strict';
 
-var u = require('./support/nats_conf_utils'),
+const u = require('./support/nats_conf_utils'),
     should = require('should');
 
 
 describe('NATS Conf Utils', function() {
     it('test serializing simple', function() {
-        var x = {
+        const x = {
             test: 'one'
         };
-        var y = u.j(x);
+        const y = u.j(x);
 
-        var buf = y.split('\n');
+        const buf = y.split('\n');
         buf.forEach(function(e, i) {
             buf[i] = e.trim();
         });
 
-        var z = buf.join(' ');
+        const z = buf.join(' ');
         should(z).be.equal("test: one");
     });
 
     it('test serializing nested', function() {
-        var x = {
+        const x = {
             a: 'one',
             b: {
                 a: 'two'
             }
         };
-        var y = u.j(x);
+        const y = u.j(x);
 
-        var buf = y.split('\n');
+        const buf = y.split('\n');
         buf.forEach(function(e, i) {
             buf[i] = e.trim();
         });
 
-        var z = buf.join(' ');
+        const z = buf.join(' ');
         should(z).be.equal("a: one b { a: two }");
     });
 
     it('test serializing array', function() {
-        var x = {
+        const x = {
             a: 'one',
             b: ['a', 'b', 'c']
         };
-        var y = u.j(x);
+        const y = u.j(x);
 
-        var buf = y.split('\n');
+        const buf = y.split('\n');
         buf.forEach(function(e, i) {
             buf[i] = e.trim();
         });
 
-        var z = buf.join(' ');
+        const z = buf.join(' ');
         should(z).be.equal("a: one b [ a b c ]");
     });
 
     it('test serializing array objs', function() {
-        var x = {
+        const x = {
             a: 'one',
             b: [{
                 a: 'a'
@@ -83,18 +83,18 @@ describe('NATS Conf Utils', function() {
                 c: 'c'
             }]
         };
-        var y = u.j(x);
-        var buf = y.split('\n');
+        const y = u.j(x);
+        const buf = y.split('\n');
         buf.forEach(function(e, i) {
             buf[i] = e.trim();
         });
 
-        var z = buf.join(' ');
+        const z = buf.join(' ');
         should(z).be.equal("a: one b [ { a: a } { b: b } { c: c } ]");
     });
 
     it('test serializing array arrays', function() {
-        var x = {
+        const x = {
             a: 'one',
             b: [{
                 a: 'a',
@@ -105,13 +105,13 @@ describe('NATS Conf Utils', function() {
                 c: 'c'
             }]
         };
-        var y = u.j(x);
-        var buf = y.split('\n');
+        const y = u.j(x);
+        const buf = y.split('\n');
         buf.forEach(function(e, i) {
             buf[i] = e.trim();
         });
 
-        var z = buf.join(' ');
+        const z = buf.join(' ');
         should(z).be.equal("a: one b [ { a: a b [ b c ] } { b: b } { c: c } ]");
     });
 });

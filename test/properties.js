@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,7 @@
 /* jshint -W030 */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     should = require('should');
 
 describe('Base Properties', function() {
@@ -29,7 +29,7 @@ describe('Base Properties', function() {
 
     it('should have the same version as package.json', function() {
         // eslint-disable-next-line
-        var pkg = require('../package.json');
+        const pkg = require('../package.json');
         NATS.version.should.equal(pkg.version);
     });
 
@@ -45,7 +45,7 @@ describe('Base Properties', function() {
 
 describe('Connection Properties', function() {
 
-    var nc = NATS.connect();
+    let nc = NATS.connect();
     nc.should.exist;
 
     it('should have a publish function', function() {
@@ -87,7 +87,7 @@ describe('Connection Properties', function() {
     nc.close();
 
     it('should allow options to be overridden', function() {
-        var options = {
+        const options = {
             'url': 'nats://localhost:22421',
             'verbose': true,
             'pedantic': true,

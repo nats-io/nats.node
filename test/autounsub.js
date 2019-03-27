@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,14 +17,14 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Max responses and Auto-unsub', function() {
 
-    var PORT = 1422;
-    var server;
+    const PORT = 1422;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -37,17 +37,17 @@ describe('Max responses and Auto-unsub', function() {
     });
 
     it('should only received max responses requested', function(done) {
-        var nc = NATS.connect(PORT);
-        var WANT = 10;
-        var SEND = 20;
-        var received = 0;
+        const nc = NATS.connect(PORT);
+        const WANT = 10;
+        const SEND = 20;
+        let received = 0;
 
         nc.subscribe('foo', {
             'max': WANT
         }, function() {
             received += 1;
         });
-        for (var i = 0; i < SEND; i++) {
+        for (let i = 0; i < SEND; i++) {
             nc.publish('foo');
         }
         nc.flush(function() {
@@ -59,15 +59,15 @@ describe('Max responses and Auto-unsub', function() {
     });
 
     it('should only received max responses requested (client support)', function(done) {
-        var nc = NATS.connect(PORT);
-        var WANT = 10;
-        var SEND = 20;
-        var received = 0;
+        const nc = NATS.connect(PORT);
+        const WANT = 10;
+        const SEND = 20;
+        let received = 0;
 
-        var sid = nc.subscribe('foo', function() {
+        const sid = nc.subscribe('foo', function() {
             received += 1;
         });
-        for (var i = 0; i < SEND; i++) {
+        for (let i = 0; i < SEND; i++) {
             nc.publish('foo');
         }
         nc.unsubscribe(sid, WANT);
@@ -81,16 +81,16 @@ describe('Max responses and Auto-unsub', function() {
     });
 
     it('should not complain when unsubscribing an auto-unsubscribed sid', function(done) {
-        var nc = NATS.connect(PORT);
-        var SEND = 20;
-        var received = 0;
+        const nc = NATS.connect(PORT);
+        const SEND = 20;
+        let received = 0;
 
-        var sid = nc.subscribe('foo', {
+        const sid = nc.subscribe('foo', {
             'max': 1
-        }, function() {
+        }, function () {
             received += 1;
         });
-        for (var i = 0; i < SEND; i++) {
+        for (let i = 0; i < SEND; i++) {
             nc.publish('foo');
         }
 
@@ -104,17 +104,17 @@ describe('Max responses and Auto-unsub', function() {
     });
 
     it('should allow proper override to a lesser value ', function(done) {
-        var nc = NATS.connect(PORT);
-        var SEND = 20;
-        var received = 0;
+        const nc = NATS.connect(PORT);
+        const SEND = 20;
+        let received = 0;
 
-        var sid = nc.subscribe('foo', function() {
+        const sid = nc.subscribe('foo', function () {
             received += 1;
             nc.unsubscribe(sid, 1);
         });
         nc.unsubscribe(sid, SEND);
 
-        for (var i = 0; i < SEND; i++) {
+        for (let i = 0; i < SEND; i++) {
             nc.publish('foo');
         }
 
@@ -127,18 +127,18 @@ describe('Max responses and Auto-unsub', function() {
     });
 
     it('should allow proper override to a higher value', function(done) {
-        var nc = NATS.connect(PORT);
-        var WANT = 10;
-        var SEND = 20;
-        var received = 0;
+        const nc = NATS.connect(PORT);
+        const WANT = 10;
+        const SEND = 20;
+        let received = 0;
 
-        var sid = nc.subscribe('foo', function() {
+        const sid = nc.subscribe('foo', function () {
             received += 1;
         });
         nc.unsubscribe(sid, 1);
         nc.unsubscribe(sid, WANT);
 
-        for (var i = 0; i < SEND; i++) {
+        for (let i = 0; i < SEND; i++) {
             nc.publish('foo');
         }
 
@@ -152,11 +152,11 @@ describe('Max responses and Auto-unsub', function() {
 
     it('should only receive N msgs in request mode with multiple helpers', function(done) {
         /* jshint loopfunc: true */
-        var nc = NATS.connect(PORT);
-        var received = 0;
+        const nc = NATS.connect(PORT);
+        let received = 0;
 
         // Create 5 helpers
-        for (var i = 0; i < 5; i++) {
+        for (let i = 0; i < 5; i++) {
             nc.subscribe('help', function(msg, reply) {
                 nc.publish(reply, 'I can help!');
             });
@@ -177,7 +177,7 @@ describe('Max responses and Auto-unsub', function() {
     });
 
     function requestSubscriptions(nc, done) {
-        var received = 0;
+        let received = 0;
 
         nc.subscribe('help', function(msg, reply) {
             nc.publish(reply, 'I can help!');
@@ -185,7 +185,7 @@ describe('Max responses and Auto-unsub', function() {
 
         /* jshint loopfunc: true */
         // Create 5 requests
-        for (var i = 0; i < 5; i++) {
+        for (let i = 0; i < 5; i++) {
             nc.request('help', null, {
                 'max': 1
             }, function() {
@@ -195,7 +195,7 @@ describe('Max responses and Auto-unsub', function() {
         nc.flush(function() {
             setTimeout(function() {
                 received.should.equal(5);
-                var expected_subs = (nc.options.useOldRequestStyle ? 1 : 2);
+                const expected_subs = (nc.options.useOldRequestStyle ? 1 : 2);
                 Object.keys(nc.subs).length.should.equal(expected_subs);
                 nc.close();
                 done();
@@ -204,12 +204,12 @@ describe('Max responses and Auto-unsub', function() {
     }
 
     it('should not leak subscriptions when using max', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         requestSubscriptions(nc, done);
     });
 
     it('oldRequest should not leak subscriptions when using max', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             useOldRequestStyle: true
         });
@@ -217,7 +217,7 @@ describe('Max responses and Auto-unsub', function() {
     });
 
     function requestGetsWantedNumberOfMessages(nc, done) {
-        var received = 0;
+        let received = 0;
 
         nc.subscribe('help', function(msg, reply) {
             nc.publish(reply, 'I can help!');
@@ -245,13 +245,13 @@ describe('Max responses and Auto-unsub', function() {
 
     it('request should received specified number of messages', function(done) {
         /* jshint loopfunc: true */
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         requestGetsWantedNumberOfMessages(nc, done);
     });
 
     it('old request should received specified number of messages', function(done) {
         /* jshint loopfunc: true */
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             useOldRequestStyle: true
         });

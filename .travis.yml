@@ -2,14 +2,17 @@ language: node_js
 sudo: false
 
 node_js:
+  - "8"
   - "10"
   - "11"
+
+cache: npm
 
 git:
   depth: false
 
 env:
-  - NATS_VERSION=v1.3.0
+  - NATS_VERSION=v1.4.1
 
 before_script:
   - wget "https://github.com/nats-io/gnatsd/releases/download/$NATS_VERSION/gnatsd-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
@@ -17,6 +20,6 @@ before_script:
   - mv gnatsd-$NATS_VERSION-linux-amd64 gnatsd
 
 script:
-  - if [[ "$TRAVIS_NODE_VERSION" == 6 ]]; then npm test; fi
   - if [[ "$TRAVIS_NODE_VERSION" == 8 ]]; then npm test; fi
-  - if [[ "$TRAVIS_NODE_VERSION" == 10 ]]; then npm run coveralls; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 10 ]]; then npm test; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 11 ]]; then npm run coveralls; fi

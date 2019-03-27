@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,31 +17,31 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should'),
     fs = require('fs');
 
 describe('TLS', function() {
 
-    var PORT = 1442;
-    var TLSPORT = 1443;
-    var TLSVERIFYPORT = 1444;
-    var flags = [];
+    const PORT = 1442;
+    const TLSPORT = 1443;
+    const TLSVERIFYPORT = 1444;
+    const flags = [];
 
-    var server;
-    var tlsServer;
-    var tlsVerifyServer;
+    let server;
+    let tlsServer;
+    let tlsVerifyServer;
 
     // Start up our own nats-server for each test
     // We will start a plain, a no client cert, and a client cert required.
     before(function(done) {
         server = nsc.start_server(PORT, function() {
-            var flags = ['--tls', '--tlscert', './test/certs/server-cert.pem',
+            const flags = ['--tls', '--tlscert', './test/certs/server-cert.pem',
                 '--tlskey', './test/certs/server-key.pem'
             ];
             tlsServer = nsc.start_server(TLSPORT, flags, function() {
-                var flags = ['--tlsverify', '--tlscert', './test/certs/server-cert.pem',
+                const flags = ['--tlsverify', '--tlscert', './test/certs/server-cert.pem',
                     '--tlskey', './test/certs/server-key.pem',
                     '--tlscacert', './test/certs/ca.pem'
                 ];
@@ -57,7 +57,7 @@ describe('TLS', function() {
     });
 
     it('should error if server does not support TLS', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             tls: true
         });
@@ -70,7 +70,7 @@ describe('TLS', function() {
     });
 
     it('should reject without proper CA', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: TLSPORT,
             tls: true
         });
@@ -83,10 +83,10 @@ describe('TLS', function() {
     });
 
     it('should connect if authorized is overridden', function(done) {
-        var tlsOptions = {
+        const tlsOptions = {
             rejectUnauthorized: false,
         };
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: TLSPORT,
             tls: tlsOptions
         });
@@ -100,10 +100,10 @@ describe('TLS', function() {
     });
 
     it('should connect with proper ca and be authorized', function(done) {
-        var tlsOptions = {
+        const tlsOptions = {
             ca: [fs.readFileSync('./test/certs/ca.pem')]
         };
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: TLSPORT,
             tls: tlsOptions
         });
@@ -117,7 +117,7 @@ describe('TLS', function() {
     });
 
     it('should reject without proper cert if required by server', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: TLSVERIFYPORT,
             tls: true
         });
@@ -131,12 +131,12 @@ describe('TLS', function() {
 
 
     it('should be authorized with proper cert', function(done) {
-        var tlsOptions = {
+        const tlsOptions = {
             key: fs.readFileSync('./test/certs/client-key.pem'),
             cert: fs.readFileSync('./test/certs/client-cert.pem'),
             ca: [fs.readFileSync('./test/certs/ca.pem')]
         };
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: TLSPORT,
             tls: tlsOptions
         });

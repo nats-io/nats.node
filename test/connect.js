@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,15 +17,15 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Basic Connectivity', function() {
 
-    var PORT = 1424;
-    var uri = 'nats://localhost:' + PORT;
-    var server;
+    const PORT = 1424;
+    const uri = 'nats://localhost:' + PORT;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -38,28 +38,28 @@ describe('Basic Connectivity', function() {
     });
 
     it('should perform basic connect with port', function() {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         should.exist(nc);
         nc.close();
     });
 
     it('should perform basic connect with uri', function() {
-        var nc = NATS.connect(uri);
+        const nc = NATS.connect(uri);
         should.exist(nc);
         nc.close();
     });
 
     it('should perform basic connect with options arg', function() {
-        var options = {
+        const options = {
             'uri': uri
         };
-        var nc = NATS.connect(options);
+        const nc = NATS.connect(options);
         should.exist(nc);
         nc.close();
     });
 
     it('should emit a connect event', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('connect', function(client) {
             client.should.equal(nc);
             nc.close();
@@ -68,7 +68,7 @@ describe('Basic Connectivity', function() {
     });
 
     it('should emit error if no server available', function(done) {
-        var nc = NATS.connect('nats://localhost:22222');
+        const nc = NATS.connect('nats://localhost:22222');
         nc.on('error', function() {
             nc.close();
             done();
@@ -76,13 +76,13 @@ describe('Basic Connectivity', function() {
     });
 
     it('should emit connecting events and try repeatedly if configured and no server available', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'uri': 'nats://localhost:22222',
             'waitOnFirstConnect': true,
             'reconnectTimeWait': 100,
             'maxReconnectAttempts': 20
         });
-        var connectingEvents = 0;
+        let connectingEvents = 0;
         nc.on('error', function() {
             nc.close();
             done('should not have produced error');
@@ -99,14 +99,14 @@ describe('Basic Connectivity', function() {
 
 
     it('should still receive publish when some servers are invalid', function(done) {
-        var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
-        var ua = NATS.connect({
+        const natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
+        const ua = NATS.connect({
             servers: natsServers
         });
-        var ub = NATS.connect({
+        const ub = NATS.connect({
             servers: natsServers
         });
-        var recvMsg = '';
+        let recvMsg = '';
         ua.subscribe('topic1', function(msg, reply, subject) {
             recvMsg = msg;
         });
@@ -123,16 +123,16 @@ describe('Basic Connectivity', function() {
 
 
     it('should still receive publish when some servers[noRandomize] are invalid', function(done) {
-        var natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
-        var ua = NATS.connect({
+        const natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
+        const ua = NATS.connect({
             servers: natsServers,
             noRandomize: true
         });
-        var ub = NATS.connect({
+        const ub = NATS.connect({
             servers: natsServers,
             noRandomize: true
         });
-        var recvMsg = "";
+        let recvMsg = "";
         ua.subscribe('topic1', function(msg, reply, subject) {
             recvMsg = msg;
         });
@@ -149,11 +149,11 @@ describe('Basic Connectivity', function() {
 
 
     it('should add a new cluster server', function(done) {
-        var servers = [uri, 'nats://localhost:22223'];
-        var nc = NATS.connect({
+        const servers = [uri, 'nats://localhost:22223'];
+        const nc = NATS.connect({
             servers: new Array(servers[0])
         });
-        var contains = 0;
+        let contains = 0;
 
         nc.on('connect', function(client) {
             client.addServer(servers[1]);

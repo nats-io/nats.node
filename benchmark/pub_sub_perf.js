@@ -1,30 +1,45 @@
+/*
+ * Copyright 2013-2019 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 "use strict";
 
-var fs = require('fs');
-var NATS = require('../lib/nats');
-var nc1 = NATS.connect();
-var nc2 = NATS.connect();
+const fs = require('fs');
+const NATS = require('../lib/nats');
+const nc1 = NATS.connect();
+const nc2 = NATS.connect();
 
 ///////////////////////////////////////
 // Publish/Subscribe Performance
 ///////////////////////////////////////
 
-var loop = 1000000;
-var hash = 2500;
+const loop = 1000000;
+const hash = 2500;
 
 console.log('Publish/Subscribe Performance Test');
 
 nc1.on('connect', function() {
 
-    var received = 0;
-    var start = new Date();
+    let received = 0;
+    const start = new Date();
 
     nc1.subscribe('test', function() {
         received += 1;
 
         if (received === loop) {
-            var stop = new Date();
-            var mps = parseInt(loop / ((stop - start) / 1000), 10);
+            const stop = new Date();
+            const mps = parseInt(loop / ((stop - start) / 1000), 10);
             console.log('\nPublished/Subscribe at ' + mps + ' msgs/sec');
             console.log('Received ' + received + ' messages');
             log("pubsub", loop, stop - start);
@@ -33,7 +48,7 @@ nc1.on('connect', function() {
 
     // Make sure sub is registered
     nc1.flush(function() {
-        for (var i = 0; i < loop; i++) {
+        for (let i = 0; i < loop; i++) {
             nc2.publish('test', 'ok');
             if (i % hash === 0) {
                 process.stdout.write('+');

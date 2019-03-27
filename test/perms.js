@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,7 @@
 /* jshint -W030 */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     ncu = require('./support/nats_conf_utils'),
     os = require('os'),
@@ -30,12 +30,12 @@ var NATS = require('../'),
 
 describe('Auth Basics', function() {
 
-    var PORT = 6758;
-    var server;
+    const PORT = 6758;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
-        var conf = {
+        const conf = {
             authorization: {
                 SUB: {
                     subscribe: "bar",
@@ -48,7 +48,7 @@ describe('Auth Basics', function() {
                 }]
             }
         };
-        var cf = path.resolve(os.tmpdir(), 'conf-' + nuid.next() + '.conf');
+        const cf = path.resolve(os.tmpdir(), 'conf-' + nuid.next() + '.conf');
         fs.writeFile(cf, ncu.j(conf), function(err) {
             if (err) {
                 done(err);
@@ -64,13 +64,13 @@ describe('Auth Basics', function() {
     });
 
     it('bar cannot subscribe/pub foo', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             user: 'bar',
             password: 'bar'
         });
 
-        var perms = 0;
+        let perms = 0;
         nc.on('permission_error', function() {
             perms++;
             if (perms === 2) {

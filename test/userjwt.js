@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +17,7 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nkeys = require('ts-nkeys'),
     nsc = require('./support/nats_server_control'),
     should = require('should'),
@@ -26,24 +26,24 @@ var NATS = require('../'),
 describe('NKeys, Signatures and User JWTs', function() {
     this.timeout(5000);
 
-    var PORT = 22222;
-    var server;
+    const PORT = 22222;
+    let server;
 
-    var uSeed = "SUAIBDPBAUTWCWBKIO6XHQNINK5FWJW4OHLXC3HQ2KFE4PEJUA44CNHTC4";
-    var uJWT = "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJqdGkiOiJFU1VQS1NSNFhGR0pLN0FHUk5ZRjc0STVQNTZHMkFGWERYQ01CUUdHSklKUEVNUVhMSDJBIiwiaWF0IjoxNTQ0MjE3NzU3LCJpc3MiOiJBQ1pTV0JKNFNZSUxLN1FWREVMTzY0VlgzRUZXQjZDWENQTUVCVUtBMzZNSkpRUlBYR0VFUTJXSiIsInN1YiI6IlVBSDQyVUc2UFY1NTJQNVNXTFdUQlAzSDNTNUJIQVZDTzJJRUtFWFVBTkpYUjc1SjYzUlE1V002IiwidHlwZSI6InVzZXIiLCJuYXRzIjp7InB1YiI6e30sInN1YiI6e319fQ.kCR9Erm9zzux4G6M-V2bp7wKMKgnSNqMBACX05nwePRWQa37aO_yObbhcJWFGYjo1Ix-oepOkoyVLxOJeuD8Bw";
+    const uSeed = "SUAIBDPBAUTWCWBKIO6XHQNINK5FWJW4OHLXC3HQ2KFE4PEJUA44CNHTC4";
+    const uJWT = "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJqdGkiOiJFU1VQS1NSNFhGR0pLN0FHUk5ZRjc0STVQNTZHMkFGWERYQ01CUUdHSklKUEVNUVhMSDJBIiwiaWF0IjoxNTQ0MjE3NzU3LCJpc3MiOiJBQ1pTV0JKNFNZSUxLN1FWREVMTzY0VlgzRUZXQjZDWENQTUVCVUtBMzZNSkpRUlBYR0VFUTJXSiIsInN1YiI6IlVBSDQyVUc2UFY1NTJQNVNXTFdUQlAzSDNTNUJIQVZDTzJJRUtFWFVBTkpYUjc1SjYzUlE1V002IiwidHlwZSI6InVzZXIiLCJuYXRzIjp7InB1YiI6e30sInN1YiI6e319fQ.kCR9Erm9zzux4G6M-V2bp7wKMKgnSNqMBACX05nwePRWQa37aO_yObbhcJWFGYjo1Ix-oepOkoyVLxOJeuD8Bw";
 
     // Start up our own nats-server
     before(function(done) {
         // We need v2 or above for these tests.
-        var version = nsc.server_version();
+        const version = nsc.server_version();
         if ((/\s+1\./).exec(version) !== null) {
             this.skip();
         }
-        var flags = ['-c', './test/configs/operator.conf'];
+        const flags = ['-c', './test/configs/operator.conf'];
         server = nsc.start_server(PORT, flags, done);
     });
 
-    var uri = 'nats://localhost:' + PORT;
+    const uri = 'nats://localhost:' + PORT;
 
     // Shutdown our server after we are done
     after(function(done) {
@@ -51,7 +51,7 @@ describe('NKeys, Signatures and User JWTs', function() {
     });
 
     it('should error when no signature callback provided', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('error', function(err) {
             should.exist(err);
             should.exist((/requires an nkey signature/i).exec(err));
@@ -61,7 +61,7 @@ describe('NKeys, Signatures and User JWTs', function() {
     });
 
     it('should error when sigcb not a function', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             sigCB: "BAD"
         });
@@ -74,9 +74,10 @@ describe('NKeys, Signatures and User JWTs', function() {
     });
 
     it('should error when no nkey or userJWT callback defined', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
-            sigCB: function(nonce) {},
+            sigCB: function (nonce) {
+            },
         });
         nc.on('error', function(err) {
             should.exist(err);
@@ -87,10 +88,10 @@ describe('NKeys, Signatures and User JWTs', function() {
     });
 
     it('should connect when userJWT and sig provided', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
-            sigCB: function(nonce) {
-                var sk = nkeys.fromSeed(Buffer.from(uSeed));
+            sigCB: function (nonce) {
+                const sk = nkeys.fromSeed(Buffer.from(uSeed));
                 return sk.sign(nonce);
             },
             userJWT: uJWT,
@@ -107,13 +108,13 @@ describe('NKeys, Signatures and User JWTs', function() {
     });
 
     it('should connect when userJWT is a callback function', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
-            sigCB: function(nonce) {
-                var sk = nkeys.fromSeed(Buffer.from(uSeed));
+            sigCB: function (nonce) {
+                const sk = nkeys.fromSeed(Buffer.from(uSeed));
                 return sk.sign(nonce);
             },
-            userJWT: function() {
+            userJWT: function () {
                 return uJWT;
             },
         });
@@ -129,7 +130,7 @@ describe('NKeys, Signatures and User JWTs', function() {
     });
 
     it('should connect with a user credentials file', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             port: PORT,
             userCreds: './test/configs/nkeys/test.creds',
         });
@@ -145,7 +146,7 @@ describe('NKeys, Signatures and User JWTs', function() {
     });
 
     it('should connect with new style of connect with url and a user credentials file', function(done) {
-        var nc = NATS.connect(uri, NATS.creds('./test/configs/nkeys/test.creds'));
+        const nc = NATS.connect(uri, NATS.creds('./test/configs/nkeys/test.creds'));
         nc.on('connect', function(client) {
             client.should.equal(nc);
             nc.close();

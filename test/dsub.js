@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,15 +17,15 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Double SUBS', function() {
 
-    var PORT = 1922;
-    var flags = ['-DV'];
-    var server;
+    const PORT = 1922;
+    const flags = ['-DV'];
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -38,18 +38,18 @@ describe('Double SUBS', function() {
     });
 
     it('should not send multiple subscriptions on startup', function(done) {
-        var subsSeen = 0;
-        var subRe = /(\[SUB foo \d\])+/g;
+        let subsSeen = 0;
+        const subRe = /(\[SUB foo \d\])+/g;
 
         // Capture log output from nats-server and check for double SUB protos.
         server.stderr.on('data', function(data) {
-            var m;
+            let m;
             while ((m = subRe.exec(data)) !== null) {
                 subsSeen++;
             }
         });
 
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.subscribe('foo');
         nc.on('connect', function(nc) {
             setTimeout(function() {

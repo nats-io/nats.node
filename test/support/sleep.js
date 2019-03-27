@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,7 @@
 'use strict';
 
 exports.sleep = function(ms) {
-    var start = new Date().getTime(),
+    const start = new Date().getTime(),
         expire = start + ms;
     while (new Date().getTime() < expire) {
         // spinning...

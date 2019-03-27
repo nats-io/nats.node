@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,24 +18,24 @@
 /* jshint -W030 */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should'),
     url = require('url');
 
 describe('Cluster', function() {
 
-    var WAIT = 20;
-    var ATTEMPTS = 4;
+    const WAIT = 20;
+    const ATTEMPTS = 4;
 
-    var PORT1 = 15621;
-    var PORT2 = 15622;
+    const PORT1 = 15621;
+    const PORT2 = 15622;
 
-    var s1Url = 'nats://localhost:' + PORT1;
-    var s2Url = 'nats://localhost:' + PORT2;
+    const s1Url = 'nats://localhost:' + PORT1;
+    const s2Url = 'nats://localhost:' + PORT2;
 
-    var s1;
-    var s2;
+    let s1;
+    let s2;
 
     // Start up our own nats-server
     before(function(done) {
@@ -52,7 +52,7 @@ describe('Cluster', function() {
     });
 
     it('should accept servers options', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'servers': [s1Url, s2Url]
         });
         should.exists(nc);
@@ -68,14 +68,14 @@ describe('Cluster', function() {
     });
 
     it('should randomly connect to servers by default', function(done) {
-        var conns = [];
-        var s1Count = 0;
+        const conns = [];
+        let s1Count = 0;
         for (var i = 0; i < 100; i++) {
-            var nc = NATS.connect({
+            const nc = NATS.connect({
                 'servers': [s1Url, s2Url]
             });
             conns.push(nc);
-            var nurl = url.format(nc.url);
+            const nurl = url.format(nc.url);
             if (nurl === s1Url) {
                 s1Count++;
             }
@@ -88,7 +88,7 @@ describe('Cluster', function() {
     });
 
     it('should connect to first valid server', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'servers': ['nats://localhost:' + 21022, s1Url, s2Url]
         });
         nc.on('error', function(err) {
@@ -101,7 +101,7 @@ describe('Cluster', function() {
     });
 
     it('should emit error if no servers are available', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'servers': ['nats://localhost:' + 21022, 'nats://localhost:' + 21023]
         });
         nc.on('error', function(err) {
@@ -115,15 +115,15 @@ describe('Cluster', function() {
     });
 
     it('should not randomly connect to servers if noRandomize is set', function(done) {
-        var conns = [];
-        var s1Count = 0;
+        const conns = [];
+        let s1Count = 0;
         for (var i = 0; i < 100; i++) {
-            var nc = NATS.connect({
+            const nc = NATS.connect({
                 'noRandomize': true,
                 'servers': [s1Url, s2Url]
             });
             conns.push(nc);
-            var nurl = url.format(nc.url);
+            const nurl = url.format(nc.url);
             if (nurl === s1Url) {
                 s1Count++;
             }
@@ -136,15 +136,15 @@ describe('Cluster', function() {
     });
 
     it('should not randomly connect to servers if dontRandomize is set', function(done) {
-        var conns = [];
-        var s1Count = 0;
+        const conns = [];
+        let s1Count = 0;
         for (var i = 0; i < 100; i++) {
-            var nc = NATS.connect({
+            const nc = NATS.connect({
                 'dontRandomize': true,
                 'servers': [s1Url, s2Url]
             });
             conns.push(nc);
-            var nurl = url.format(nc.url);
+            const nurl = url.format(nc.url);
             if (nurl == s1Url) {
                 s1Count++;
             }
@@ -157,14 +157,14 @@ describe('Cluster', function() {
     });
 
     it('should fail after maxReconnectAttempts when servers killed', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'noRandomize': true,
             'servers': [s1Url, s2Url],
             'reconnectTimeWait': WAIT,
             'maxReconnectAttempts': ATTEMPTS
         });
-        var startTime;
-        var numAttempts = 0;
+        let startTime;
+        let numAttempts = 0;
         nc.on('connect', function() {
             nsc.stop_server(s1, function() {
                 s1 = null;
@@ -177,7 +177,7 @@ describe('Cluster', function() {
             });
         });
         nc.on('reconnecting', function(client) {
-            var elapsed = new Date() - startTime;
+            const elapsed = new Date() - startTime;
             elapsed.should.be.within(WAIT, 5 * WAIT);
             startTime = new Date();
             numAttempts += 1;

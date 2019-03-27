@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,14 +17,14 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Errors', function() {
 
-    var PORT = 1491;
-    var server;
+    const PORT = 1491;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -38,7 +38,7 @@ describe('Errors', function() {
 
     it('should throw errors on connect', function(done) {
         (function() {
-            var nc = NATS.connect({
+            const nc = NATS.connect({
                 'url': 'nats://localhost:' + PORT,
                 'token': 'token1',
                 'user': 'foo'
@@ -48,7 +48,7 @@ describe('Errors', function() {
     });
 
     it('should throw errors on publish', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         // No subject
         (function() {
             nc.publish();
@@ -69,7 +69,7 @@ describe('Errors', function() {
     });
 
     it('should throw errors on flush', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.close();
         (function() {
             nc.flush();
@@ -78,11 +78,11 @@ describe('Errors', function() {
     });
 
     it('should pass errors on publish with callbacks', function(done) {
-        var nc = NATS.connect(PORT);
-        var expectedErrors = 4;
-        var received = 0;
+        const nc = NATS.connect(PORT);
+        const expectedErrors = 4;
+        let received = 0;
 
-        var cb = function(err) {
+        const cb = function (err) {
             should.exist(err);
             if (++received === expectedErrors) {
                 done();
@@ -101,7 +101,7 @@ describe('Errors', function() {
     });
 
     it('should throw errors on subscribe', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.close();
         // Closed
         (function() {
@@ -111,14 +111,14 @@ describe('Errors', function() {
     });
 
     it('NatsErrors have code', function() {
-        var err = new NATS.NatsError("hello", "helloid");
+        const err = new NATS.NatsError("hello", "helloid");
         should.equal(err.message, 'hello');
         should.equal(err.code, 'helloid');
     });
 
     it('NatsErrors can chain an error', function() {
-        var srcErr = new Error('foo');
-        var err = new NATS.NatsError("hello", "helloid", srcErr);
+        const srcErr = new Error('foo');
+        const err = new NATS.NatsError("hello", "helloid", srcErr);
         should.equal(err.message, 'hello');
         should.equal(err.code, 'helloid');
         should.equal(err.chainedError, srcErr);
@@ -126,7 +126,7 @@ describe('Errors', function() {
     });
 
     it('should emit error on exception during handler', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         nc.on('error', function(err) {
             err.message.should.equal('die');
             nc.close();

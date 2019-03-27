@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,12 +18,12 @@
 /* jslint node: true */
 'use strict';
 
-var NATS = require('../..');
-var fs = require('fs');
+const NATS = require('../..');
+const fs = require('fs');
 
-var count = process.argv.length;
-var port = parseInt(process.argv[count - 1], 10);
-var nats = NATS.connect({
+const count = process.argv.length;
+const port = parseInt(process.argv[count - 1], 10);
+const nats = NATS.connect({
     port: port
 });
 

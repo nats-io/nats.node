@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,14 +17,14 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('Split Messages', function() {
 
-    var PORT = 1427;
-    var server;
+    const PORT = 1427;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -37,11 +37,11 @@ describe('Split Messages', function() {
     });
 
     it('should properly handle large # of messages from split buffers', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
 
-        var data = 'Hello World!';
-        var received = 0;
-        var expected = 10000;
+        const data = 'Hello World!';
+        let received = 0;
+        const expected = 10000;
 
         nc.subscribe('foo', function(msg) {
             should.exists(msg);
@@ -54,18 +54,18 @@ describe('Split Messages', function() {
             }
         });
 
-        for (var i = 0; i < expected; i++) {
+        for (let i = 0; i < expected; i++) {
             nc.publish('foo', data);
         }
     });
 
     it('should properly handle large # of utf8 messages from split buffers', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
 
         // Use utf8 string to make sure encoding works too.
-        var data = '½ + ¼ = ¾';
-        var received = 0;
-        var expected = 10000;
+        const data = '½ + ¼ = ¾';
+        let received = 0;
+        const expected = 10000;
 
         nc.subscribe('foo', function(msg) {
             msg.should.equal(data);
@@ -77,7 +77,7 @@ describe('Split Messages', function() {
             }
         });
 
-        for (var i = 0; i < expected; i++) {
+        for (let i = 0; i < expected; i++) {
             nc.publish('foo', data);
         }
     });

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 The NATS Authors
+ * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,14 +17,14 @@
 /* global describe: false, before: false, after: false, it: false */
 'use strict';
 
-var NATS = require('../'),
+const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
 describe('UTF8', function() {
 
-    var PORT = 1430;
-    var server;
+    const PORT = 1430;
+    let server;
 
     // Start up our own nats-server
     before(function(done) {
@@ -37,9 +37,9 @@ describe('UTF8', function() {
     });
 
     it('should do publish and subscribe with UTF8 payloads by default', function(done) {
-        var nc = NATS.connect(PORT);
+        const nc = NATS.connect(PORT);
         // ½ + ¼ = ¾: 9 characters, 12 bytes
-        var data = '\u00bd + \u00bc = \u00be';
+        const data = '\u00bd + \u00bc = \u00be';
         data.length.should.equal(9);
         Buffer.byteLength(data).should.equal(12);
 
@@ -54,13 +54,13 @@ describe('UTF8', function() {
     });
 
     it('should allow encoding override with the encoding option', function(done) {
-        var nc = NATS.connect({
+        const nc = NATS.connect({
             'url': 'nats://localhost:' + PORT,
             'encoding': 'ascii'
         });
         // ½ + ¼ = ¾: 9 characters, 12 bytes
-        var utf8_data = '\u00bd + \u00bc = \u00be';
-        var plain_data = 'Hello World';
+        const utf8_data = '\u00bd + \u00bc = \u00be';
+        const plain_data = 'Hello World';
 
         nc.subscribe('utf8', function(msg) {
             // Should be all 12 bytes..

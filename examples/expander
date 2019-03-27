@@ -14,18 +14,18 @@
  */
 "use strict";
 
-var url = require("url");
-var dns = require("dns");
+const url = require("url");
+const dns = require("dns");
 
 // Mapping function for A records
 function mapA(u) {
     return function(a) {
         return a.map(function(s) {
-            var auth = "";
+            let auth = "";
             if (u.auth) {
                 auth = u.auth + "@";
             }
-            var hostport = s;
+            let hostport = s;
             if(u.port) {
                 hostport += ":" + u.port;
             }
@@ -38,11 +38,11 @@ function mapA(u) {
 function mapSrv(u) {
     return function(a) {
         return a.map(function(s) {
-            var auth = "";
+            let auth = "";
             if (u.auth) {
                 auth = u.auth + "@";
             }
-            var hostport = s.name;
+            let hostport = s.name;
             if(s.port) {
                 hostport += ":" + s.port;
             }
@@ -66,9 +66,9 @@ function mapSrv(u) {
 // });
 //
 function expand(natsurl, type, callback) {
-    var u = url.parse(natsurl);
+    const u = url.parse(natsurl);
     type = type.toUpperCase();
-    var fun = null;
+    let fun = null;
     switch(type) {
         case "A":
             fun = mapA(u);
@@ -87,4 +87,3 @@ function expand(natsurl, type, callback) {
         callback(undefined, fun(records));
     });
 }
-
