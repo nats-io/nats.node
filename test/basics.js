@@ -198,7 +198,7 @@ describe('Basics', function() {
         nc.publish('foo.bar.3');
     });
 
-    it('should pass exact subject to callback', function(done) {
+    it('should pass exact subject to callback', (done) => {
         const nc = NATS.connect(PORT);
         const subject = 'foo.bar.baz';
         nc.subscribe('*.*.*', function(msg, reply, subj) {
@@ -210,7 +210,7 @@ describe('Basics', function() {
         nc.publish(subject);
     });
 
-    it('should do callback after publish is flushed', function(done) {
+    it('should do callback after publish is flushed', (done) => {
         const nc = NATS.connect(PORT);
         nc.publish('foo', function() {
             nc.close();
@@ -218,7 +218,7 @@ describe('Basics', function() {
         });
     });
 
-    it('should do callback after flush', function(done) {
+    it('should do callback after flush', (done) => {
         const nc = NATS.connect(PORT);
         nc.flush(function() {
             nc.close();
@@ -226,7 +226,7 @@ describe('Basics', function() {
         });
     });
 
-    it('should handle an unsubscribe after close of connection', function(done) {
+    it('should handle an unsubscribe after close of connection', (done) => {
         const nc = NATS.connect(PORT);
         const sid = nc.subscribe('foo');
         nc.close();
@@ -234,7 +234,7 @@ describe('Basics', function() {
         done();
     });
 
-    it('should not receive data after unsubscribe call', function(done) {
+    it('should not receive data after unsubscribe call', (done) => {
         const nc = NATS.connect(PORT);
         let received = 0;
         const expected = 1;
@@ -253,7 +253,7 @@ describe('Basics', function() {
         });
     });
 
-    it('should pass sid properly to a message callback if requested', function(done) {
+    it('should pass sid properly to a message callback if requested', (done) => {
         const nc = NATS.connect(PORT);
         const sid = nc.subscribe('foo', function (msg, reply, subj, lsid) {
             sid.should.equal(lsid);
@@ -263,7 +263,7 @@ describe('Basics', function() {
         nc.publish('foo');
     });
 
-    it('should parse json messages', function(done) {
+    it('should parse json messages', (done) => {
         const config = {
             port: PORT,
             json: true
@@ -280,7 +280,7 @@ describe('Basics', function() {
         nc.publish('foo1', jsonMsg);
     });
 
-    it('should parse UTF8 json messages', function(done) {
+    it('should parse UTF8 json messages', (done) => {
         const config = {
             port: PORT,
             json: true
@@ -322,12 +322,12 @@ describe('Basics', function() {
         });
     }
 
-    it('should do requestone-get-reply', function(done) {
+    it('should do requestone-get-reply', (done) => {
         const nc = NATS.connect(PORT);
         requestOneGetsReply(nc, done);
     });
 
-    it('oldRequestOne should do requestone-get-reply', function(done) {
+    it('oldRequestOne should do requestone-get-reply', (done) => {
         const nc = NATS.connect({
             port: PORT,
             useOldRequestStyle: true
@@ -363,14 +363,14 @@ describe('Basics', function() {
         });
     }
 
-    it('should do requestone-will-unsubscribe', function(done) {
+    it('should do requestone-will-unsubscribe', (done) => {
         // eslint-disable-next-line
         this.timeout(3000);
         const nc = NATS.connect(PORT);
         requestOneWillUnsubscribe(nc, done);
     });
 
-    it('oldRequest: should do requestone-will-unsubscribe', function(done) {
+    it('oldRequest: should do requestone-will-unsubscribe', (done) => {
         // eslint-disable-next-line
         this.timeout(3000);
         const nc = NATS.connect({
@@ -452,7 +452,7 @@ describe('Basics', function() {
         shouldUnsubscribeWhenRequestOneTimeout(nc, done);
     });
 
-    it('requestone has negative sids', function(done) {
+    it('requestone has negative sids', (done) => {
         const nc = NATS.connect(PORT);
         nc.flush(function() {
             const sid = nc.requestOne("121.2.13.4", 1000, function (r) {
@@ -505,12 +505,12 @@ describe('Basics', function() {
         }
     }
 
-    it('requestOne: optional param transpositions', function(done) {
+    it('requestOne: optional param transpositions', (done) => {
         const nc = NATS.connect(PORT);
         paramTranspositions(nc, done);
     });
 
-    it('old requestOne: optional param transpositions', function(done) {
+    it('old requestOne: optional param transpositions', (done) => {
         const nc = NATS.connect({
             port: PORT,
             useOldRequestStyle: true

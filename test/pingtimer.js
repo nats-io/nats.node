@@ -23,23 +23,22 @@ const NATS = require('../'),
     mockserver = require('./support/mock_server'),
     should = require('should');
 
-describe('Ping Timer', function() {
-    this.timeout(10000);
+describe('Ping Timer', () => {
     const PORT = 1966;
     let server;
 
-    before(function(done) {
+    beforeEach(function(done) {
         // default server simply sends connect and responds to one ping
         server = new mockserver.ScriptedServer(PORT);
         server.on('listening', done);
         server.start();
     });
 
-    after(function(done) {
+    afterEach(function(done) {
         server.stop(done);
     });
 
-    it('should reconnect if server doesnt ping', function(done) {
+    it('should reconnect if server doesnt ping', (done) => {
         const nc = NATS.connect({
             port: PORT,
             pingInterval: 200,
@@ -49,7 +48,7 @@ describe('Ping Timer', function() {
             nc.close();
             done();
         });
-    });
+    }).timeout(10000);
 
     it('timer pings are sent', function(done) {
         const nc = NATS.connect({
@@ -72,7 +71,7 @@ describe('Ping Timer', function() {
     });
 
 
-    it('configured number of missed pings is honored', function(done) {
+    it('configured number of missed pings is honored', (done) => {
         const nc = NATS.connect({
             port: PORT,
             pingInterval: 200,

@@ -28,12 +28,12 @@ describe('Close functionality', function() {
     let server;
 
     // Start up our own nats-server
-    before(function(done) {
+    beforeEach(function(done) {
         server = nsc.start_server(PORT, done);
     });
 
     // Shutdown our server after we are done
-    after(function(done) {
+    afterEach(function(done) {
         nsc.stop_server(server, done);
     });
 
@@ -74,4 +74,83 @@ describe('Close functionality', function() {
             }
         });
     });
+
+
+    it('ping timers are not left behind on socket close', (done) => {
+        const nc = NATS.connect({
+            port: PORT,
+            reconnectTimeWait: 100,
+            maxReconnectAttempts: 1
+        });
+
+        nc.on('connect', () => {
+            console.log('connected');
+            process.nextTick(() => {
+                server.kill();
+            });
+        });
+
+        nc.on('close', () => {
+            should.not.exist(nc.pingTimer);
+            done();
+        });
+    });
+
+    it('subscription timers are not left behind on socket close', (done) => {
+        const nc = NATS.connect({
+            port: PORT,
+            reconnectTimeWait: 100,
+            maxReconnectAttempts: 1
+        });
+
+        let subID = 0;
+        nc.on('connect', () => {
+            subID = nc.subscribe("foo", () => {
+                // nothing
+            });
+            nc.timeout(subID, 1000, 1, (err) => {
+                throw new Error("shouldn't have timed out");
+            });
+            nc.flush(() => {
+                server.kill();
+            });
+        });
+
+        nc.on('close', () => {
+            const conf = nc.subs[subID];
+            should.exist(conf);
+            should.not.exist(conf.timeout);
+            done();
+        });
+    });
+
+
+    it('request timers are not left behind on socket close', (done) => {
+        const nc = NATS.connect({
+            port: PORT,
+            reconnectTimeWait: 100,
+            maxReconnectAttempts: 1
+        });
+
+        nc.on('connect', () => {
+            nc.request("foo", undefined, {timeout: 1000, max: 1}, (err) => {
+                throw err;
+            });
+            nc.flush(() => {
+                server.kill();
+            });
+        });
+
+        nc.on('close', () => {
+            let foundOne = false;
+            for (const p in nc.respmux.requestMap) {
+                if (this.respmux.requestMap.hasOwnProperty(p)) {
+                    foundOne = true;
+                }
+            }
+            foundOne.should.be.false();
+            done();
+        });
+    });
+
 });
