@@ -34,7 +34,7 @@
     "test": "npm run depcheck && npm run depcheck:unused && npm run lint && npm run test:unit",
     "coveralls": "npm run test && nyc report --reporter=text-lcov | coveralls",
     "cover": "nyc report --reporter=html && open coverage/index.html",
-    "lint": "if-node-version '>=4' eslint ./lib ./examples ./benchmark ./test",
+    "lint": "eslint ./lib ./examples ./benchmark ./test",
     "fmt": "js-beautify -n --config crockford.jscsrc -r lib/* test/*.js test/support/*.js examples/* benchmark/*.js"
   },
   "engines": {
@@ -50,7 +50,6 @@
     "coveralls": "^3.0.2",
     "dependency-check": "^3.2.1",
     "eslint": "^5.10.0",
-    "if-node-version": "^1.1.1",
     "nyc": "^13.3.0",
     "js-beautify": "^1.6.12",
     "jshint": "^2.9.6",
