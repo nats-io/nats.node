@@ -84,7 +84,6 @@ describe('Close functionality', function() {
         });
 
         nc.on('connect', () => {
-            console.log('connected');
             process.nextTick(() => {
                 server.kill();
             });

@@ -85,7 +85,8 @@ export interface ClientOpts {
 	token?: string,
 	pingInterval?: number,
 	maxPingOut?: number,
-	useOldRequestStyle?: boolean
+	useOldRequestStyle?: boolean,
+	noEcho?: boolean
 }
 
 export interface SubscribeOptions {

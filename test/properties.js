@@ -74,6 +74,7 @@ describe('Connection Properties', function() {
         nc.options.should.have.property('reconnectTimeWait');
         nc.options.should.have.property('useOldRequestStyle');
         nc.options.useOldRequestStyle.should.equal(false);
+        nc.options.noEcho.should.be.false();
     });
 
     it('should have an parsed url', function() {
