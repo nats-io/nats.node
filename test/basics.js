@@ -129,8 +129,8 @@ describe('Basics', function() {
             nc.publish(reply, replyMsg);
         });
 
-        const sub = nc.request('foo', initMsg, function (reply) {
-            nc.flush(function () {
+        const sub = nc.request('foo', initMsg, function(reply) {
+            nc.flush(function() {
                 received.should.equal(expected);
                 nc.close();
                 done();
@@ -239,7 +239,7 @@ describe('Basics', function() {
         let received = 0;
         const expected = 1;
 
-        const sid = nc.subscribe('foo', function () {
+        const sid = nc.subscribe('foo', function() {
             nc.unsubscribe(sid);
             received += 1;
         });
@@ -255,7 +255,7 @@ describe('Basics', function() {
 
     it('should pass sid properly to a message callback if requested', (done) => {
         const nc = NATS.connect(PORT);
-        const sid = nc.subscribe('foo', function (msg, reply, subj, lsid) {
+        const sid = nc.subscribe('foo', function(msg, reply, subj, lsid) {
             sid.should.equal(lsid);
             nc.close();
             done();
@@ -455,7 +455,7 @@ describe('Basics', function() {
     it('requestone has negative sids', (done) => {
         const nc = NATS.connect(PORT);
         nc.flush(function() {
-            const sid = nc.requestOne("121.2.13.4", 1000, function (r) {
+            const sid = nc.requestOne("121.2.13.4", 1000, function(r) {
                 should.fail("got message when it shouldn't have", r);
             });
             sid.should.be.number;
@@ -516,5 +516,94 @@ describe('Basics', function() {
             useOldRequestStyle: true
         });
         paramTranspositions(nc, done);
+    });
+
+    it('echo false is honored', function(done) {
+        let nc1 = NATS.connect({
+            port: PORT,
+            noEcho: true,
+            name: "no echo client"
+        });
+        nc1.on('error', function(err) {
+            if (err.code === NATS.NATS_PROTOCOL_ERR) {
+                nc1 = null;
+                done();
+            }
+        });
+
+        nc1.flush(function() {
+            var subj = NATS.createInbox();
+
+            var count = 0;
+            nc1.subscribe(subj, function() {
+                count++;
+            });
+
+            var nc2 = NATS.connect({
+                port: PORT,
+                name: "default client"
+            });
+            nc2.on('connect', function() {
+                nc2.subscribe(subj, function() {
+                    count++;
+                });
+            });
+
+            nc2.flush(function() {
+                nc1.publish(subj);
+                nc2.flush(function() {
+                    nc1.flush(function() {
+                        should(count).be.equal(1);
+                        nc1.close();
+                        nc2.close();
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
+    it('echo is on by default', function(done) {
+        let nc1 = NATS.connect({
+            port: PORT,
+            name: "echo client"
+        });
+        nc1.on('error', function(err) {
+            if (err.code === NATS.NATS_PROTOCOL_ERR) {
+                nc1 = null;
+                done();
+            }
+        });
+
+        nc1.flush(function() {
+            var subj = NATS.createInbox();
+
+            var count = 0;
+            nc1.subscribe(subj, function() {
+                count++;
+            });
+
+            var nc2 = NATS.connect({
+                port: PORT,
+                name: "default client"
+            });
+            nc2.on('connect', function() {
+                nc2.subscribe(subj, function() {
+                    count++;
+                });
+            });
+
+            nc2.flush(function() {
+                nc1.publish(subj);
+                nc2.flush(function() {
+                    nc1.flush(function() {
+                        count.should.be.equal(2);
+                        nc1.close();
+                        nc2.close();
+                        done();
+                    });
+                });
+            });
+        });
     });
 });
