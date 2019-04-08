@@ -40,7 +40,7 @@ export const STALE_CONNECTION_ERR: string;
 
 /**
  * Create a properly formatted inbox subject.
-*/
+ */
 export function createInbox(): string;
 
 /**
@@ -113,9 +113,8 @@ declare class Client extends events.EventEmitter {
 	/**
 	 * Publish a message to the given subject, with optional reply and callback.
 	 */
-	publish(callback: Function):void;
-	publish(subject: string, callback: Function):void;
-	publish(subject: string, msg: any, callback: Function):void;
+	publish(subject: string, callback?: Function):void;
+	publish(subject: string, msg: any, callback?: Function):void;
 	publish(subject: string, msg: any, reply: string, callback?: Function):void;
 
 	/**
@@ -126,7 +125,7 @@ declare class Client extends events.EventEmitter {
 	subscribe(subject: string, opts: SubscribeOptions, callback: Function): number;
 
 	/**
-	 * Unsubscribe to a given Subscriber Id, with optional max parameter.
+	 * Unsubscribe to a given Subscriber Id, with optional max number of messages before unsubscribing.
 	 */
 	unsubscribe(sid: number, max?: number):void;
 
@@ -154,7 +153,9 @@ declare class Client extends events.EventEmitter {
 	 * a timeout has been reached.
 	 * The Subscriber Id is returned.
 	 */
-	requestOne(subject: string, msg: any, options: SubscribeOptions, timeout: number, callback?:Function) : number
+	requestOne(subject: string, timeout: number, callback: Function);
+	requestOne(subject: string, msg: any, timeout: number, callback: Function);
+	requestOne(subject: string, msg: any, options: SubscribeOptions, timeout: number, callback: Function);
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.
@@ -163,10 +164,10 @@ declare class Client extends events.EventEmitter {
 }
 
 declare class NatsError implements Error {
-    public name: string;
-    public message: string;
-    public code: string;
-    public chainedError: Error;
+	public name: string;
+	public message: string;
+	public code: string;
+	public chainedError: Error;
 
-    constructor(message:string, code:string, chainedError?:Error);
+	constructor(message:string, code:string, chainedError?:Error);
 }
