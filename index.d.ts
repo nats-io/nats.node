@@ -153,9 +153,9 @@ declare class Client extends events.EventEmitter {
 	 * a timeout has been reached.
 	 * The Subscriber Id is returned.
 	 */
-	requestOne(subject: string, timeout: number, callback: Function);
-	requestOne(subject: string, msg: any, timeout: number, callback: Function);
-	requestOne(subject: string, msg: any, options: SubscribeOptions, timeout: number, callback: Function);
+	requestOne(subject: string, timeout: number, callback: Function): number;
+	requestOne(subject: string, msg: any, timeout: number, callback: Function): number;
+	requestOne(subject: string, msg: any, options: SubscribeOptions, timeout: number, callback: Function): number;
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.
