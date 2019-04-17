@@ -100,7 +100,7 @@ describe('Token Authorization', function() {
 
     // Shutdown our server after we are done
     after(function(done) {
-        server = nsc.stop_server(server, done);
+        nsc.stop_server(server, done);
     });
 
     it('should fail to connect with no credentials ', function(done) {
@@ -143,6 +143,136 @@ describe('Token Authorization', function() {
         nc.on('connect', function(nc) {
             nc.close();
             setTimeout(done, 100);
+        });
+    });
+});
+
+describe('tokenHandler Authorization', function() {
+    const PORT = 1421;
+    const flags = ['--auth', 'token1'];
+    const noAuthUrl = 'nats://localhost:' + PORT;
+    let server;
+
+    // Start up our own nats-server
+    before(function(done) {
+        server = nsc.start_server(PORT, flags, done);
+    });
+
+    // Shutdown our server after we are done
+    after(function(done) {
+        nsc.stop_server(server, done);
+    });
+
+    it('should connect using tokenHandler instead of plain old token', function(done) {
+        const nc = NATS.connect({
+            'url': noAuthUrl,
+            'tokenHandler': () => new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve('token1');
+                }, 500);
+            })
+        });
+        nc.on('connect', (nc) => {
+            setTimeout(() => {
+                nc.close();
+                done();
+            }, 100);
+        });
+    });
+
+    it('should fail to connect if tokenHandler is not a function', function(done) {
+        (function() {
+            const nc = NATS.connect({
+                'url': noAuthUrl,
+                'tokenHandler': 'token1'
+            });
+        }).should.throw(/tokenHandler must be a function returning a Promise/);
+        done();
+    });
+
+    it('should fail to connect if both token and tokenHandler are provided', function(done) {
+        (function() {
+            const nc = NATS.connect({
+                'url': noAuthUrl,
+                'token': 'token1',
+                'tokenHandler': () => new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve('token1');
+                    }, 500);
+                })
+            });
+        }).should.throw(/token and tokenHandler cannot both be provided/);
+        done();
+    });
+
+    it('should NOT connect if tokenHandler fails to return a token', function(done) {
+        this.timeout(10 * 1000);
+
+        const nc = NATS.connect({
+            'url': noAuthUrl,
+            'tokenHandler': () => new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    reject(new Error('no token for you!'));
+                }, 50);
+            })
+        });
+
+        let totalErrorCount = 0;
+        let tokenHandlerErrorCount = 0;
+        nc.on('error', (err) => {
+            totalErrorCount++;
+            if ((/^NatsError: tokenHandler call failed: .+$/).test(err.toString())) {
+                tokenHandlerErrorCount++;
+            }
+        });
+        nc.on('close', () => {
+            tokenHandlerErrorCount.should.be.greaterThan(0);
+            totalErrorCount.should.equal(tokenHandlerErrorCount);
+            done();
+        });
+    });
+
+    it('tokenHandler errors can be recovered from', function(done) {
+        this.timeout(10 * 1000);
+
+        let tokenHandlerCallCount = 0;
+        const nc = NATS.connect({
+            'url': noAuthUrl,
+            'tokenHandler': () => new Promise((resolve, reject) => {
+                tokenHandlerCallCount++;
+                setTimeout(() => {
+                    if (tokenHandlerCallCount == 2) {
+                        reject(new Error('no token for you!'));
+                    } else {
+                        resolve('token1');
+                    }
+                }, 50);
+            })
+        });
+
+        let totalErrorCount = 0;
+        let tokenHandlerErrorCount = 0;
+        nc.on('error', (err) => {
+            totalErrorCount++;
+            if ((/^NatsError: tokenHandler call failed: .+$/).test(err.toString())) {
+                tokenHandlerErrorCount++;
+            }
+        });
+        nc.on('connect', () => {
+            setTimeout(() => {
+                nsc.stop_server(server, () => {
+                    server = nsc.start_server(PORT, flags);
+                });
+            }, 100);
+        });
+        nc.on('reconnect', (nc) => {
+            setTimeout(() => {
+                nc.close();
+                tokenHandlerCallCount.should.equal(3);
+                tokenHandlerErrorCount.should.equal(1);
+                totalErrorCount.should.equal(tokenHandlerErrorCount);
+                done();
+            }, 100);
         });
     });
 });
