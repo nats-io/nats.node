@@ -100,7 +100,7 @@ describe('Token Authorization', function() {
 
     // Shutdown our server after we are done
     after(function(done) {
-        server = nsc.stop_server(server, done);
+        nsc.stop_server(server, done);
     });
 
     it('should fail to connect with no credentials ', function(done) {
@@ -143,6 +143,170 @@ describe('Token Authorization', function() {
         nc.on('connect', function(nc) {
             nc.close();
             setTimeout(done, 100);
+        });
+    });
+});
+
+describe('tokenHandler Authorization', function() {
+    const PORT = 1421;
+    const flags = ['--auth', 'token1'];
+    const noAuthUrl = 'nats://localhost:' + PORT;
+    let server;
+
+    // Start up our own nats-server
+    before(function(done) {
+        server = nsc.start_server(PORT, flags, done);
+    });
+
+    // Shutdown our server after we are done
+    after(function(done) {
+        nsc.stop_server(server, done);
+    });
+
+    it('should connect using tokenHandler instead of plain old token', function(done) {
+        const nc = NATS.connect({
+            'url': noAuthUrl,
+            'tokenHandler': () => 'token1'
+        });
+        nc.on('connect', (nc) => {
+            setTimeout(() => {
+                nc.close();
+                done();
+            }, 100);
+        });
+    });
+
+    it('should fail to connect if tokenHandler is not a function', function(done) {
+        (function() {
+            const nc = NATS.connect({
+                'url': noAuthUrl,
+                'tokenHandler': 'token1'
+            });
+        }).should.throw(/tokenHandler must be a function returning a token/);
+        done();
+    });
+
+    it('should fail to connect if both token and tokenHandler are provided', function(done) {
+        (function() {
+            const nc = NATS.connect({
+                'url': noAuthUrl,
+                'token': 'token1',
+                'tokenHandler': () => 'token1'
+            });
+        }).should.throw(/token and tokenHandler cannot both be provided/);
+        done();
+    });
+
+    it('should NOT connect if tokenHandler fails to return a token', function(done) {
+        const nc = NATS.connect({
+            'url': noAuthUrl,
+            'tokenHandler': () => {
+                throw new Error('no token for you!');
+            }
+        });
+
+        let totalErrorCount = 0;
+        let tokenHandlerErrorCount = 0;
+        let authorizationViolationErrorCount = 0;
+        let disconnectCount = 0;
+        nc.on('error', (err) => {
+            totalErrorCount++;
+            if ((/^NatsError: tokenHandler call failed: .+$/).test(err.toString())) {
+                tokenHandlerErrorCount++;
+            }
+            if ((/^NatsError: 'Authorization Violation'$/).test(err.toString())) {
+                authorizationViolationErrorCount++;
+            }
+        });
+        nc.on('disconnect', () => {
+            disconnectCount++;
+        });
+        nc.on('close', () => {
+            tokenHandlerErrorCount.should.be.greaterThan(0);
+            authorizationViolationErrorCount.should.equal(tokenHandlerErrorCount);
+            totalErrorCount.should.be.greaterThanOrEqual(2 * tokenHandlerErrorCount);
+
+            disconnectCount.should.equal(tokenHandlerErrorCount);
+            done();
+        });
+    });
+
+    it('tokenHandler errors can be recovered from', function(done) {
+        this.timeout(10 * 1000);
+
+        const RECONNECT_DELAY = 500;
+        const TOKEN_TTL = 2 * 1000;
+        const TOKEN_TTL_SAFETY_MARGIN = 500;
+
+        let token = 'token1';
+        let tokenTimestamp = new Date().getTime();
+        const getTokenAge = () => {
+          const now = new Date().getTime();
+          return now - tokenTimestamp;
+        };
+
+        let tokenHandlerCallCount = 0;
+        const nc = NATS.connect({
+            'url': noAuthUrl,
+            'tokenHandler': () => {
+                tokenHandlerCallCount++;
+                if (!token) {
+                    throw new Error('no token for you!');
+                } else {
+                    return token;
+                }
+            },
+            'reconnect': true,
+            'reconnectTimeWait': RECONNECT_DELAY
+        });
+        let refreshingToken = false;
+        nc.on('disconnect', () => {
+            // refresh token if it might be too old before it's used again:
+            if (!refreshingToken && (getTokenAge() + RECONNECT_DELAY + TOKEN_TTL_SAFETY_MARGIN > TOKEN_TTL)) {
+                refreshingToken = true;
+                token = '';
+                setTimeout(() => {
+                    token = 'token1';
+                    tokenTimestamp = new Date().getTime();
+                    refreshingToken = false;
+                }, 3 * RECONNECT_DELAY);
+            }
+        });
+
+        let totalErrorCount = 0;
+        let tokenHandlerErrorCount = 0;
+        let authorizationViolationErrorCount = 0;
+        nc.on('error', (err) => {
+            totalErrorCount++;
+            if ((/^NatsError: tokenHandler call failed: .+$/).test(err.toString())) {
+                tokenHandlerErrorCount++;
+            }
+            if ((/^NatsError: 'Authorization Violation'$/).test(err.toString())) {
+                authorizationViolationErrorCount++;
+            }
+        });
+        nc.on('connect', () => {
+            // restart server to initiate reconnects after the token has expired:
+            setTimeout(() => {
+                nsc.stop_server(server, () => {
+                    server = nsc.start_server(PORT, flags);
+                });
+            }, TOKEN_TTL);
+        });
+        nc.on('reconnect', (nc) => {
+            setTimeout(() => {
+                nc.close();
+                tokenHandlerCallCount.should.be.greaterThanOrEqual(4);
+                tokenHandlerCallCount.should.be.lessThanOrEqual(5);
+
+                tokenHandlerErrorCount.should.greaterThanOrEqual(2);
+                tokenHandlerErrorCount.should.lessThanOrEqual(3);
+
+                authorizationViolationErrorCount.should.equal(tokenHandlerErrorCount);
+                totalErrorCount.should.equal(tokenHandlerErrorCount + authorizationViolationErrorCount);
+
+                done();
+            }, 100);
         });
     });
 });
