@@ -15,7 +15,7 @@ env:
   - NATS_VERSION=v1.4.1
 
 before_script:
-  - wget "https://github.com/nats-io/gnatsd/releases/download/$NATS_VERSION/gnatsd-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
+  - wget "https://github.com/nats-io/nats-server/releases/download/$NATS_VERSION/gnatsd-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
   - unzip tmp.zip
   - mv gnatsd-$NATS_VERSION-linux-amd64 gnatsd
 
