@@ -1,10 +1,10 @@
-# NATS - Node.js Client
+# NATS.js - Node.js Client
 
 A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
 [![license](https://img.shields.io/github/license/nats-io/node-nats.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Build Status](https://travis-ci.org/nats-io/node-nats.svg?branch=master)](https://travis-ci.org/nats-io/node-nats)
-[![Coveralls](https://img.shields.io/coveralls/github/nats-io/node-nats/master.svg)](https://coveralls.io/r/nats-io/node-nats?branch=master)
+[![Build Status](https://travis-ci.org/nats-io/nats.js.svg?branch=master)](https://travis-ci.org/nats-io/nats.js)
+[![Coverage Status](https://coveralls.io/repos/github/nats-io/nats.js/badge.svg?branch=master)](https://coveralls.io/github/nats-io/nats.js?branch=master)
 [![npm](https://img.shields.io/npm/v/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dt/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dm/nats.svg)](https://www.npmjs.com/package/nats)
