@@ -15,10 +15,10 @@
   "homepage": "https://nats.io",
   "repository": {
     "type": "git",
-    "url": "git@github.com:nats-io/node-nats.git"
+    "url": "git@github.com:nats-io/nats.js.git"
   },
   "bugs": {
-    "url": "https://github.com/nats-io/node-nats/issues"
+    "url": "https://github.com/nats-io/nats.js/issues"
   },
   "license": "Apache-2.0",
   "private": false,
