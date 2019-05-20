@@ -363,8 +363,8 @@ The following is the list of connection options and default values.
 | `noEcho`               |                                              | `false`                   | Subscriptions receive messages published by the client. Requires server support (1.2.0). If set to true, and the server does not support the feature, an error with code `NO_ECHO_NOT_SUPPORTED` is emitted, and the connection is aborted. Note that it is possible for this error to be emitted on reconnect when the server reconnects to a server that does not support the feature.
 | `encoding`             |                                              | `"utf8"`                  | Encoding specified by the client to encode/decode data
 | `json`                 |                                              | `false`                   | If true, message payloads are converted to/from JSON
-| `maxPingOut`           |                                              | `2`                       | Max number of pings the client will allow unanswered before rasing a stale connection error
-| `maxReconnectAttempts` |                                              | `10`                      | Sets the maximun number of reconnect attempts. The value of `-1` specifies no limit
+| `maxPingOut`           |                                              | `2`                       | Max number of pings the client will allow unanswered before raising a stale connection error
+| `maxReconnectAttempts` |                                              | `10`                      | Sets the maximum number of reconnect attempts. The value of `-1` specifies no limit
 | `name`                 | `client`                                     |                           | Optional client name
 | `noRandomize`          | `dontRandomize`, `NoRandomize`               | `false`                   | If set, the order of user-specified servers is randomized.
 | `pass`                 | `password`                                   |                           | Sets the password for a connection
