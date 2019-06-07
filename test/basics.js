@@ -606,4 +606,275 @@ describe('Basics', function() {
             });
         });
     });
+
+    it('connection drains when no subs', function(done) {
+        const nc = NATS.connect(PORT);
+        nc.on('error', function(err) {
+            done(err);
+        });
+        nc.on('connect', function() {
+            nc.drain(() => {
+               nc.closed.should.be.true();
+                done();
+            });
+        });
+    });
+
+
+    it('connection drain', function(done) {
+        const subj = NATS.createInbox();
+
+        const nc1 = NATS.connect(PORT);
+        let c1 = 0;
+        nc1.on('error', function(err) {
+            done(err);
+        });
+        let drainCB = false;
+        nc1.on('connect', function() {
+            nc1.subscribe(subj, {queue: 'q1'}, () => {
+                c1++;
+                if(c1 === 1) {
+                    nc1.drain(() => {
+                        drainCB = true;
+                        finish();
+                    });
+                }
+            });
+        });
+        nc1.flush(() => {
+            start();
+        });
+
+        const nc2 = NATS.connect(PORT);
+        let c2 = 0;
+        nc2.on('error', function(err) {
+            done(err);
+        });
+        nc2.on('connect', function() {
+            nc2.subscribe(subj, {queue: 'q1'}, () => {
+                c2++;
+            });
+        });
+        nc2.flush(() => {
+            start();
+        });
+
+        let startCount = 0;
+        function start() {
+            startCount++;
+            if(startCount === 2) {
+                for (let i = 0; i < 10000; i++) {
+                    nc2.publish(subj);
+                }
+                nc2.flush(finish);
+            }
+        }
+
+        let finishCount = 0;
+        function finish() {
+            finishCount++;
+            if(finishCount === 2) {
+                should(drainCB).be.true();
+                should(c1 + c2).be.equal(10000, `c1: ${c1}  c2: ${c2}`);
+                should(c1 >= 1).be.true('c1 got more than one message');
+                should(c2 >= 1).be.true('c2 got more than one message');
+                done();
+                nc2.close();
+            }
+        }
+    });
+
+
+    it('subscription drain', function(done) {
+        const subj = NATS.createInbox();
+
+        const nc1 = NATS.connect(PORT);
+        let c1 = 0;
+        let c2 = 0;
+
+        nc1.on('error', function(err) {
+            done(err);
+        });
+        let drainCB = false;
+        let sid1 = 0;
+        let sid2 = 0;
+        nc1.on('connect', function() {
+            sid1 = nc1.subscribe(subj, {queue: 'q1'}, () => {
+                c1++;
+                if(c1 === 1) {
+                    nc1.drainSubscription(sid1, () => {
+                        drainCB = true;
+                        finish();
+                    });
+                }
+            });
+
+            sid2 = nc1.subscribe(subj, {queue: 'q1'}, () => {
+                c2++;
+            });
+        });
+
+        nc1.flush(() => {
+            start();
+        });
+
+        function start() {
+            for (let i = 0; i < 10000; i++) {
+                nc1.publish(subj);
+            }
+            nc1.flush(finish);
+        }
+
+        function finish() {
+            should(c1 + c2).be.equal(10000, `c1: ${c1}  c2: ${c2}`);
+            should(c1 >= 1).be.true('c1 got more than one message');
+            should(c2 >= 1).be.true('c2 got more than one message');
+            done();
+            nc1.close();
+        }
+    });
+
+    it('publish after drain fails', function(done) {
+        const subj = NATS.createInbox();
+        const nc1 = NATS.connect(PORT);
+
+        nc1.flush(() => {
+            nc1.drain();
+            try {
+                nc1.publish(subj);
+            } catch(err) {
+                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+                    done();
+                } else {
+                    done(err);
+                }
+            }
+        });
+    });
+
+    it('request after drain fails toss', function(done) {
+        const subj = NATS.createInbox();
+        const nc1 = NATS.connect(PORT);
+
+        nc1.flush(() => {
+            nc1.drain();
+            try {
+                nc1.request(subj);
+            } catch(err) {
+                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+                    done();
+                } else {
+                    done(err);
+                }
+            }
+        });
+    });
+
+    it('request after drain fails callback', function(done) {
+        const subj = NATS.createInbox();
+        const nc1 = NATS.connect(PORT);
+
+        nc1.flush(() => {
+            nc1.drain();
+            nc1.request(subj, (err) => {
+                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+                    done();
+                } else {
+                    done(err);
+                }
+            });
+        });
+    });
+
+    it('oldrequest after drain fails callback', function(done) {
+        const subj = NATS.createInbox();
+        const nc1 = NATS.connect(PORT);
+
+        nc1.flush(() => {
+            nc1.drain();
+            nc1.oldRequest(subj, (err) => {
+                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+                    done();
+                } else {
+                    done(err);
+                }
+            });
+        });
+    });
+
+    it('reject drain after close', function(done) {
+        const nc1 = NATS.connect(PORT);
+        nc1.on('connect', () => {
+            nc1.close();
+            nc1.drain((err) => {
+                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+                    done();
+                } else {
+                    done(err);
+                }
+            });
+        });
+    });
+
+
+    it('reject drainsubscription after close', function(done) {
+        const nc1 = NATS.connect(PORT);
+        nc1.on('connect', () => {
+            nc1.close();
+            nc1.drainSubscription(100, (err) => {
+                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+                    done();
+                } else {
+                    done(err);
+                }
+            });
+        });
+    });
+
+    it('reject subscribe on draining', function(done) {
+        const nc1 = NATS.connect(PORT);
+        nc1.on('connect', () => {
+            nc1.drain();
+            nc1.subscribe(NATS.createInbox(), (err) => {
+                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+                    done();
+                } else {
+                    done(err);
+                }
+            });
+        });
+    });
+
+    it('reject drain on draining', function(done) {
+        const nc1 = NATS.connect(PORT);
+        nc1.on('connect', () => {
+            nc1.drain();
+            nc1.drain((err) => {
+                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+                    done();
+                } else {
+                    done(err);
+                }
+            });
+        });
+    });
+
+
+    it('drain cleared timeout', function(done) {
+        const nc1 = NATS.connect(PORT);
+        nc1.on('connect', () => {
+            const sid = nc1.subscribe(NATS.createInbox(), () => {});
+            const sub = nc1.subs[sid];
+            nc1.timeout(sid, 250, 1000, () => {
+                done('timeout fired');
+            });
+            nc1.drainSubscription(sid, () => {
+                should(sub.timeout).is.null();
+                nc1.close();
+                done();
+            });
+
+        });
+    });
+
 });
