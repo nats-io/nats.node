@@ -33,7 +33,7 @@ describe('Direct NKeys and Signatures', function() {
     before(function(done) {
         // We need v2 or above for these tests.
         const version = nsc.server_version();
-        if ((/\s+1\./).exec(version) !== null) {
+        if ((/\s+2\./).exec(version) !== null) {
             this.skip();
         }
         const flags = ['-c', './test/configs/nkey.conf'];
