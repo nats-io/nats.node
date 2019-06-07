@@ -29,6 +29,7 @@ export const BAD_REPLY: string;
 export const BAD_SUBJECT: string;
 export const CLIENT_CERT_REQ: string;
 export const CONN_CLOSED: string;
+export const CONN_DRAINING: string;
 export const CONN_ERR: string;
 export const INVALID_ENCODING: string;
 export const NATS_PROTOCOL_ERR: string;
@@ -37,6 +38,7 @@ export const PERMISSIONS_ERR: string;
 export const REQ_TIMEOUT: string;
 export const SECURE_CONN_REQ: string;
 export const STALE_CONNECTION_ERR: string;
+export const SUB_DRAINING: string;
 
 /**
  * Create a properly formatted inbox subject.
@@ -128,6 +130,29 @@ declare class Client extends events.EventEmitter {
 	 * Unsubscribe to a given Subscriber Id, with optional max number of messages before unsubscribing.
 	 */
 	unsubscribe(sid: number, max?: number):void;
+
+	/**
+	 * Draining a subscription is similar to unsubscribe but inbound pending messages are
+	 * not discarded. When the last in-flight message is processed, the subscription handler
+	 * is removed.
+	 * @param sid
+	 * @param callback
+	 */
+	drainSubscription(sid: number, callback?:Function):void;
+
+	/**
+	 * Drains all subscriptions. If an opt_callback is provided, the callback
+	 * is called if there's an error with an error argument.
+	 *
+	 * Note that after calling drain, it is impossible to create new subscriptions
+	 * or any requests. As soon as all messages for the draining subscriptions are
+	 * processed, it is also impossible to publish new messages.
+	 *
+	 * A drained connection is closed when the opt_callback is called without arguments.
+	 * @param sid
+	 * @param callback
+	 */
+	drain(sid: number, callback?:Function):void;
 
 	/**
 	 * Set a timeout on a subscription.
