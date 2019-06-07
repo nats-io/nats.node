@@ -149,10 +149,9 @@ declare class Client extends events.EventEmitter {
 	 * processed, it is also impossible to publish new messages.
 	 *
 	 * A drained connection is closed when the opt_callback is called without arguments.
-	 * @param sid
 	 * @param callback
 	 */
-	drain(sid: number, callback?:Function):void;
+	drain(callback?:Function):void;
 
 	/**
 	 * Set a timeout on a subscription.
