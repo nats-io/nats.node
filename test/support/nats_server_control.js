@@ -20,7 +20,7 @@ const spawn = require('child_process').spawn;
 const net = require('net');
 const sync = require('child_process').execSync;
 
-const SERVER = (process.env.TRAVIS) ? 'gnatsd/gnatsd' : 'gnatsd';
+const SERVER = (process.env.TRAVIS) ? 'nats-server/nats-server' : 'nats-server';
 const DEFAULT_PORT = 4222;
 
 function server_version() {
