@@ -100,7 +100,7 @@ nc.on('connect', function() {
             console.log('tricky - trying to crash me:', msg.toString);
             return;
         }
-    
+
         // of course this is no different than using a value that is
         // expected in one format (say a number), but the client provides
         // a string:
@@ -175,16 +175,16 @@ nc = nats.connect({'dontRandomize': true, 'servers':servers});
 ## Draining Connections and Subscriptions
 
 ```javascript
-// Unsubscribing removes the subscription handler for a subscription 
-// and cancels the subscription. Any pending messages on the client's 
-// buffer are discarded. 
-// 
+// Unsubscribing removes the subscription handler for a subscription
+// and cancels the subscription. Any pending messages on the client's
+// buffer are discarded.
+//
 // Draining is similar to unsubscribe, but the client instead
-// sends the unsubscribe request followed by a flush. When the flush 
-// returns, the subscription handler is removed. Thus the client is 
-// able to process all messages sent by the server before the subscription 
-// handler is removed. 
-// 
+// sends the unsubscribe request followed by a flush. When the flush
+// returns, the subscription handler is removed. Thus the client is
+// able to process all messages sent by the server before the subscription
+// handler is removed.
+//
 // Draining is particularly valuable with queue subscriptions preventing
 // messages from being lost.
 
@@ -193,8 +193,8 @@ const sid1 = nc.subscribe(subj, {queue: 'q1'}, () => {
     c1++;
     if(c1 === 1) {
         nc1.drainSubscription(sid1, () => {
-            // subscription drained - possible arguments are an error or 
-            // the sid (number) and subject identifying the drained 
+            // subscription drained - possible arguments are an error or
+            // the sid (number) and subject identifying the drained
             // subscription
         });
     }
@@ -204,7 +204,7 @@ const sid1 = nc.subscribe(subj, {queue: 'q1'}, () => {
 // It is possible to drain a connection, draining a connection:
 // - drains all subscriptions
 // - after calling drain it is impossible to make subscriptions or requests
-// - when all subscriptions are drained, it is impossible to publish 
+// - when all subscriptions are drained, it is impossible to publish
 // messages and drained connection is closed.
 // - finally, the callback handler is called (with possibly an error).
 
@@ -338,7 +338,7 @@ nats.timeout(sid, timeout_ms, expected, function() {
 });
 
 // Auto-unsubscribe after MAX_WANTED messages received
-nats.subscribe('foo', {'max':MAX_WANTED});
+var sid = nats.subscribe('foo', {'max':MAX_WANTED});
 nats.unsubscribe(sid, MAX_WANTED);
 
 // Multiple connections
