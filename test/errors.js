@@ -18,6 +18,7 @@
 'use strict';
 
 const NATS = require('../'),
+    NatsError = require('../').NatsError,
     nsc = require('./support/nats_server_control'),
     should = require('should');
 
@@ -43,61 +44,91 @@ describe('Errors', function() {
                 'token': 'token1',
                 'user': 'foo'
             });
-        }).should.throw(Error);
+        }).should.throw(NatsError);
         done();
     });
 
-    it('should throw errors on publish', function(done) {
+    it('should throw errors on publish when no subject is supplied', function(done) {
         const nc = NATS.connect(PORT);
-        // No subject
         (function() {
             nc.publish();
-        }).should.throw(Error);
-        // bad args
-        (function() {
-            nc.publish('foo', function() {}, 'bar');
-        }).should.throw(Error);
-        (function() {
-            nc.publish('foo', 'bar', function() {}, 'bar');
-        }).should.throw(Error);
-        // closed
-        nc.close();
-        (function() {
-            nc.publish('foo');
-        }).should.throw(Error);
+        }).should.throw(NatsError, { message: 'Subject must be supplied' });
         done();
     });
 
-    it('should throw errors on flush', function(done) {
+    it('should throw errors on publish when message is a function', function(done) {
+        const nc = NATS.connect(PORT);
+        (function() { // only passed accidentally, threw opt_callback is not a function
+            nc.publish('subject', function() {}, 'bar');
+        }).should.throw(NatsError, { message: 'Message can\'t be a function' });
+        done();
+    });
+
+    it('should throw errors on publish when reply is a function', function(done) {
+        const nc = NATS.connect(PORT);
+        (function() {
+            nc.publish('subject', 'message', function() {}, null);
+        }).should.throw(NatsError, { message: 'Reply can\'t be a function' });
+        done();
+    });
+
+    it('should throw errors on publish when callback is not a function', function(done) {
+        const nc = NATS.connect(PORT);
+        (function() {
+            nc.publish('subject', 'message', 'reply', 'bar');
+        }).should.throw(NatsError, { message: 'Callback needs to be a function' });
+        done();
+    });
+
+    it('should throw errors on publish when connection is closed', function(done) {
+        const nc = NATS.connect(PORT);
+        nc.close();
+        (function() {
+            nc.publish('subject');
+        }).should.throw(NatsError, { message: 'Connection closed' });
+        done();
+    });
+
+    it('should throw errors on flush when connection is closed', function(done) {
         const nc = NATS.connect(PORT);
         nc.close();
         (function() {
             nc.flush();
-        }).should.throw(Error);
+        }).should.throw(NatsError, { message: 'Connection closed' });
         done();
     });
 
-    it('should pass errors on publish with callbacks', function(done) {
+    it('should pass error to publish callback when missing subject', function(done) {
         const nc = NATS.connect(PORT);
-        const expectedErrors = 4;
-        let received = 0;
+        nc.publish(createCallback(done, 'Subject must be supplied'));
+    });
 
-        const cb = function (err) {
-            should.exist(err);
-            if (++received === expectedErrors) {
-                done();
-            }
-        };
+    it('should pass error to publish callback when missing subject but message is present', function(done) {
+        const nc = NATS.connect(PORT);
+        nc.publish(null, 'message', createCallback(done, 'Subject must be supplied'));
+    });
 
-        // No subject
-        nc.publish(cb);
+    it('should pass error to publish callback when missing subject but message and opt_reply is present', function(done) {
+        const nc = NATS.connect(PORT);
+        nc.publish(null, 'message', 'opt_reply', createCallback(done, 'Subject must be supplied'));
+    });
+
+    it('should pass error to publish callback message has wrong type', function(done) {
         // bad args
-        nc.publish('foo', function() {}, 'bar', cb);
-        nc.publish('foo', 'bar', function() {}, cb);
+        const nc = NATS.connect(PORT);
+        nc.publish('subject', function() {}, 'opt_reply', createCallback(done, 'Message can\'t be a function'));
+    });
 
+    it('should pass error to publish callback opt_reply has wrong type', function(done) {
+        const nc = NATS.connect(PORT);
+        nc.publish('subject', 'message', function() {}, createCallback(done, 'Reply can\'t be a function'));
+    });
+
+    it('should pass error to publish callback when closed', function(done) {
         // closed will still throw since we remove event listeners.
+        const nc = NATS.connect(PORT);
         nc.close();
-        nc.publish('foo', cb);
+        nc.publish('subject', createCallback(done, 'Connection closed'));
     });
 
     it('should throw errors on subscribe', function(done) {
@@ -105,7 +136,7 @@ describe('Errors', function() {
         nc.close();
         // Closed
         (function() {
-            nc.subscribe('foo');
+            nc.subscribe('subject');
         }).should.throw(Error);
         done();
     });
@@ -138,4 +169,15 @@ describe('Errors', function() {
         nc.publish('baz');
     });
 
+    function createCallback(done, expectedErrorMessage) {
+        const callback = function(err) {
+            (++callback.called).should.equal(1);
+            should.exist(err);
+            should.exist(err.message);
+            err.message.should.equal(expectedErrorMessage);
+            done();
+        };
+        callback.called = 0;
+        return callback;
+    }
 });

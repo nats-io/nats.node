@@ -26,6 +26,7 @@ export const BAD_AUTHENTICATION: string;
 export const BAD_JSON: string;
 export const BAD_MSG: string;
 export const BAD_REPLY: string;
+export const BAD_CALLBACK: string;
 export const BAD_SUBJECT: string;
 export const CLIENT_CERT_REQ: string;
 export const CONN_CLOSED: string;

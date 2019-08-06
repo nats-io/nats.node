@@ -441,6 +441,10 @@ Our support policy for Nodejs versions follows [Nodejs release support]( https:/
 We will support and build node-nats on even-numbered Nodejs versions that are current or in LTS.
 
 
+## Running The Tests
+
+To run the tests, you need to have a `nats-server` execubtable in your path. Refer to the [server installation guide](https://nats-io.github.io/docs/nats_server/installation.html#installing-via-a-package-manager) in the NATS.io documentation. With that in place, you can run `npm test` to run all tests.
+
 ## License
 
 Unless otherwise noted, the NATS source files are distributed under the Apache Version 2.0 license found in the LICENSE file.
