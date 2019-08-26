@@ -32,11 +32,8 @@ nats.on('connect', function() {
 
     const start = new Date();
 
-    const invalid2octet = Buffer.from('\xc3\x28', 'binary');
-
     for (let i = 0; i < loop; i++) {
-        nats.publish('test', invalid2octet);
-        //nats.publish('test', 'ok');
+        nats.publish('test', 'ok');
         if (i % hash === 0) {
             process.stdout.write('+');
         }
