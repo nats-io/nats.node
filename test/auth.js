@@ -19,7 +19,11 @@
 
 const NATS = require('../'),
     nsc = require('./support/nats_server_control'),
-    should = require('should');
+    should = require('should'),
+    nuid = require('nuid'),
+    fs = require('fs'),
+    os = require('os'),
+    path = require('path');
 
 describe('Authorization', function() {
 
@@ -307,6 +311,75 @@ describe('tokenHandler Authorization', function() {
 
                 done();
             }, 100);
+        });
+    });
+});
+
+describe('Publish Permissions', function() {
+    const PORT = 1421;
+    const noAuthUrl = 'nats://localhost:' + PORT;
+    let server;
+    const user = 'foo';
+    const pass = 'foo-password';
+    const allowedSubject = 'allowed-subject';
+    const disallowedSubject = 'denied-subject';
+
+    // Start up our own nats-server
+    before(function(done) {
+        const configFileName = 'node-nats-server-' + nuid.next() + '.conf';
+        const configFilePath = path.join(os.tmpdir(), configFileName);
+        const permissions = `authorization {
+  users = [
+    {user: ${user}, password: ${pass}, permissions: {publish: {allow: ["${allowedSubject}"], deny: ["${disallowedSubject}"]}, subscribe: ">"}}
+  ]
+}
+`;
+        fs.writeFile(configFilePath, permissions, function(err) {
+            if (err) {
+                done(err);
+            } else {
+                server = nsc.start_server(PORT, ['--config', configFilePath], done);
+            }
+        });
+    });
+
+    // Shutdown our server after we are done
+    after(function(done) {
+        nsc.stop_server(server, done);
+    });
+
+    it(`should fail publishing to a subject that's denied and succeed publishing to a subject that's allowed`, function(done) {
+        this.timeout(3 * 1000);
+
+        const nc = NATS.connect({
+            'url': noAuthUrl,
+            user,
+            pass
+        });
+        nc.on('connect', function() {
+            let permissionErrorCounter = 0;
+            nc.on('permission_error', function() {
+                permissionErrorCounter++;
+            });
+            let disallowedMsg = null;
+            nc.subscribe(disallowedSubject, function(msg) {
+                disallowedMsg = msg;
+            });
+            let allowedMsg = null;
+            nc.subscribe(allowedSubject, function(msg) {
+                allowedMsg = msg;
+            });
+            nc.publish(disallowedSubject, 'data-' + nuid.next());
+            nc.publish(allowedSubject, 'data-' + nuid.next());
+            setTimeout(function() {
+                nc.close();
+
+                should.not.exist(disallowedMsg);
+                should.exist(allowedMsg);
+                permissionErrorCounter.should.equal(1);
+
+                done();
+            }, 2000);
         });
     });
 });
