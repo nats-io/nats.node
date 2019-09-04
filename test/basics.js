@@ -487,7 +487,7 @@ describe('Basics', function() {
                 called();
             });
 
-            nc.requestOne("b", 1, function() {
+            nc.requestOne("c", 1, function() {
                 three = true;
                 called();
             });
@@ -877,4 +877,87 @@ describe('Basics', function() {
         });
     });
 
+    it('json requests', function(done) {
+        const nc = NATS.connect({port: PORT, json: true});
+        nc.on('connect', () => {
+            let c = 0;
+            const subj = NATS.createInbox();
+            nc.subscribe(subj, (m, reply) => {
+                nc.publish(reply, m);
+            });
+
+            let str = false;
+            let obj = false;
+            let num = false;
+            const h = function(m) {
+                switch(typeof m) {
+                    case "number":
+                        num = true;
+                        break;
+                    case "string":
+                        str = true;
+                        break;
+                    case "object":
+                        obj = true;
+                        break;
+                }
+                c++;
+                if(c === 3) {
+                    str.should.be.true();
+                    obj.should.be.true();
+                    num.should.be.true();
+                    nc.close();
+                    done();
+                }
+            };
+
+            nc.flush(() => {
+                nc.requestOne(subj, 'some string', {queue: 'worker'}, 1000, h);
+                nc.requestOne(subj, {}, {queue: 'worker'}, 1000, h);
+                nc.requestOne(subj, 123, {queue: 'worker'}, 1000, h);
+            });
+        });
+    });
+
+    it('json requests', function(done) {
+        const nc = NATS.connect({port: PORT, json: true, useOldRequestStyle: true});
+        nc.on('connect', () => {
+            let c = 0;
+            const subj = NATS.createInbox();
+            nc.subscribe(subj, (m, reply) => {
+                nc.publish(reply, m);
+            });
+
+            let str = false;
+            let obj = false;
+            let num = false;
+            const h = function(m) {
+                switch(typeof m) {
+                    case "number":
+                        num = true;
+                        break;
+                    case "string":
+                        str = true;
+                        break;
+                    case "object":
+                        obj = true;
+                        break;
+                }
+                c++;
+                if(c === 3) {
+                    str.should.be.true();
+                    obj.should.be.true();
+                    num.should.be.true();
+                    nc.close();
+                    done();
+                }
+            };
+
+            nc.flush(() => {
+                nc.requestOne(subj, 'some string', {queue: 'worker'}, 1000, h);
+                nc.requestOne(subj, {}, {queue: 'worker'}, 1000, h);
+                nc.requestOne(subj, 123, {queue: 'worker'}, 1000, h);
+            });
+        });
+    });
 });
