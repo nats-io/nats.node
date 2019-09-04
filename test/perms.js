@@ -113,7 +113,7 @@ describe('Auth Basics', function() {
         nc.flush(() => {
             nc.close();
             if (errs.length !== 2) {
-                done(new Error("expected one permission error"));
+                done(new Error("expected two permission errors"));
             } else if (count !== 3) {
                 done(new Error("expected three messages"));
             } else {
