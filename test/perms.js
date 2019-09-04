@@ -39,7 +39,7 @@ describe('Auth Basics', function() {
             authorization: {
                 SUB: {
                     subscribe: "bar",
-                    publish: "bar"
+                    publish: ["bar"]
                 },
                 users: [{
                     user: 'bar',
@@ -86,5 +86,59 @@ describe('Auth Basics', function() {
             nc.publish('foo', 'foo');
         });
 
+    });
+
+    it('permission_error is not fatal', function(done) {
+        const nc = NATS.connect({
+            port: PORT,
+            user: 'bar',
+            password: 'bar'
+        });
+
+        const errs = [];
+        nc.on('permission_error', function(err) {
+            errs.push(err);
+        });
+
+        let count = 0;
+        nc.subscribe('bar', () => {
+            count++;
+        });
+
+        nc.publish('bar');
+        nc.publish('foo');
+        nc.publish('bar');
+        nc.subscribe('foo', () => {});
+        nc.publish('bar');
+        nc.flush(() => {
+            nc.close();
+            if (errs.length !== 2) {
+                done(new Error("expected one permission error"));
+            } else if (count !== 3) {
+                done(new Error("expected three messages"));
+            } else {
+                // let's make sure the errors are what we think they are
+                let hasPubErr = false;
+                let hasSubErr = false;
+                for(let i=0; i < errs.length; i++) {
+                    const m = errs[i].message.toLowerCase();
+                    if (m.indexOf('permission violation for publish to "foo"')) {
+                        hasPubErr = true;
+                    }
+                    if (m.indexOf('permission violation for subscription to "foo"')) {
+                        hasSubErr = true;
+                    }
+                }
+                if(!hasPubErr) {
+                    done(new Error("permission violation for pub not found"));
+                    return;
+                }
+                if(!hasSubErr) {
+                    done(new Error("permission violation for sub not found"));
+                    return;
+                }
+                done();
+            }
+        });
     });
 });
