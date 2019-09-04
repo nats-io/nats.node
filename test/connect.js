@@ -168,4 +168,10 @@ describe('Basic Connectivity', function() {
         });
     });
 
+    it('opts must be an object', (done) => {
+       should.throws(() => {
+           NATS.connect(uri, "a string");
+       });
+       done();
+    });
 });

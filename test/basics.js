@@ -607,6 +607,21 @@ describe('Basics', function() {
         });
     });
 
+    it('drains callback must be a function', function(done) {
+        const nc = NATS.connect(PORT);
+        nc.on('error', (err) => {
+            nc.close();
+            if(err.code === NATS.BAD_CALLBACK) {
+                done();
+                return;
+            }
+            done(err);
+        });
+        nc.on('connect', function() {
+            nc.drain("a string");
+        });
+    });
+
     it('connection drains when no subs', function(done) {
         const nc = NATS.connect(PORT);
         nc.on('error', function(err) {
@@ -860,4 +875,106 @@ describe('Basics', function() {
         });
     });
 
+    it('drain sub callback must be function', function(done) {
+        const nc1 = NATS.connect(PORT);
+        nc1.on('connect', () => {
+            nc1.on('error', (err) => {
+                nc1.close();
+                if(err.code === NATS.BAD_CALLBACK) {
+                    done();
+                    return;
+                }
+                done(err);
+            });
+            const sid = nc1.subscribe(NATS.createInbox(), () => {});
+            nc1.drainSubscription(sid, "not a function");
+
+        });
+    });
+
+    it('drain sub callback on unknown sub is called', function(done) {
+        const nc1 = NATS.connect(PORT);
+        nc1.on('connect', () => {
+            nc1.drainSubscription(1000, () => {
+                nc1.close();
+                done();
+            });
+        });
+    });
+
+    it('publish callback must be a function', (done) => {
+        const nc = NATS.connect(PORT);
+        nc.on('error', (err) => {
+            nc.close();
+            if(err.code === NATS.BAD_CALLBACK) {
+                done();
+                return;
+            }
+            done(err);
+        });
+
+        nc.publish("foo", undefined, undefined, "not a function");
+    });
+
+    it('publish reply cannot be a function', (done) => {
+        const nc = NATS.connect(PORT);
+        nc.publish("foo", undefined, () => {}, (err) => {
+            nc.close();
+            if(err.code === NATS.BAD_REPLY) {
+                done();
+                return;
+            }
+            done(err);
+        });
+    });
+
+    it('subscribe cb must be function', (done) => {
+        const nc = NATS.connect(PORT);
+        nc.on('error', (err) => {
+            nc.close();
+            if(err.code === NATS.BAD_CALLBACK) {
+                done();
+                return;
+            }
+            done(err);
+        });
+        nc.subscribe("foo");
+    });
+
+    it('subscribe cb must be function or sid is zero', (done) => {
+        const nc = NATS.connect(PORT);
+        nc.on('error', (err) => {
+            // need a handler
+        });
+        const sid = nc.subscribe("foo");
+        sid.should.be.equal(0);
+        nc.close();
+        done();
+    });
+
+    it('timeout callback must be function', (done) => {
+        const nc = NATS.connect(PORT);
+        nc.on('error', (err) => {
+            nc.close();
+            if(err.code === NATS.BAD_CALLBACK) {
+                done();
+                return;
+            }
+            done(err);
+        });
+        nc.timeout(1000, 1000000, 1, "not a function");
+    });
+
+    it('request callback must be function', (done) => {
+        const nc = NATS.connect(PORT);
+        nc.on('error', (err) => {
+            nc.close();
+            if(err.code === NATS.BAD_CALLBACK) {
+                done();
+                return;
+            }
+            done(err);
+        });
+        nc.request("foo", undefined, undefined, "not a function");
+    });
 });
