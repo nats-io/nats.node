@@ -87,7 +87,6 @@ export interface ClientOpts {
 	token?: string,
 	pingInterval?: number,
 	maxPingOut?: number,
-	useOldRequestStyle?: boolean,
 	noEcho?: boolean
 }
 
@@ -163,7 +162,7 @@ declare class Client extends events.EventEmitter {
 	 * This should be treated as a subscription. You can optionally indicate how many
 	 * messages you only want to receive using opt_options = {max:N}. Otherwise you
 	 * will need to unsubscribe to stop the message stream.
-	 * The Subscriber Id is returned.
+	 * The Subscriber Id is returned or 0 if the request failed.
 	 */
 	request(subject: string, callback: Function): number;
 	request(subject: string, msg: any, callback: Function): number;
@@ -175,7 +174,7 @@ declare class Client extends events.EventEmitter {
 	 * after the first response is received or the timeout is reached.
 	 * The callback can be called with either a message payload or a NatsError to indicate
 	 * a timeout has been reached.
-	 * The Subscriber Id is returned.
+	 * The Subscriber Id is returned or 0 if the request failed.
 	 */
 	requestOne(subject: string, timeout: number, callback: Function): number;
 	requestOne(subject: string, msg: any, timeout: number, callback: Function): number;

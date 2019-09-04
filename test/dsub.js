@@ -50,7 +50,7 @@ describe('Double SUBS', function() {
         });
 
         const nc = NATS.connect(PORT);
-        nc.subscribe('foo');
+        nc.subscribe('foo', () => {});
         nc.on('connect', function(nc) {
             setTimeout(function() {
                 nc.close();

@@ -61,7 +61,7 @@ describe('JSON payloads', () => {
         };
     }
 
-    function testReqRep(input, expected, useOldRequestStyle) {
+    function testReqRep(input, expected) {
         if (expected === undefined) {
             expected = input;
         }
@@ -70,7 +70,6 @@ describe('JSON payloads', () => {
             const nc = NATS.connect({
                 json: true,
                 port: PORT,
-                useOldRequestStyle: useOldRequestStyle === true
             });
 
             nc.subscribe('reqrep', {
@@ -135,15 +134,9 @@ describe('JSON payloads', () => {
     for (const name of Object.getOwnPropertyNames(testInputs)) {
         it(`should pub/sub with ${name}`, testPubSub(testInputs[name]));
         it(`should req/rep with ${name}`, testReqRep(testInputs[name]));
-        it(`should req/rep with ${name} oldrr`, testReqRep(
-            testInputs[name], undefined, true
-        ));
     }
 
     // undefined must be serialized as null
     it('should pub/sub with undefined', testPubSub(undefined, null));
     it('should req/rep with undefined', testReqRep(undefined, null));
-    it('should req/rep with undefined oldrr', testReqRep(
-        undefined, null, true
-    ));
 });

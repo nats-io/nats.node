@@ -38,7 +38,7 @@ describe('Basics', function() {
 
     it('should do basic subscribe and unsubscribe', function(done) {
         const nc = NATS.connect(PORT);
-        const sid = nc.subscribe('foo');
+        const sid = nc.subscribe('foo', () => {});
         should.exist(sid);
         nc.unsubscribe(sid);
         nc.flush(function() {
@@ -129,7 +129,7 @@ describe('Basics', function() {
             nc.publish(reply, replyMsg);
         });
 
-        const sub = nc.request('foo', initMsg, function(reply) {
+        const sub = nc.request('foo', initMsg, function() {
             nc.flush(function() {
                 received.should.equal(expected);
                 nc.close();
@@ -228,7 +228,7 @@ describe('Basics', function() {
 
     it('should handle an unsubscribe after close of connection', (done) => {
         const nc = NATS.connect(PORT);
-        const sid = nc.subscribe('foo');
+        const sid = nc.subscribe('foo', () => {});
         nc.close();
         nc.unsubscribe(sid);
         done();
@@ -614,7 +614,7 @@ describe('Basics', function() {
         });
         nc.on('connect', function() {
             nc.drain(() => {
-               nc.closed.should.be.true();
+                nc.closed.should.be.true();
                 done();
             });
         });
@@ -757,17 +757,16 @@ describe('Basics', function() {
         const nc1 = NATS.connect(PORT);
 
         nc1.flush(() => {
-            nc1.drain();
-            try {
-                nc1.request(subj);
-            } catch(err) {
-                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-                    done();
-                } else {
-                    done(err);
-                }
+                nc1.drain();
+                nc1.request(subj, (err) => {
+                    if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+                        done();
+                    } else {
+                        done(err);
+                    }
+                });
             }
-        });
+        );
     });
 
     it('request after drain fails callback', function(done) {
@@ -777,22 +776,6 @@ describe('Basics', function() {
         nc1.flush(() => {
             nc1.drain();
             nc1.request(subj, (err) => {
-                if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-                    done();
-                } else {
-                    done(err);
-                }
-            });
-        });
-    });
-
-    it('oldrequest after drain fails callback', function(done) {
-        const subj = NATS.createInbox();
-        const nc1 = NATS.connect(PORT);
-
-        nc1.flush(() => {
-            nc1.drain();
-            nc1.oldRequest(subj, (err) => {
                 if(err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
                     done();
                 } else {

@@ -260,7 +260,7 @@ module.exports = {
         "prefer-numeric-literals": "error",
         "prefer-promise-reject-errors": "error",
         "prefer-reflect": "off",
-        "prefer-rest-params": "error",
+        "prefer-rest-params": "off",
         "prefer-spread": "error",
         "prefer-template": "off",
         "quote-props": "off",

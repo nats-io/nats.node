@@ -47,7 +47,7 @@ describe('Subscription Events', function() {
             nc.close();
             done();
         });
-        nc.subscribe(subj);
+        nc.subscribe(subj, () => {});
     });
 
     it('should generate subscribe events with opts', function(done) {
@@ -66,7 +66,7 @@ describe('Subscription Events', function() {
         });
         nc.subscribe(subj, {
             queue: queuegroup
-        });
+        }, () => {});
     });
 
     it('should generate unsubscribe events', function(done) {
@@ -79,7 +79,7 @@ describe('Subscription Events', function() {
             nc.close();
             done();
         });
-        var sid = nc.subscribe(subj);
+        var sid = nc.subscribe(subj, () => {});
         nc.unsubscribe(sid);
     });
 
@@ -95,7 +95,7 @@ describe('Subscription Events', function() {
         });
         nc.subscribe(subj, {
             max: 1
-        });
+        }, () => {});
         nc.publish(subj);
     });
 
@@ -105,10 +105,10 @@ describe('Subscription Events', function() {
         let eventsReceived = 0;
         const want = 5;
 
-        nc.on('unsubscribe', function(sid, subject) {
+        nc.on('unsubscribe', function() {
             eventsReceived++;
         });
-        const sid = nc.subscribe(subj);
+        const sid = nc.subscribe(subj, () => {});
         nc.unsubscribe(sid, want);
         for (let i = 0; i < want; i++) {
             nc.publish(subj);
@@ -129,7 +129,7 @@ describe('Subscription Events', function() {
         });
         nc.request(subj, null, {
             max: 1
-        });
+        }, () => {});
 
         nc.on('unsubscribe', function(sid, subject) {
             should.exist(sid);

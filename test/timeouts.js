@@ -41,7 +41,7 @@ describe('Timeout and max received events for subscriptions', function() {
         const nc = NATS.connect(PORT);
         nc.on('connect', function() {
             const startTime = new Date();
-            const sid = nc.subscribe('foo');
+            const sid = nc.subscribe('foo', () => {});
             nc.timeout(sid, 50, 1, function() {
                 const elapsed = new Date() - startTime;
                 should.exists(elapsed);
@@ -55,7 +55,7 @@ describe('Timeout and max received events for subscriptions', function() {
     it('should not timeout if exepected has been received', function(done) {
         const nc = NATS.connect(PORT);
         nc.on('connect', function() {
-            const sid = nc.subscribe('foo');
+            const sid = nc.subscribe('foo', () => {});
             nc.timeout(sid, 50, 1, function() {
                 done(new Error('Timeout improperly called'));
             });
@@ -71,7 +71,7 @@ describe('Timeout and max received events for subscriptions', function() {
         const nc = NATS.connect(PORT);
         nc.on('connect', function() {
             let count = 0;
-            const sid = nc.subscribe('bar', function (m) {
+            const sid = nc.subscribe('bar', function () {
                 count++;
                 if (count === 1) {
                     nc.unsubscribe(sid);
@@ -94,7 +94,7 @@ describe('Timeout and max received events for subscriptions', function() {
         const nc = NATS.connect(PORT);
         nc.on('connect', function() {
             let count = 0;
-            const sid = nc.subscribe('bar', function (m) {
+            const sid = nc.subscribe('bar', function () {
                 count++;
             });
             nc.timeout(sid, 250, 2, function() {
@@ -159,7 +159,7 @@ describe('Timeout and max received events for subscriptions', function() {
             const sid = nc.request('foo', null, {
                 max: 2,
                 timeout: 1000
-            }, function (err) {
+            }, function () {
                 calledOnRequestHandler = true;
             });
 
