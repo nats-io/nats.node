@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /*
  * Copyright 2013-2019 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +15,10 @@
  * limitations under the License.
  */
 
-#!/usr/bin/env node
-
 /* jslint node: true */
 'use strict';
 
-const nats = require('nats');
+const nats = require('../');
 const argv = require('minimist')(process.argv.slice(2));
 
 const url = argv.s || nats.DEFAULT_URI;
@@ -28,14 +28,14 @@ const subject = argv._[0];
 const msg = argv._[1] || '';
 
 if (!subject) {
-    console.log('Usage: node-req  [-s server] [--creds file] [-n max_responses] <subject> [msg]');
+    console.log('Usage: node-req  [-s server] [--creds=creds_file_path] [-n max_responses] <subject> [msg]');
     process.exit();
 }
 
 // Connect to NATS server.
 const nc = nats.connect(url, nats.creds(creds));
 
-nc.request(subject, msg, {
+nc.request(subject, String(msg), {
     max: max
 }, function(response) {
     console.log('Received: ' + response);

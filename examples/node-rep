@@ -25,10 +25,10 @@ const url = argv.s || nats.DEFAULT_URI;
 const creds = argv.creds;
 const queue = argv.queue;
 const subject = argv._[0];
-
+const response = argv._[1] || '';
 
 if (!subject) {
-    console.log('Usage: node-sub [-s server] [--creds=creds_file_path] [--queue=qname] <subject>');
+    console.log('Usage: node-rep  [-s server] [--creds=creds_file_path] [--queue=qname] <subject> [response]');
     process.exit();
 }
 
@@ -40,22 +40,30 @@ nc.on('connect', function() {
     if(queue) {
         opts.queue = queue;
     }
-    nc.subscribe(subject, opts, function(msg) {
-        console.log('Received "' + msg + '"');
+
+    let count = 0;
+    nc.subscribe(subject, opts, function(msg, reply) {
+        if(reply) {
+            // give the response or echo back
+            const d = response || msg;
+            nc.publish(reply, d);
+            console.log('Sent [' + count++ + '] reply "' + d + '"');
+            return;
+        }
+        console.log('Dropping message "' + msg + '" - no reply subject set');
     });
     if(queue) {
-        console.log('Queue [' + queue + '] listening on [' + subject + ']');
+        console.log('Queue reply [' + queue + '] listening on [' + subject + ']');
     } else {
-        console.log('Listening on [' + subject + ']');
+        console.log('Reply listening on [' + subject + ']');
     }
+});
+
+nc.on('unsubscribe', function() {
+    process.exit();
 });
 
 nc.on('error', function(e) {
     console.log('Error [' + nc.currentServer + ']: ' + e);
-    process.exit();
-});
-
-nc.on('close', function() {
-    console.log('CLOSED');
     process.exit();
 });
