@@ -33,10 +33,26 @@ nats.subscribe('foo', function(msg) {
 var sid = nats.subscribe('foo', function(msg) {});
 nats.unsubscribe(sid);
 
+// Subscription/Request callbacks are given multiple arguments:
+// - msg is the payload for the message
+// - reply is an optional reply subject set by the sender (could be undefined)
+// - subject is the subject the message was sent (which may be more specific 
+//   than the subscription subject - see "Wildcard Subscriptions".
+// - finally the subscription id is the local id for the subscription
+//   this is the same value returned by the subscribe call.
+nats.subscribe('foo', function(msg, reply, subject, sid) {
+    if(reply) {
+        nats.publish(reply, "got " + msg + " on " + subject + " in subscription id " + sid);
+        return;
+    }
+    console.log('Received a message: ' + msg + " it wasn't a request.");
+});
+
 // Request Streams
 var sid = nats.request('request', function(response) {
   console.log('Got a response in msg stream: ' + response);
 });
+
 
 // Request with Auto-Unsubscribe. Will unsubscribe after
 // the first response is received via {'max':1}
@@ -333,6 +349,10 @@ var sid = nats.subscribe('foo', function() {
 });
 
 // Timeout unless a certain number of messages have been received
+// the callback for the timeout. The callback for the timeout
+// provides one argument, the subscription id (sid) for the
+// subscription. This allows a generic callback to identify
+// where the timeout triggered.
 nats.timeout(sid, timeout_ms, expected, function() {
   timeout = true;
 });
@@ -376,28 +396,50 @@ nc = nats.connect({'preserveBuffers': true});
 
 nc = nats.connect({'maxReconnectAttempts': -1, 'reconnectTimeWait': 250});
 
+// emitted whenever there's an error. if you don't implement at least
+// the error handler, your program will crash if an error is emitted.
 nc.on('error', function(err) {
 	console.log(err);
 });
 
+// connect callback provides a reference to the connection as an argument
 nc.on('connect', function(nc) {
 	console.log('connected');
 });
 
+// emitted whenever the client disconnects from a server
 nc.on('disconnect', function() {
 	console.log('disconnect');
 });
 
+// emitted whenever the client is attempting to reconnect
 nc.on('reconnecting', function() {
 	console.log('reconnecting');
 });
 
+// emitted whenever the client reconnects
+// reconnect callback provides a reference to the connection as an argument
 nc.on('reconnect', function(nc) {
 	console.log('reconnect');
 });
 
+// emitted when the connection is closed - once a connection is closed
+// the client has to create a new connection.
 nc.on('close', function() {
 	console.log('close');
+});
+
+// emitted whenever the client unsubscribes
+nc.on('unsubscribe', function(sid, subject) {
+    console.log("unsubscribed subscription", sid, "for subject", subject);
+});
+
+// emitted whenever the server returns a permission error for
+// a publish/subscription for the current user. This sort of error
+// means that the client cannot subscribe and/or publish/request
+// on the specific subject
+nc.on("permission_error", function(err) {
+    console.error("got a permissions error", err.message);
 });
 
 ```
@@ -410,12 +452,13 @@ The following is the list of connection options and default values.
 
 | Option                 | Aliases                                      | Default                   | Description
 |--------                |---------                                     |---------                  |------------
-| `noEcho`               |                                              | `false`                   | Subscriptions receive messages published by the client. Requires server support (1.2.0). If set to true, and the server does not support the feature, an error with code `NO_ECHO_NOT_SUPPORTED` is emitted, and the connection is aborted. Note that it is possible for this error to be emitted on reconnect when the server reconnects to a server that does not support the feature.
 | `encoding`             |                                              | `"utf8"`                  | Encoding specified by the client to encode/decode data
 | `json`                 |                                              | `false`                   | If true, message payloads are converted to/from JSON
 | `maxPingOut`           |                                              | `2`                       | Max number of pings the client will allow unanswered before raising a stale connection error
 | `maxReconnectAttempts` |                                              | `10`                      | Sets the maximum number of reconnect attempts. The value of `-1` specifies no limit
 | `name`                 | `client`                                     |                           | Optional client name
+| `nkey`                 |                                              | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials)
+| `noEcho`               |                                              | `false`                   | Subscriptions receive messages published by the client. Requires server support (1.2.0). If set to true, and the server does not support the feature, an error with code `NO_ECHO_NOT_SUPPORTED` is emitted, and the connection is aborted. Note that it is possible for this error to be emitted on reconnect when the server reconnects to a server that does not support the feature.
 | `noRandomize`          | `dontRandomize`, `NoRandomize`               | `false`                   | If set, the order of user-specified servers is randomized.
 | `pass`                 | `password`                                   |                           | Sets the password for a connection
 | `pedantic`             |                                              | `false`                   | Turns on strict subject format checks
@@ -424,15 +467,17 @@ The following is the list of connection options and default values.
 | `reconnect`            |                                              | `true`                    | If false server will not attempt reconnecting
 | `reconnectTimeWait`    |                                              | `2000`                    | If disconnected, the client will wait the specified number of milliseconds between reconnect attempts
 | `servers`              | `urls`                                       |                           | Array of connection `url`s
+| `sigCB`                |                                              | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials)
 | `tls`                  | `secure`                                     | `false`                   | This property can be a boolean or an Object. If true the client requires a TLS connection. If false a non-tls connection is required.  The value can also be an object specifying TLS certificate data. The properties `ca`, `key`, `cert` should contain the certificate file data. `ca` should be provided for self-signed certificates. `key` and `cert` are required for client provided certificates. `rejectUnauthorized` if `true` validates server's credentials
 | `token`                |                                              |                           | Sets a authorization token for a connection
 | `url`                  | `uri`                                        | `"nats://localhost:4222"` | Connection url
 | `useOldRequestStyle`   |                                              | `false`                   | If set to `true` calls to `request()` and `requestOne()` will create an inbox subscription per call.
 | `user`                 |                                              |                           | Sets the username for a connection
+| `usercreds`            |                                              | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). Set with `NATS.creds()`.
+| `userjwt`              |                                              | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials)
 | `verbose`              |                                              | `false`                   | Turns on `+OK` protocol acknowledgements
 | `waitOnFirstConnect`   |                                              | `false`                   | If `true` the server will fall back to a reconnect mode if it fails its first connection attempt.
 | `yieldTime`            |                                              |                           | If set, processing will yield at least the specified number of milliseconds to IO callbacks before processing inbound messages
-
 
 
 ## Supported Node Versions
@@ -440,6 +485,10 @@ The following is the list of connection options and default values.
 Our support policy for Nodejs versions follows [Nodejs release support]( https://github.com/nodejs/Release).
 We will support and build node-nats on even-numbered Nodejs versions that are current or in LTS.
 
+
+## Running Tests
+
+To run the tests, you need to have a `nats-server` executable in your path. Refer to the [server installation guide](https://nats-io.github.io/docs/nats_server/installation.html) in the NATS.io documentation. With that in place, you can run `npm test` to run all tests.
 
 ## License
 
