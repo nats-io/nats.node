@@ -487,7 +487,7 @@ describe('Basics', function() {
                 called();
             });
 
-            nc.requestOne("b", 1, function() {
+            nc.requestOne("c", 1, function() {
                 three = true;
                 called();
             });
@@ -877,4 +877,117 @@ describe('Basics', function() {
         });
     });
 
+    it('json requests', function(done) {
+        const nc = NATS.connect({port: PORT, json: true});
+        nc.on('connect', () => {
+            let c = 0;
+            const subj = NATS.createInbox();
+            nc.subscribe(subj, (m, reply) => {
+                nc.publish(reply, m);
+            });
+
+            let str = 0;
+            let obj = 0;
+            let num = 0;
+            const h = function(m) {
+                switch(typeof m) {
+                    case "number":
+                        num++;
+                        break;
+                    case "string":
+                        str++;
+                        break;
+                    case "object":
+                        obj++;
+                        break;
+                }
+                c++;
+                if(c === 11) {
+                    str.should.be.equal(4);
+                    obj.should.be.equal(4);
+                    num.should.be.equal(3);
+                    nc.close();
+                    done();
+                }
+            };
+
+            nc.flush(() => {
+                // simplest signature - empty resolves to ''
+                nc.requestOne(subj, 1000, h);
+
+                // subj, payload, timeout, handler
+                nc.requestOne(subj, "a", 1000, h);
+                nc.requestOne(subj, {}, 1000, h);
+                nc.requestOne(subj, 10, 1000, h);
+
+                nc.requestOne(subj, "a", 1000, h);
+                nc.requestOne(subj, {}, 1000, h);
+                nc.requestOne(subj, 10, 1000, h);
+
+                // this one is misleading, the option is really a payload
+                nc.requestOne(subj, {queue: "bar"}, 1000, h);
+
+                nc.requestOne(subj, 'a', {queue: 'worker'}, 1000, h);
+                nc.requestOne(subj, {}, {queue: 'worker'}, 1000, h);
+                nc.requestOne(subj, 10, {queue: 'worker'}, 1000, h);
+            });
+        });
+    });
+
+    it('json json old requests', function(done) {
+        const nc = NATS.connect({port: PORT, json: true, useOldRequestStyle: true});
+        nc.on('connect', () => {
+            let c = 0;
+            const subj = NATS.createInbox();
+            nc.subscribe(subj, (m, reply) => {
+                nc.publish(reply, m);
+            });
+
+            let str = 0;
+            let obj = 0;
+            let num = 0;
+            const h = function(m) {
+                switch(typeof m) {
+                    case "number":
+                        num++;
+                        break;
+                    case "string":
+                        str++;
+                        break;
+                    case "object":
+                        obj++;
+                        break;
+                }
+                c++;
+                if(c === 11) {
+                    str.should.be.equal(4);
+                    obj.should.be.equal(4);
+                    num.should.be.equal(3);
+                    nc.close();
+                    done();
+                }
+            };
+
+            nc.flush(() => {
+                // simplest signature - empty resolves to ''
+                nc.requestOne(subj, 1000, h);
+
+                // subj, payload, timeout, handler
+                nc.requestOne(subj, "a", 1000, h);
+                nc.requestOne(subj, {}, 1000, h);
+                nc.requestOne(subj, 10, 1000, h);
+
+                nc.requestOne(subj, "a", 1000, h);
+                nc.requestOne(subj, {}, 1000, h);
+                nc.requestOne(subj, 10, 1000, h);
+
+                // this one is misleading, the option is really a payload
+                nc.requestOne(subj, {queue: "bar"}, 1000, h);
+
+                nc.requestOne(subj, 'a', {queue: 'worker'}, 1000, h);
+                nc.requestOne(subj, {}, {queue: 'worker'}, 1000, h);
+                nc.requestOne(subj, 10, {queue: 'worker'}, 1000, h);
+            });
+        });
+    });
 });
