@@ -29,7 +29,7 @@ describe('shifter', function() {
         const a  = [function () {}];
         const b = NATS.callbackShifter(10, a);
         b.should.have.length(10);
-        for(let i=0; i < 8; i++) {
+        for(let i=0; i < 9; i++) {
             (b[i] === undefined).should.be.true();
         }
         const v = typeof b[9];
