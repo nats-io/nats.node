@@ -37,12 +37,12 @@ describe('TLS', function() {
     // We will start a plain, a no client cert, and a client cert required.
     before(function(done) {
         server = nsc.start_server(PORT, function() {
-            const flags = ['--tls', '--tlscert', './test/certs/server-cert.pem',
-                '--tlskey', './test/certs/server-key.pem'
+            const flags = ['--tls', '--tlscert', './test/certs/server.pem',
+                '--tlskey', './test/certs/key.pem'
             ];
             tlsServer = nsc.start_server(TLSPORT, flags, function() {
-                const flags = ['--tlsverify', '--tlscert', './test/certs/server-cert.pem',
-                    '--tlskey', './test/certs/server-key.pem',
+                const flags = ['--tlsverify', '--tlscert', './test/certs/server.pem',
+                    '--tlskey', './test/certs/key.pem',
                     '--tlscacert', './test/certs/ca.pem'
                 ];
                 tlsVerifyServer = nsc.start_server(TLSVERIFYPORT, flags, done);
