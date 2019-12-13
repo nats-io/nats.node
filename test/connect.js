@@ -24,7 +24,7 @@ const NATS = require('../'),
 describe('Basic Connectivity', function() {
 
     const PORT = 1424;
-    const uri = 'nats://localhost:' + PORT;
+    const u = 'nats://localhost:' + PORT;
     let server;
 
     // Start up our own nats-server
@@ -44,14 +44,14 @@ describe('Basic Connectivity', function() {
     });
 
     it('should perform basic connect with uri', function() {
-        const nc = NATS.connect(uri);
+        const nc = NATS.connect(u);
         should.exist(nc);
         nc.close();
     });
 
     it('should perform basic connect with options arg', function() {
         const options = {
-            'uri': uri
+            url: u
         };
         const nc = NATS.connect(options);
         should.exist(nc);
@@ -77,10 +77,10 @@ describe('Basic Connectivity', function() {
 
     it('should emit connecting events and try repeatedly if configured and no server available', function(done) {
         const nc = NATS.connect({
-            'uri': 'nats://localhost:22222',
-            'waitOnFirstConnect': true,
-            'reconnectTimeWait': 100,
-            'maxReconnectAttempts': 20
+            url: 'nats://localhost:22222',
+            waitOnFirstConnect: true,
+            reconnectTimeWait: 100,
+            maxReconnectAttempts: 20
         });
         let connectingEvents = 0;
         nc.on('error', function() {
@@ -99,7 +99,7 @@ describe('Basic Connectivity', function() {
 
 
     it('should still receive publish when some servers are invalid', function(done) {
-        const natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
+        const natsServers = ['nats://localhost:22222', u, 'nats://localhost:22223'];
         const ua = NATS.connect({
             servers: natsServers
         });
@@ -123,7 +123,7 @@ describe('Basic Connectivity', function() {
 
 
     it('should still receive publish when some servers[noRandomize] are invalid', function(done) {
-        const natsServers = ['nats://localhost:22222', uri, 'nats://localhost:22223'];
+        const natsServers = ['nats://localhost:22222', u, 'nats://localhost:22223'];
         const ua = NATS.connect({
             servers: natsServers,
             noRandomize: true
@@ -149,7 +149,7 @@ describe('Basic Connectivity', function() {
 
 
     it('should add a new cluster server', function(done) {
-        const servers = [uri, 'nats://localhost:22223'];
+        const servers = [u, 'nats://localhost:22223'];
         const nc = NATS.connect({
             servers: new Array(servers[0])
         });

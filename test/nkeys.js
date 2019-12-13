@@ -51,7 +51,7 @@ describe('Direct NKeys and Signatures', function() {
         const nc = NATS.connect({
             port: PORT,
             nkey: 'UAH42UG6PV552P5SWLWTBP3H3S5BHAVCO2IEKEXUANJXR75J63RQ5WM6',
-            sigCB: function (nonce) {
+            nonceSigner: function (nonce) {
                 const sk = nkeys.fromSeed(Buffer.from(nkey_seed));
                 return sk.sign(nonce);
             }
