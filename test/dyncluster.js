@@ -181,7 +181,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
         servers = nsc.start_cluster(ports, route_port, function() {
 
             const nc = NATS.connect({
-                uri: "nats://127.0.0.1:" + port,
+                url: "nats://127.0.0.1:" + port,
                 reconnectTimeWait: 100,
                 servers: urls
             });
@@ -203,7 +203,7 @@ describe('Dynamic Cluster - Connect URLs', function() {
 
         servers = nsc.start_cluster(ports, route_port, function() {
             const nc = NATS.connect({
-                uri: "nats://127.0.0.1:" + port,
+                url: "nats://127.0.0.1:" + port,
                 reconnectTimeWait: 100,
                 servers: ["nats://127.0.0.1:" + (port + 1)]
             });

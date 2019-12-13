@@ -140,7 +140,7 @@ describe('Cluster', function() {
         let s1Count = 0;
         for (var i = 0; i < 100; i++) {
             const nc = NATS.connect({
-                'dontRandomize': true,
+                'noRandomize': true,
                 'servers': [s1Url, s2Url]
             });
             conns.push(nc);

@@ -67,7 +67,7 @@ describe('Auth Basics', function() {
         const nc = NATS.connect({
             port: PORT,
             user: 'bar',
-            password: 'bar'
+            pass: 'bar'
         });
 
         let perms = 0;
@@ -92,7 +92,7 @@ describe('Auth Basics', function() {
         const nc = NATS.connect({
             port: PORT,
             user: 'bar',
-            password: 'bar'
+            pass: 'bar'
         });
 
         const errs = [];

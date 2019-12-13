@@ -67,28 +67,33 @@ export function connect(port: number): Client;
 export function connect(url: string): Client;
 
 export interface ClientOpts {
-	url?: string,
-	user?: string,
-	pass?: string,
-	verbose?: boolean,
-	pedantic?: boolean,
-	reconnect?: boolean,
+	encoding?: BufferEncoding,
+	json?: boolean,
+	maxPingOut?: number,
 	maxReconnectAttempts?: number,
+	name?: string,
+	nkey?: string,
+	noEcho?: boolean
+	noRandomize?: boolean,
+	nonceSigner?: Function,
+	pass?: string,
+	pedantic?: boolean,
+	pingInterval?: number,
+	preserveBuffers?: boolean,
+	reconnect?: boolean,
 	reconnectTimeWait?: number,
 	servers?: Array<string>,
-	noRandomize?: boolean,
-	encoding?: BufferEncoding,
 	tls?: boolean | tls.TlsOptions,
-	name?: string,
-	yieldTime?: number,
-	waitOnFirstConnect?: boolean,
-	json?: boolean,
-	preserveBuffers?: boolean,
 	token?: string,
-	pingInterval?: number,
-	maxPingOut?: number,
+	tokenHandler?: Function,
+	url?: string,
 	useOldRequestStyle?: boolean,
-	noEcho?: boolean
+	user?: string,
+	userCreds?: string,
+	userJWT?: string | Function,
+	verbose?: boolean,
+	waitOnFirstConnect?: boolean,
+	yieldTime?: number
 }
 
 export interface SubscribeOptions {

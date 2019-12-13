@@ -60,10 +60,10 @@ describe('NKeys, Signatures and User JWTs', function() {
         });
     });
 
-    it('should error when sigcb not a function', function(done) {
+    it('should error when nonceSigner not a function', function(done) {
         const nc = NATS.connect({
             port: PORT,
-            sigCB: "BAD"
+            nonceSigner: "BAD"
         });
         nc.on('error', function(err) {
             should.exist(err);
@@ -76,7 +76,7 @@ describe('NKeys, Signatures and User JWTs', function() {
     it('should error when no nkey or userJWT callback defined', function(done) {
         const nc = NATS.connect({
             port: PORT,
-            sigCB: function (nonce) {
+            nonceSigner: function (nonce) {
             },
         });
         nc.on('error', function(err) {
@@ -90,7 +90,7 @@ describe('NKeys, Signatures and User JWTs', function() {
     it('should connect when userJWT and sig provided', function(done) {
         const nc = NATS.connect({
             port: PORT,
-            sigCB: function (nonce) {
+            nonceSigner: function (nonce) {
                 const sk = nkeys.fromSeed(Buffer.from(uSeed));
                 return sk.sign(nonce);
             },
@@ -110,7 +110,7 @@ describe('NKeys, Signatures and User JWTs', function() {
     it('should connect when userJWT is a callback function', function(done) {
         const nc = NATS.connect({
             port: PORT,
-            sigCB: function (nonce) {
+            nonceSigner: function (nonce) {
                 const sk = nkeys.fromSeed(Buffer.from(uSeed));
                 return sk.sign(nonce);
             },
