@@ -1,3 +1,4 @@
 node_modules/**
 reports/**
 .eslintrc.js
+examples/node-*
