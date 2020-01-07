@@ -15,55 +15,53 @@
 
 /* jslint node: true */
 /* global describe: false, before: false, after: false, it: false */
-'use strict';
+'use strict'
 
-const NATS = require('../'),
-    nkeys = require('ts-nkeys'),
-    nsc = require('./support/nats_server_control'),
-    should = require('should'),
-    fs = require('fs');
+const NATS = require('../')
+const nkeys = require('ts-nkeys')
+const nsc = require('./support/nats_server_control')
 
-describe('Direct NKeys and Signatures', function() {
-    this.timeout(5000);
+describe('Direct NKeys and Signatures', function () {
+  this.timeout(5000)
 
-    const PORT = 22233;
-    let server;
+  const PORT = 22233
+  let server
 
-    // Start up our own nats-server
-    before(function(done) {
-        // We need v2 or above for these tests.
-        const version = nsc.server_version();
-        if ((/\s+2\./).exec(version) !== null) {
-            this.skip();
-        }
-        const flags = ['-c', './test/configs/nkey.conf'];
-        server = nsc.start_server(PORT, flags, done);
-    });
+  // Start up our own nats-server
+  before(function (done) {
+    // We need v2 or above for these tests.
+    const version = nsc.serverVersion()
+    if ((/\s+2\./).exec(version) !== null) {
+      this.skip()
+    }
+    const flags = ['-c', './test/configs/nkey.conf']
+    server = nsc.startServer(PORT, flags, done)
+  })
 
-    const nkey_seed = 'SUAIBDPBAUTWCWBKIO6XHQNINK5FWJW4OHLXC3HQ2KFE4PEJUA44CNHTC4';
+  const nkeySeed = 'SUAIBDPBAUTWCWBKIO6XHQNINK5FWJW4OHLXC3HQ2KFE4PEJUA44CNHTC4'
 
-    // Shutdown our server after we are done
-    after(function(done) {
-        nsc.stop_server(server, done);
-    });
+  // Shutdown our server after we are done
+  after(function (done) {
+    nsc.stopServer(server, done)
+  })
 
-    it('should connect with direct nkey and sig', function(done) {
-        const nc = NATS.connect({
-            port: PORT,
-            nkey: 'UAH42UG6PV552P5SWLWTBP3H3S5BHAVCO2IEKEXUANJXR75J63RQ5WM6',
-            nonceSigner: function (nonce) {
-                const sk = nkeys.fromSeed(Buffer.from(nkey_seed));
-                return sk.sign(nonce);
-            }
-        });
-        nc.on('connect', function(client) {
-            client.should.equal(nc);
-            nc.close();
-            done();
-        });
-        nc.on('error', function(err) {
-            nc.close();
-            done(err);
-        });
-    });
-});
+  it('should connect with direct nkey and sig', function (done) {
+    const nc = NATS.connect({
+      port: PORT,
+      nkey: 'UAH42UG6PV552P5SWLWTBP3H3S5BHAVCO2IEKEXUANJXR75J63RQ5WM6',
+      nonceSigner: function (nonce) {
+        const sk = nkeys.fromSeed(Buffer.from(nkeySeed))
+        return sk.sign(nonce)
+      }
+    })
+    nc.on('connect', function (client) {
+      client.should.equal(nc)
+      nc.close()
+      done()
+    })
+    nc.on('error', function (err) {
+      nc.close()
+      done(err)
+    })
+  })
+})

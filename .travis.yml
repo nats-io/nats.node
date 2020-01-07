@@ -2,9 +2,9 @@ language: node_js
 sudo: false
 
 node_js:
-  - "8"
   - "10"
   - "12"
+  - "13"
 
 cache: npm
 
@@ -20,6 +20,6 @@ before_script:
   - mv nats-server-$NATS_VERSION-linux-amd64 nats-server
 
 script:
-  - if [[ "$TRAVIS_NODE_VERSION" == 8 ]]; then npm test; fi
   - if [[ "$TRAVIS_NODE_VERSION" == 10 ]]; then npm test; fi
-  - if [[ "$TRAVIS_NODE_VERSION" == 12 ]]; then npm run coveralls; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 12 ]]; then npm test; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 13 ]]; then npm run coveralls; fi

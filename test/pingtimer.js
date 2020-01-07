@@ -14,80 +14,79 @@
  */
 
 /* eslint-env node, es6 */
-/* global describe: false, before: false, after: false, it: false */
+/* global describe: false, it: false, beforeEach: false, afterEach: false */
 /* jshint -W030 */
 
-'use strict';
+'use strict'
 
-const NATS = require('../'),
-    mockserver = require('./support/mock_server'),
-    should = require('should');
+const NATS = require('../')
+const mockserver = require('./support/mock_server')
+const should = require('should')
 
 describe('Ping Timer', () => {
-    const PORT = 1966;
-    let server;
+  const PORT = 1966
+  let server
 
-    beforeEach(function(done) {
-        // default server simply sends connect and responds to one ping
-        server = new mockserver.ScriptedServer(PORT);
-        server.on('listening', done);
-        server.start();
-    });
+  beforeEach(function (done) {
+    // default server simply sends connect and responds to one ping
+    server = new mockserver.ScriptedServer(PORT)
+    server.on('listening', done)
+    server.start()
+  })
 
-    afterEach(function(done) {
-        server.stop(done);
-    });
+  afterEach(function (done) {
+    server.stop(done)
+  })
 
-    it('should reconnect if server doesnt ping', (done) => {
-        const nc = NATS.connect({
-            port: PORT,
-            pingInterval: 200,
-            maxReconnectAttempts: 1
-        });
-        nc.on('reconnect', () => {
-            nc.close();
-            done();
-        });
-    }).timeout(10000);
+  it('should reconnect if server doesnt ping', (done) => {
+    const nc = NATS.connect({
+      port: PORT,
+      pingInterval: 200,
+      maxReconnectAttempts: 1
+    })
+    nc.on('reconnect', () => {
+      nc.close()
+      done()
+    })
+  }).timeout(10000)
 
-    it('timer pings are sent', function(done) {
-        const nc = NATS.connect({
-            port: PORT,
-            pingInterval: 200,
-            maxPingOut: 5,
-            maxReconnectAttempts: 1
-        });
+  it('timer pings are sent', function (done) {
+    const nc = NATS.connect({
+      port: PORT,
+      pingInterval: 200,
+      maxPingOut: 5,
+      maxReconnectAttempts: 1
+    })
 
-        let pingTimerFired = false;
-        nc.on('pingtimer', () => {
-            pingTimerFired = true;
-        });
+    let pingTimerFired = false
+    nc.on('pingtimer', () => {
+      pingTimerFired = true
+    })
 
-        nc.on('reconnect', () => {
-            nc.close();
-            should(pingTimerFired).be.true();
-            done();
-        });
-    });
+    nc.on('reconnect', () => {
+      nc.close()
+      should(pingTimerFired).be.true()
+      done()
+    })
+  })
 
+  it('configured number of missed pings is honored', (done) => {
+    const nc = NATS.connect({
+      port: PORT,
+      pingInterval: 200,
+      maxPingOut: 5,
+      maxReconnectAttempts: 1
+    })
 
-    it('configured number of missed pings is honored', (done) => {
-        const nc = NATS.connect({
-            port: PORT,
-            pingInterval: 200,
-            maxPingOut: 5,
-            maxReconnectAttempts: 1
-        });
+    let maxOut = 0
+    nc.on('pingcount', (c) => {
+      maxOut = Math.max(maxOut, c)
+    })
 
-        let maxOut = 0;
-        nc.on('pingcount', (c) => {
-            maxOut = Math.max(maxOut, c);
-        });
-
-        nc.on('reconnect', () => {
-            should(maxOut).be.equal(5);
-            nc.close();
-            done();
-        });
-    });
-});
+    nc.on('reconnect', () => {
+      should(maxOut).be.equal(5)
+      nc.close()
+      done()
+    })
+  })
+})
