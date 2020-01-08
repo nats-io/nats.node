@@ -15,84 +15,82 @@
 
 /* jslint node: true */
 /* global describe: false, before: false, after: false, it: false */
-'use strict';
+'use strict'
 
-const NATS = require('../'),
-    nsc = require('./support/nats_server_control'),
-    should = require('should');
+const NATS = require('../')
+const nsc = require('./support/nats_server_control')
+const should = require('should')
 
-describe('UTF8', function() {
+describe('UTF8', function () {
+  const PORT = 1430
+  let server
 
-    const PORT = 1430;
-    let server;
+  // Start up our own nats-server
+  before(function (done) {
+    server = nsc.startServer(PORT, done)
+  })
 
-    // Start up our own nats-server
-    before(function(done) {
-        server = nsc.start_server(PORT, done);
-    });
+  // Shutdown our server
+  after(function (done) {
+    nsc.stopServer(server, done)
+  })
 
-    // Shutdown our server
-    after(function(done) {
-        nsc.stop_server(server, done);
-    });
+  it('should do publish and subscribe with UTF8 payloads by default', function (done) {
+    const nc = NATS.connect(PORT)
+    // ½ + ¼ = ¾: 9 characters, 12 bytes
+    const data = '\u00bd + \u00bc = \u00be'
+    data.length.should.equal(9)
+    Buffer.byteLength(data).should.equal(12)
 
-    it('should do publish and subscribe with UTF8 payloads by default', function(done) {
-        const nc = NATS.connect(PORT);
-        // ½ + ¼ = ¾: 9 characters, 12 bytes
-        const data = '\u00bd + \u00bc = \u00be';
-        data.length.should.equal(9);
-        Buffer.byteLength(data).should.equal(12);
+    nc.subscribe('utf8', function (msg) {
+      should.exists(msg)
+      msg.should.equal(data)
+      nc.close()
+      done()
+    })
 
-        nc.subscribe('utf8', function(msg) {
-            should.exists(msg);
-            msg.should.equal(data);
-            nc.close();
-            done();
-        });
+    nc.publish('utf8', data)
+  })
 
-        nc.publish('utf8', data);
-    });
+  it('should allow encoding override with the encoding option', function (done) {
+    const nc = NATS.connect({
+      url: 'nats://localhost:' + PORT,
+      encoding: 'ascii'
+    })
+    // ½ + ¼ = ¾: 9 characters, 12 bytes
+    const utf8Data = '\u00bd + \u00bc = \u00be'
+    const plainData = 'Hello World'
 
-    it('should allow encoding override with the encoding option', function(done) {
-        const nc = NATS.connect({
-            'url': 'nats://localhost:' + PORT,
-            'encoding': 'ascii'
-        });
-        // ½ + ¼ = ¾: 9 characters, 12 bytes
-        const utf8_data = '\u00bd + \u00bc = \u00be';
-        const plain_data = 'Hello World';
+    nc.subscribe('utf8', function (msg) {
+      // Should be all 12 bytes..
+      msg.length.should.equal(12)
+      // Should not be a proper utf8 string.
+      msg.should.not.equal(utf8Data)
+    })
 
-        nc.subscribe('utf8', function(msg) {
-            // Should be all 12 bytes..
-            msg.length.should.equal(12);
-            // Should not be a proper utf8 string.
-            msg.should.not.equal(utf8_data);
-        });
+    nc.subscribe('plain', function (msg) {
+      msg.should.equal(plainData)
+      nc.close()
+      done()
+    })
 
-        nc.subscribe('plain', function(msg) {
-            msg.should.equal(plain_data);
-            nc.close();
-            done();
-        });
+    nc.publish('utf8', utf8Data)
+    nc.publish('plain', plainData)
+  })
 
-        nc.publish('utf8', utf8_data);
-        nc.publish('plain', plain_data);
-    });
-
-    it('should not allow unsupported encodings', function(done) {
-        try {
-            NATS.connect({
-                'url': 'nats://localhost:' + PORT,
-                'encoding': 'foobar'
-            });
-            done('No error thrown, wanted Invalid Encoding Exception');
-        } catch (err) {
-            if (err.toString().indexOf('Invalid Encoding') < 0) {
-                done('Bad Error, wanted Invalid Encoding');
-            } else {
-                done();
-            }
-        }
-    });
-
-});
+  it('should not allow unsupported encodings', function (done) {
+    try {
+      NATS.connect({
+        url: 'nats://localhost:' + PORT,
+        encoding: 'foobar'
+      })
+      done('No error thrown, wanted Invalid Encoding Exception')
+    } catch (err) {
+      if (err.toString().indexOf('Invalid Encoding') < 0) {
+        done('Bad Error, wanted Invalid Encoding')
+      } else {
+        done()
+      }
+    }
+  })
+})

@@ -15,49 +15,48 @@
 
 /* jslint node: true */
 /* global describe: false, before: false, after: false, it: false */
-'use strict';
+'use strict'
 
-const NATS = require('../'),
-    nsc = require('./support/nats_server_control'),
-    sleep = require('./support/sleep'),
-    should = require('should');
+const NATS = require('../')
+const nsc = require('./support/nats_server_control')
+const sleep = require('./support/sleep')
 
-describe('Yield', function() {
-    const PORT = 1469;
-    let server;
+describe('Yield', function () {
+  const PORT = 1469
+  let server
 
-    // Start up our own nats-server
-    before(function(done) {
-        server = nsc.start_server(PORT, done);
-    });
+  // Start up our own nats-server
+  before(function (done) {
+    server = nsc.startServer(PORT, done)
+  })
 
-    // Shutdown our server
-    after(function(done) {
-        nsc.stop_server(server, done);
-    });
+  // Shutdown our server
+  after(function (done) {
+    nsc.stopServer(server, done)
+  })
 
-    it('should yield to other events', function(done) {
-        const nc = NATS.connect({
-            port: PORT,
-            yieldTime: 5
-        });
+  it('should yield to other events', function (done) {
+    const nc = NATS.connect({
+      port: PORT,
+      yieldTime: 5
+    })
 
-        const start = Date.now();
+    const start = Date.now()
 
-        const timer = setInterval(function () {
-            const delta = Date.now() - start;
-            nc.close();
-            clearTimeout(timer);
-            delta.should.within(10, 25);
-            done();
-        }, 10);
+    const timer = setInterval(function () {
+      const delta = Date.now() - start
+      nc.close()
+      clearTimeout(timer)
+      delta.should.within(10, 25)
+      done()
+    }, 10)
 
-        nc.subscribe('foo', function() {
-            sleep.sleep(1);
-        });
+    nc.subscribe('foo', function () {
+      sleep.sleep(1)
+    })
 
-        for (let i = 0; i < 256; i++) {
-            nc.publish('foo', 'hello world');
-        }
-    });
-});
+    for (let i = 0; i < 256; i++) {
+      nc.publish('foo', 'hello world')
+    }
+  })
+})

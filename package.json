@@ -1,6 +1,6 @@
 {
   "name": "nats",
-  "version": "1.3.4",
+  "version": "1.3.6",
   "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
     "nats",
@@ -28,15 +28,15 @@
   "contributors": [],
   "main": "./index.js",
   "scripts": {
-    "depcheck": "dependency-check . lib/*",
-    "depcheck:unused": "dependency-check ./package.json --unused --no-dev lib/*",
+    "depcheck": "dependency-check --no-dev package.json",
+    "depcheck:unused": "dependency-check package.json --no-dev --entry ./**/*.js",
     "test:unit": "mkdir -p reports/ && NODE_ENV=test multi='spec=- xunit=reports/mocha-xunit.xml' nyc mocha --timeout 10000 --slow 750",
     "test": "npm run depcheck && npm run depcheck:unused && npm run lint && npm run test:typescript && npm run test:unit",
     "test:typescript": "./node_modules/typescript/bin/tsc --strict --noEmit tstest/main.ts",
     "coveralls": "npm run test && nyc report --reporter=text-lcov | coveralls",
     "cover": "nyc report --reporter=html && open coverage/index.html",
-    "lint": "eslint ./lib ./examples ./benchmark ./test",
-    "fmt": "js-beautify -n --config crockford.jscsrc -r lib/* test/*.js test/support/*.js examples/* benchmark/*.js"
+    "lint": "standard './**/*.js'",
+    "fmt": "standard --fix './**/*.js'"
   },
   "engines": {
     "node": ">= 8.0.0"
@@ -48,16 +48,14 @@
   "devDependencies": {
     "@types/node": "^12.6.2",
     "coveralls": "^3.0.5",
-    "dependency-check": "^3.4.1",
-    "eslint": "^5.16.0",
-    "js-beautify": "^1.10.0",
-    "jshint": "^2.10.2",
-    "jshint-stylish": "2.2.x",
+    "dependency-check": "^4.1.0",
+    "eslint": "^6.7.2",
     "minimist": "^1.2.0",
     "mocha": "^6.1.4",
     "mocha-lcov-reporter": "1.3.0",
     "nyc": "^14.1.1",
     "should": "^13.2.3",
+    "standard": "^14.3.1",
     "typescript": "^3.5.3"
   },
   "typings": "./index.d.ts",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 The NATS Authors
+ * Copyright 2013-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,71 +15,69 @@
 
 /* jslint node: true */
 /* global describe: false, before: false, after: false, it: false */
-'use strict';
+'use strict'
 
-const NATS = require('../'),
-    nsc = require('./support/nats_server_control'),
-    should = require('should');
+const NATS = require('../')
+const nsc = require('./support/nats_server_control')
+const should = require('should')
 
-describe('Split Messages', function() {
+describe('Split Messages', function () {
+  const PORT = 1427
+  let server
 
-    const PORT = 1427;
-    let server;
+  // Start up our own nats-server
+  before(function (done) {
+    server = nsc.startServer(PORT, done)
+  })
 
-    // Start up our own nats-server
-    before(function(done) {
-        server = nsc.start_server(PORT, done);
-    });
+  // Shutdown our server
+  after(function (done) {
+    nsc.stopServer(server, done)
+  })
 
-    // Shutdown our server
-    after(function(done) {
-        nsc.stop_server(server, done);
-    });
+  it('should properly handle large # of messages from split buffers', function (done) {
+    const nc = NATS.connect(PORT)
 
-    it('should properly handle large # of messages from split buffers', function(done) {
-        const nc = NATS.connect(PORT);
+    const data = 'Hello World!'
+    let received = 0
+    const expected = 10000
 
-        const data = 'Hello World!';
-        let received = 0;
-        const expected = 10000;
+    nc.subscribe('foo', function (msg) {
+      should.exists(msg)
+      msg.should.equal(data)
+      msg.length.should.equal(data.length)
+      received += 1
+      if (received === expected) {
+        nc.close()
+        done()
+      }
+    })
 
-        nc.subscribe('foo', function(msg) {
-            should.exists(msg);
-            msg.should.equal(data);
-            msg.length.should.equal(data.length);
-            received += 1;
-            if (received == expected) {
-                nc.close();
-                done();
-            }
-        });
+    for (let i = 0; i < expected; i++) {
+      nc.publish('foo', data)
+    }
+  })
 
-        for (let i = 0; i < expected; i++) {
-            nc.publish('foo', data);
-        }
-    });
+  it('should properly handle large # of utf8 messages from split buffers', function (done) {
+    const nc = NATS.connect(PORT)
 
-    it('should properly handle large # of utf8 messages from split buffers', function(done) {
-        const nc = NATS.connect(PORT);
+    // Use utf8 string to make sure encoding works too.
+    const data = '½ + ¼ = ¾'
+    let received = 0
+    const expected = 10000
 
-        // Use utf8 string to make sure encoding works too.
-        const data = '½ + ¼ = ¾';
-        let received = 0;
-        const expected = 10000;
+    nc.subscribe('foo', function (msg) {
+      msg.should.equal(data)
+      msg.length.should.equal(data.length)
+      received += 1
+      if (received === expected) {
+        nc.close()
+        done()
+      }
+    })
 
-        nc.subscribe('foo', function(msg) {
-            msg.should.equal(data);
-            msg.length.should.equal(data.length);
-            received += 1;
-            if (received == expected) {
-                nc.close();
-                done();
-            }
-        });
-
-        for (let i = 0; i < expected; i++) {
-            nc.publish('foo', data);
-        }
-    });
-
-});
+    for (let i = 0; i < expected; i++) {
+      nc.publish('foo', data)
+    }
+  })
+})

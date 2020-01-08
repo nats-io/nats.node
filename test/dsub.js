@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 The NATS Authors
+ * Copyright 2013-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,49 +15,45 @@
 
 /* jslint node: true */
 /* global describe: false, before: false, after: false, it: false */
-'use strict';
+'use strict'
 
-const NATS = require('../'),
-    nsc = require('./support/nats_server_control'),
-    should = require('should');
+const NATS = require('../')
+const nsc = require('./support/nats_server_control')
 
-describe('Double SUBS', function() {
+describe('Double SUBS', function () {
+  const PORT = 1922
+  const flags = ['-DV']
+  let server
 
-    const PORT = 1922;
-    const flags = ['-DV'];
-    let server;
+  // Start up our own nats-server
+  before(function (done) {
+    server = nsc.startServer(PORT, flags, done)
+  })
 
-    // Start up our own nats-server
-    before(function(done) {
-        server = nsc.start_server(PORT, flags, done);
-    });
+  // Shutdown our server after we are done
+  after(function (done) {
+    nsc.stopServer(server, done)
+  })
 
-    // Shutdown our server after we are done
-    after(function(done) {
-        nsc.stop_server(server, done);
-    });
+  it('should not send multiple subscriptions on startup', function (done) {
+    let subsSeen = 0
+    const subRe = /(\[SUB foo \d\])+/g
 
-    it('should not send multiple subscriptions on startup', function(done) {
-        let subsSeen = 0;
-        const subRe = /(\[SUB foo \d\])+/g;
+    // Capture log output from nats-server and check for double SUB protos.
+    server.stderr.on('data', function (data) {
+      while (subRe.exec(data) !== null) {
+        subsSeen++
+      }
+    })
 
-        // Capture log output from nats-server and check for double SUB protos.
-        server.stderr.on('data', function(data) {
-            let m;
-            while ((m = subRe.exec(data)) !== null) {
-                subsSeen++;
-            }
-        });
-
-        const nc = NATS.connect(PORT);
-        nc.subscribe('foo');
-        nc.on('connect', function(nc) {
-            setTimeout(function() {
-                nc.close();
-                subsSeen.should.equal(1);
-                done();
-            }, 100);
-        });
-    });
-
-});
+    const nc = NATS.connect(PORT)
+    nc.subscribe('foo')
+    nc.on('connect', function (nc) {
+      setTimeout(function () {
+        nc.close()
+        subsSeen.should.equal(1)
+        done()
+      }, 100)
+    })
+  })
+})

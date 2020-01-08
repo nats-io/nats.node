@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 The NATS Authors
+ * Copyright 2013-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,43 +12,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-"use strict";
+'use strict'
 
-const url = require("url");
-const dns = require("dns");
+const dns = require('dns')
+const url = require('url')
 
 // Mapping function for A records
-function mapA(u) {
-    return function(a) {
-        return a.map(function(s) {
-            let auth = "";
-            if (u.auth) {
-                auth = u.auth + "@";
-            }
-            let hostport = s;
-            if(u.port) {
-                hostport += ":" + u.port;
-            }
-            return u.protocol + "//" + auth + hostport;
-        });
-    };
+function mapA (u) {
+  return function (a) {
+    return a.map(function (s) {
+      let auth = ''
+      if (u.auth) {
+        auth = u.auth + '@'
+      }
+      let hostport = s
+      if (u.port) {
+        hostport += ':' + u.port
+      }
+      return u.protocol + '//' + auth + hostport
+    })
+  }
 }
 
 // Mapping function for SRV records
-function mapSrv(u) {
-    return function(a) {
-        return a.map(function(s) {
-            let auth = "";
-            if (u.auth) {
-                auth = u.auth + "@";
-            }
-            let hostport = s.name;
-            if(s.port) {
-                hostport += ":" + s.port;
-            }
-            return u.protocol + "//" + auth + hostport;
-        });
-    };
+function mapSrv (u) {
+  return function (a) {
+    return a.map(function (s) {
+      let auth = ''
+      if (u.auth) {
+        auth = u.auth + '@'
+      }
+      let hostport = s.name
+      if (s.port) {
+        hostport += ':' + s.port
+      }
+      return u.protocol + '//' + auth + hostport
+    })
+  }
 }
 
 // expand takes a natsurl, and performs a resolution on the records type of
@@ -65,25 +65,25 @@ function mapSrv(u) {
 //     console.log(values);
 // });
 //
-function expand(natsurl, type, callback) {
-    const u = url.parse(natsurl);
-    type = type.toUpperCase();
-    let fun = null;
-    switch(type) {
-        case "A":
-            fun = mapA(u);
-            break;
-        case "SRV":
-            fun = mapSrv(u);
-            break;
-        default:
-            callback(new Error("unsupported type: " + type));
+function expand (natsurl, type, callback) {
+  const u = new url.URL(natsurl)
+  type = type.toUpperCase()
+  let fun = null
+  switch (type) {
+    case 'A':
+      fun = mapA(u)
+      break
+    case 'SRV':
+      fun = mapSrv(u)
+      break
+    default:
+      callback(new Error('unsupported type: ' + type))
+  }
+  dns.resolve(u.hostname, type, function (err, records) {
+    if (err) {
+      callback(err)
+      return
     }
-    dns.resolve(u.hostname, type, function(err, records){
-        if(err) {
-            callback(err);
-            return;
-        }
-        callback(undefined, fun(records));
-    });
+    callback(undefined, fun(records))
+  })
 }

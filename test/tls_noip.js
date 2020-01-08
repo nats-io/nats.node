@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 The NATS Authors
+ * Copyright 2013-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,61 +14,61 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
-'use strict';
+/* global describe: false, afterEach: false, it: false */
+'use strict'
 
-const NATS = require('../'),
-    nsc = require('./support/nats_server_control'),
-    should = require('should'),
-    fs = require('fs');
+const NATS = require('../')
+const nsc = require('./support/nats_server_control')
+const should = require('should')
+const fs = require('fs')
 
-describe('TLS No IPs', function() {
-    this.timeout(5000);
+describe('TLS No IPs', function () {
+  this.timeout(5000)
 
-    // this to enable per test cleanup
-    let servers;
+  // this to enable per test cleanup
+  let servers
 
-    // Shutdown our servers
-    afterEach(function(done) {
-        nsc.stop_cluster(servers, function() {
-            servers = [];
-            done();
-        });
-    });
+  // Shutdown our servers
+  afterEach(function (done) {
+    nsc.stopCluster(servers, function () {
+      servers = []
+      done()
+    })
+  })
 
-    it('should reconnect via tls with discovered server ip only', function(done) {
-        const route_port = 55220;
-        const port = 54222;
-        const ports = [port, port + 1, port + 2];
-        const flags = ['--tls', '--tlscert', './test/certs/server_noip.pem',
-            '--tlskey', './test/certs/key_noip.pem'
-        ];
-        servers = nsc.start_cluster(ports, route_port, flags, function() {
-            should(servers.length).be.equal(3);
-            const nc = NATS.connect({
-                url: "tls://localhost:" + port,
-                noRandomize: true,
-                reconnectTimeWait: 100,
-                tls: {
-                    ca: [fs.readFileSync('./test/certs/ca.pem')]
-                }
-            });
+  it('should reconnect via tls with discovered server ip only', function (done) {
+    const routePort = 55220
+    const port = 54222
+    const ports = [port, port + 1, port + 2]
+    const flags = ['--tls', '--tlscert', './test/certs/server_noip.pem',
+      '--tlskey', './test/certs/key_noip.pem'
+    ]
+    servers = nsc.startCluster(ports, routePort, flags, function () {
+      should(servers.length).be.equal(3)
+      const nc = NATS.connect({
+        url: 'tls://localhost:' + port,
+        noRandomize: true,
+        reconnectTimeWait: 100,
+        tls: {
+          ca: [fs.readFileSync('./test/certs/ca.pem')]
+        }
+      })
 
-            nc.on('connect', function() {
-                const s = nsc.find_server(port, servers);
-                nsc.stop_server(s);
-            });
-            nc.on('reconnect', function() {
-                nc.close();
-                done();
-            });
-            nc.on('close', function() {
-                done("Did not reconnect");
-            });
-            nc.on('error', function(err) {
-                nc.close();
-                done();
-            });
-        });
-    });
-});
+      nc.on('connect', function () {
+        const s = nsc.findServer(port, servers)
+        nsc.stopServer(s)
+      })
+      nc.on('reconnect', function () {
+        nc.close()
+        done()
+      })
+      nc.on('close', function () {
+        done('Did not reconnect')
+      })
+      nc.on('error', () => {
+        nc.close()
+        done()
+      })
+    })
+  })
+})

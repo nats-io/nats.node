@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 The NATS Authors
+ * Copyright 2013-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,225 +14,224 @@
  */
 
 /* jslint node: true */
-'use strict';
+'use strict'
 
-const spawn = require('child_process').spawn;
-const net = require('net');
-const sync = require('child_process').execSync;
+const spawn = require('child_process').spawn
+const net = require('net')
+const sync = require('child_process').execSync
 
-const SERVER = (process.env.TRAVIS) ? 'nats-server/nats-server' : 'nats-server';
-const DEFAULT_PORT = 4222;
+const SERVER = (process.env.TRAVIS) ? 'nats-server/nats-server' : 'nats-server'
+const DEFAULT_PORT = 4222
 
-function server_version() {
-    return sync(SERVER + ' -v', {
-        timeout: 1000
-    }).toString();
+function serverVersionFn () {
+  return sync(SERVER + ' -v', {
+    timeout: 1000
+  }).toString()
 }
 
-function start_server(port, opt_flags, done) {
-    if (!port) {
-        port = DEFAULT_PORT;
+function startServerFn (port, optFlags, done) {
+  if (!port) {
+    port = DEFAULT_PORT
+  }
+  if (typeof optFlags === 'function') {
+    done = optFlags
+    optFlags = null
+  }
+  let flags = ['-p', port, '-a', '127.0.0.1']
+
+  if (optFlags) {
+    flags = flags.concat(optFlags)
+  }
+
+  if (process.env.PRINT_LAUNCH_CMD) {
+    console.log(flags.join(' '))
+  }
+
+  const server = spawn(SERVER, flags)
+
+  const start = new Date()
+  let wait = 0
+  const maxWait = 5 * 1000 // 5 secs
+  const delta = 250
+  let socket
+  let timer
+
+  const resetSocket = function () {
+    if (socket !== undefined) {
+      socket.removeAllListeners()
+      socket.destroy()
+      socket = undefined
     }
-    if (typeof opt_flags == 'function') {
-        done = opt_flags;
-        opt_flags = null;
+  }
+
+  const finish = function (err) {
+    resetSocket()
+    if (timer !== undefined) {
+      clearInterval(timer)
+      timer = undefined
     }
-    let flags = ['-p', port, '-a', '127.0.0.1'];
+    if (done) {
+      done(err)
+    }
+  }
 
-    if (opt_flags) {
-        flags = flags.concat(opt_flags);
+  // Test for when socket is bound.
+  timer = setInterval(function () {
+    resetSocket()
+
+    wait = new Date() - start
+    if (wait > maxWait) {
+      finish(new Error('Can\'t connect to server on port: ' + port))
     }
 
-    if (process.env.PRINT_LAUNCH_CMD) {
-        console.log(flags.join(' '));
+    // Try to connect to the correct port.
+    socket = net.createConnection(port)
+
+    // Success
+    socket.on('connect', function () {
+      if (server.pid === null) {
+        // We connected but not to our server..
+        finish(new Error('Server already running on port: ' + port))
+      } else {
+        finish()
+      }
+    })
+
+    // Wait for next try..
+    socket.on('error', function (error) {
+      finish(new Error('Problem connecting to server on port: ' + port + ' (' + error + ')'))
+    })
+  }, delta)
+
+  // Other way to catch another server running.
+  server.on('exit', function (code, signal) {
+    if (code === 1) {
+      finish(new Error('Server exited with bad code, already running? (' + code + ' / ' + signal + ')'))
     }
+  })
 
-    const server = spawn(SERVER, flags);
+  // Server does not exist..
+  server.stderr.on('data', function (data) {
+    if ((/^execvp\(\)/).test(data)) {
+      clearInterval(timer)
+      finish(new Error('Can\'t find the ' + SERVER))
+    }
+  })
 
-    const start = new Date();
-    let wait = 0;
-    const maxWait = 5 * 1000; // 5 secs
-    const delta = 250;
-    let socket;
-    let timer;
-
-    const resetSocket = function () {
-        if (socket !== undefined) {
-            socket.removeAllListeners();
-            socket.destroy();
-            socket = undefined;
-        }
-    };
-
-    const finish = function (err) {
-        resetSocket();
-        if (timer !== undefined) {
-            clearInterval(timer);
-            timer = undefined;
-        }
-        if (done) {
-            done(err);
-        }
-    };
-
-    // Test for when socket is bound.
-    timer = setInterval(function() {
-        resetSocket();
-
-        wait = new Date() - start;
-        if (wait > maxWait) {
-            finish(new Error('Can\'t connect to server on port: ' + port));
-        }
-
-        // Try to connect to the correct port.
-        socket = net.createConnection(port);
-
-        // Success
-        socket.on('connect', function() {
-            if (server.pid === null) {
-                // We connected but not to our server..
-                finish(new Error('Server already running on port: ' + port));
-            } else {
-                finish();
-            }
-        });
-
-        // Wait for next try..
-        socket.on('error', function(error) {
-            finish(new Error("Problem connecting to server on port: " + port + " (" + error + ")"));
-        });
-
-    }, delta);
-
-    // Other way to catch another server running.
-    server.on('exit', function(code, signal) {
-        if (code === 1) {
-            finish(new Error('Server exited with bad code, already running? (' + code + ' / ' + signal + ')'));
-        }
-    });
-
-    // Server does not exist..
-    server.stderr.on('data', function(data) {
-        if ((/^execvp\(\)/).test(data)) {
-            clearInterval(timer);
-            finish(new Error('Can\'t find the ' + SERVER));
-        }
-    });
-
-    return server;
+  return server
 }
 
-exports.start_server = start_server;
-exports.server_version = server_version;
+exports.startServer = startServerFn
+exports.serverVersion = serverVersionFn
 
-function wait_stop(server, done) {
-    if (server.killed) {
-        if (done) {
-            done();
-        }
-    } else {
-        setTimeout(function() {
-            wait_stop(server, done);
-        });
+function waitStopFn (server, done) {
+  if (server.killed) {
+    if (done) {
+      done()
     }
+  } else {
+    setTimeout(function () {
+      waitStopFn(server, done)
+    })
+  }
 }
 
-function stop_server(server, done) {
-    if (server) {
-        server.kill();
-        wait_stop(server, done);
-    } else if (done) {
-        done();
-    }
+function stopServerFn (server, done) {
+  if (server) {
+    server.kill()
+    waitStopFn(server, done)
+  } else if (done) {
+    done()
+  }
 }
 
-exports.stop_server = stop_server;
+exports.stopServer = stopServerFn
 
 // starts a number of servers in a cluster at the specified ports.
 // must call with at least one port.
-function start_cluster(ports, route_port, opt_flags, done) {
-    if (typeof opt_flags == 'function') {
-        done = opt_flags;
-        opt_flags = null;
+function startClusterFn (ports, routePort, optFlags, done) {
+  if (typeof optFlags === 'function') {
+    done = optFlags
+    optFlags = null
+  }
+  const servers = []
+  let started = 0
+  const server = addMemberFn(ports[0], routePort, routePort, optFlags, function () {
+    started++
+    servers.push(server)
+    if (started === ports.length) {
+      done()
     }
-    const servers = [];
-    let started = 0;
-    const server = add_member(ports[0], route_port, route_port, opt_flags, function () {
-        started++;
-        servers.push(server);
-        if (started === ports.length) {
-            done();
-        }
-    });
+  })
 
-    const others = ports.slice(1);
-    others.forEach(function(p) {
-        const s = add_member(p, route_port, p + 1000, opt_flags, function () {
-            started++;
-            servers.push(s);
-            if (started === ports.length) {
-                done();
-            }
-        });
-    });
-    return servers;
+  const others = ports.slice(1)
+  others.forEach(function (p) {
+    const s = addMemberFn(p, routePort, p + 1000, optFlags, function () {
+      started++
+      servers.push(s)
+      if (started === ports.length) {
+        done()
+      }
+    })
+  })
+  return servers
 }
 
 // adds more cluster members, if more than one server is added additional
 // servers are added after the specified delay.
-function add_member_with_delay(ports, route_port, delay, opt_flags, done) {
-    if (typeof opt_flags == 'function') {
-        done = opt_flags;
-        opt_flags = null;
-    }
-    const servers = [];
-    ports.forEach(function(p, i) {
-        setTimeout(function() {
-            const s = add_member(p, route_port, p + 1000, opt_flags, function () {
-                servers.push(s);
-                if (servers.length === ports.length) {
-                    done();
-                }
-            });
-        }, i * delay);
-    });
-
-    return servers;
-}
-exports.add_member_with_delay = add_member_with_delay;
-
-function add_member(port, route_port, cluster_port, opt_flags, done) {
-    if (typeof opt_flags == 'function') {
-        done = opt_flags;
-        opt_flags = null;
-    }
-    opt_flags = opt_flags || [];
-    const opts = JSON.parse(JSON.stringify(opt_flags));
-    opts.push('--routes', 'nats://localhost:' + route_port);
-    opts.push('--cluster', 'nats://localhost:' + cluster_port);
-
-    return start_server(port, opts, done);
-}
-
-exports.start_cluster = start_cluster;
-exports.add_member = add_member;
-
-exports.stop_cluster = function(servers, done) {
-    let count = servers.length;
-
-    function latch() {
-        count--;
-        if (count === 0) {
-            done();
+function addMemberWithDelayFn (ports, routePort, delay, optFlags, done) {
+  if (typeof optFlags === 'function') {
+    done = optFlags
+    optFlags = null
+  }
+  const servers = []
+  ports.forEach(function (p, i) {
+    setTimeout(function () {
+      const s = addMemberFn(p, routePort, p + 1000, optFlags, function () {
+        servers.push(s)
+        if (servers.length === ports.length) {
+          done()
         }
-    }
-    servers.forEach(function(s) {
-        stop_server(s, latch);
-    });
-};
+      })
+    }, i * delay)
+  })
 
-exports.find_server = function(port, servers) {
-    return servers.find(function(s) {
-        return s.spawnargs[2] === port;
-    });
-};
+  return servers
+}
+exports.addMemberWithDelay = addMemberWithDelayFn
+
+function addMemberFn (port, routePort, clusterPort, optFlags, done) {
+  if (typeof optFlags === 'function') {
+    done = optFlags
+    optFlags = null
+  }
+  optFlags = optFlags || []
+  const opts = JSON.parse(JSON.stringify(optFlags))
+  opts.push('--routes', 'nats://localhost:' + routePort)
+  opts.push('--cluster', 'nats://localhost:' + clusterPort)
+
+  return startServerFn(port, opts, done)
+}
+
+exports.startCluster = startClusterFn
+exports.addMember = addMemberFn
+
+exports.stopCluster = function (servers, done) {
+  let count = servers.length
+
+  function latch () {
+    count--
+    if (count === 0) {
+      done()
+    }
+  }
+  servers.forEach(function (s) {
+    stopServerFn(s, latch)
+  })
+}
+
+exports.findServer = function (port, servers) {
+  return servers.find(function (s) {
+    return s.spawnargs[2] === port
+  })
+}
