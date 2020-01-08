@@ -15,6 +15,7 @@
 'use strict'
 
 const dns = require('dns')
+const url = require('url')
 
 // Mapping function for A records
 function mapA (u) {
@@ -65,7 +66,7 @@ function mapSrv (u) {
 // });
 //
 function expand (natsurl, type, callback) {
-  const u = new URL(natsurl)
+  const u = new url.URL(natsurl)
   type = type.toUpperCase()
   let fun = null
   switch (type) {

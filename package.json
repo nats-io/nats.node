@@ -35,8 +35,8 @@
     "test:typescript": "./node_modules/typescript/bin/tsc --strict --noEmit tstest/main.ts",
     "coveralls": "npm run test && nyc report --reporter=text-lcov | coveralls",
     "cover": "nyc report --reporter=html && open coverage/index.html",
-    "lint": "standard 'lib/**/*.js'",
-    "fmt": "standard --fix 'lib/**/*.js'"
+    "lint": "standard './**/*.js'",
+    "fmt": "standard --fix './**/*.js'"
   },
   "engines": {
     "node": ">= 8.0.0"
