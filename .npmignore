@@ -17,7 +17,8 @@ reports/*
 tmp/*
 
 benchmark/
-examples/
+examples/safe_json.js
+examples/expander
 test/
 coverage/
 .istanbul.yml

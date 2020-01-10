@@ -13,8 +13,8 @@ npm-debug.log
 dump.rdb
 xunit.xml
 
-logs/*
-reports/*
-tmp/*
-coverage/*
-.nyc_output/*
+logs/
+reports/
+tmp/
+coverage/
+.nyc_output/

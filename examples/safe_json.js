@@ -14,8 +14,8 @@
  */
 
 'use strict'
-
-const NATS = require('../lib/nats')
+// change '../' to 'nats' when copying
+const nats = require('../')
 
 // To easily encode and decode JSON payloads, set the 'json' connect property.
 // All subscriptions will perform a JSON.parse(msg), all publisher will perform
@@ -23,7 +23,7 @@ const NATS = require('../lib/nats')
 // Since the option applies globally you cannot subscribe or publish other
 // byte oriented payloads.
 
-const nc = NATS.connect({ json: true })
+const nc = nats.connect({ json: true })
 
 nc.on('connect', function () {
   nc.on('error', function (err) {
