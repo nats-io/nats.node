@@ -18,7 +18,8 @@
 /* jslint node: true */
 'use strict'
 
-const nats = require('nats')
+// change '../' to 'nats' when copying
+const nats = require('../')
 const argv = require('minimist')(process.argv.slice(2))
 
 const url = argv.s || nats.DEFAULT_URI
@@ -28,7 +29,7 @@ const subject = argv._[0]
 const msg = argv._[1] || ''
 
 if (!subject) {
-  console.log('Usage: node-req  [-s server] [--creds file] [-n max_responses] <subject> [msg]')
+  console.log('Usage: node-req  [-s server] [--creds=filepath] [-n max_responses] <subject> [msg]')
   process.exit()
 }
 
@@ -37,15 +38,15 @@ const nc = nats.connect(url, nats.creds(creds))
 
 nc.request(subject, msg, {
   max: max
-}, function (response) {
-  console.log('Received: ' + response)
+}, (msg) => {
+  console.log('Received: ' + msg)
 })
 
-nc.on('unsubscribe', function (e) {
+nc.on('unsubscribe', () => {
   process.exit()
 })
 
-nc.on('error', function (e) {
+nc.on('error', (e) => {
   console.log('Error [' + nc.currentServer + ']: ' + e)
   process.exit()
 })

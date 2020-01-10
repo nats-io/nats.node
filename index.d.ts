@@ -47,24 +47,11 @@ export function createInbox(): string;
 
 /**
  * Connect to a nats-server and return the client.
- * Argument can be a url, or an object with a 'url'
- * property and additional options.
+ * Argument can be a url or a port, or a ClientOpts with a 'url'
+ * and additional options
  */
+export function connect(url?: string|number, opts?: ClientOpts): Client;
 export function connect(opts: ClientOpts): Client;
-
-/**
- * Connect to a nats-server and return the client.
- * Argument can be a url, or an object with a 'url'
- * property and additional options.
- */
-export function connect(port: number): Client;
-
-/**
- * Connect to a nats-server and return the client.
- * Argument can be a url, or an object with a 'url'
- * property and additional options.
- */
-export function connect(url: string): Client;
 
 export interface ClientOpts {
 	encoding?: BufferEncoding,
@@ -100,6 +87,12 @@ export interface SubscribeOptions {
 	queue?: string,
 	max?: number
 }
+
+export interface RequestOptions {
+	max?: number,
+	timeout?: number
+}
+
 declare class Client extends events.EventEmitter {
 	/**
 	 * Create a properly formatted inbox subject.
@@ -126,13 +119,13 @@ declare class Client extends events.EventEmitter {
 
 	/**
 	 * Subscribe to a given subject, with optional options and callback. opts can be
-	 * ommitted, even with a callback. The Subscriber Id is returned.
+	 * omitted, even with a callback. A subscription id is returned.
 	 */
 	subscribe(subject: string, callback: Function): number;
 	subscribe(subject: string, opts: SubscribeOptions, callback: Function): number;
 
 	/**
-	 * Unsubscribe to a given Subscriber Id, with optional max number of messages before unsubscribing.
+	 * Unsubscribe to a given subscription id, with optional max number of messages before unsubscribing.
 	 */
 	unsubscribe(sid: number, max?: number):void;
 
@@ -166,13 +159,13 @@ declare class Client extends events.EventEmitter {
 	/**
 	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
 	 * This should be treated as a subscription. You can optionally indicate how many
-	 * messages you only want to receive using opt_options = {max:N}. Otherwise you
-	 * will need to unsubscribe to stop the message stream.
-	 * The Subscriber Id is returned.
+	 * messages you only want to receive and how long to wait for the messages using
+	 * opt_options = {max:N, timeout:N}. Otherwise you will need to unsubscribe to stop
+	 * the message stream manually by calling unsubscribe() on the subscription id returned.
 	 */
 	request(subject: string, callback: Function): number;
 	request(subject: string, msg: any, callback: Function): number;
-	request(subject: string, msg: any, options: SubscribeOptions, callback: Function): number;
+	request(subject: string, msg: any, options: RequestOptions, callback: Function): number;
 
 	/**
 	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
@@ -180,11 +173,11 @@ declare class Client extends events.EventEmitter {
 	 * after the first response is received or the timeout is reached.
 	 * The callback can be called with either a message payload or a NatsError to indicate
 	 * a timeout has been reached.
-	 * The Subscriber Id is returned.
+	 * The subscription id is returned.
 	 */
 	requestOne(subject: string, timeout: number, callback: Function): number;
 	requestOne(subject: string, msg: any, timeout: number, callback: Function): number;
-	requestOne(subject: string, msg: any, options: SubscribeOptions, timeout: number, callback: Function): number;
+	requestOne(subject: string, msg: any, options: RequestOptions, timeout: number, callback: Function): number;
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.

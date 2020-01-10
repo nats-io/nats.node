@@ -1,6 +1,6 @@
 {
   "name": "nats",
-  "version": "1.3.6",
+  "version": "1.4.0-7",
   "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
     "nats",
@@ -68,5 +68,11 @@
       "examples/**",
       "benchmark/**"
     ]
+  },
+  "bin": {
+    "node-pub": "examples/node-pub",
+    "node-sub": "examples/node-sub",
+    "node-req": "examples/node-req",
+    "node-rep": "examples/node-rep"
   }
 }

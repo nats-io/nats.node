@@ -15,14 +15,41 @@
 
 import {connect} from '..'
 
+const dnc = connect();
 const nc = connect("localhost:4222");
+const pnc = connect(4222);
+const opnc = connect({
+    url: "localhost:4222",
+});
+const mnc = connect("localhost", {
+    maxReconnectAttempts: -1
+});
 
+const mnc2 = connect(4222, {
+    maxReconnectAttempts: -1
+});
+
+pnc.flush(() => {
+   console.log('flushed');
+});
+
+pnc.drain(() => {
+    console.log('all drained');
+});
+
+opnc.close();
+console.log(`generated a inbox ${nc.createInbox()}`);
 
 // sub min
 let sid = nc.subscribe('foo', (payload: string, replyTo: string, subject: string) => {
     console.log(`sub1 handler: payload: ${payload} replyTo: ${replyTo} subject: ${subject}`);
 });
 console.log(sid);
+nc.timeout(sid, 1000, 1, (subID) => {
+   console.log(`${subID} did not receive any messages`);
+});
+
+console.log(`nc has ${nc.numSubscriptions()} subscriptions`);
 
 nc.subscribe('foo', {queue: 'one'}, (payload: string, replyTo: string, subject: string) => {
     console.log(`sub2 handler: payload: ${payload} replyTo: ${replyTo} subject: ${subject}`);

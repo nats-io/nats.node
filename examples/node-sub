@@ -18,34 +18,44 @@
 /* jslint node: true */
 'use strict'
 
-const nats = require('nats')
+// change '../' to 'nats' when copying
+const nats = require('../')
 const argv = require('minimist')(process.argv.slice(2))
 
 const url = argv.s || nats.DEFAULT_URI
 const creds = argv.creds
+const queue = argv.queue
 const subject = argv._[0]
 
 if (!subject) {
-  console.log('Usage: node-sub [-s server] [--creds file] <subject>')
+  console.log('Usage: node-sub [-s server] [--creds=filepath] [--queue=qname] <subject>')
   process.exit()
 }
 
 // Connect to NATS server.
 const nc = nats.connect(url, nats.creds(creds))
 
-nc.on('connect', function () {
-  nc.subscribe(subject, function (msg) {
+nc.on('connect', () => {
+  const opts = {}
+  if (queue) {
+    opts.queue = queue
+  }
+  nc.subscribe(subject, opts, (msg) => {
     console.log('Received "' + msg + '"')
   })
-  console.log('Listening on [' + subject + ']')
+  if (queue) {
+    console.log('Queue [' + queue + '] listening on [' + subject + ']')
+  } else {
+    console.log('Listening on [' + subject + ']')
+  }
 })
 
-nc.on('error', function (e) {
+nc.on('error', (e) => {
   console.log('Error [' + nc.currentServer + ']: ' + e)
   process.exit()
 })
 
-nc.on('close', function () {
+nc.on('close', () => {
   console.log('CLOSED')
   process.exit()
 })
