@@ -8,6 +8,8 @@ A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://n
 [![npm](https://img.shields.io/npm/v/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dt/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dm/nats.svg)](https://www.npmjs.com/package/nats)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+
 
 ## Installation
 
