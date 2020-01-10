@@ -73,6 +73,6 @@
     "node-pub": "examples/node-pub",
     "node-sub": "examples/node-sub",
     "node-req": "examples/node-req",
-    "node-rep": "examples/node-rep"
+    "node-reply": "examples/node-reply"
   }
 }

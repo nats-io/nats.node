@@ -485,7 +485,7 @@ The following is the list of connection options and default values.
 
 ## Tools
 
-The examples, `node-pub`, `node-sub`, `node-req`, `node-rep` are now bound to `bin` entries on the npm package.
+The examples, `node-pub`, `node-sub`, `node-req`, `node-reply` are now bound to `bin` entries on the npm package.
 You can use these while developing your own tools. After you install the `nats` npm package, you'll need to add
 a dependency on `minimist` before you can use the tools:
 
