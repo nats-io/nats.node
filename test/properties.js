@@ -27,9 +27,8 @@ describe('Base Properties', function () {
   })
 
   it('should have the same version as package.json', function () {
-    // eslint-disable-next-line
-        const pkg = require('../package.json');
-    NATS.version.should.equal(pkg.version)
+    const v = require('../package.json').version
+    NATS.version.should.equal(v)
   })
 
   it('should have a connect function', function () {
