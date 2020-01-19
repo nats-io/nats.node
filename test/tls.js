@@ -148,6 +148,7 @@ describe('TLS', function () {
     const testTable = [
       {
         errorCode: 'ERR_OSSL_X509_KEY_VALUES_MISMATCH',
+        regex: /key values mismatch/i,
         tls: {
           key: fs.readFileSync('./test/certs/client-key.pem'),
           cert: fs.readFileSync('./test/certs/ca.pem'),
@@ -156,6 +157,7 @@ describe('TLS', function () {
       },
       {
         errorCode: 'ERR_OSSL_PEM_NO_START_LINE',
+        regex: /no start line/i,
         tls: {
           key: fs.readFileSync('./test/certs/client-cert.pem'),
           cert: fs.readFileSync('./test/certs/client-key.pem'),
@@ -164,7 +166,7 @@ describe('TLS', function () {
       }
     ]
 
-    testTable.forEach(({ errorCode, tls }) => {
+    testTable.forEach(({ errorCode, regex, tls }) => {
       it(`should handle ${errorCode}`, function (done) {
         const nc = NATS.connect({
           port: TLSPORT,
@@ -176,7 +178,7 @@ describe('TLS', function () {
         nc.once('error', function (error) {
           should.exist(error)
           should(error.code).equal('OPENSSL_ERR')
-          should(error.chainedError.code).equal(errorCode)
+          should.exist(regex.exec(error.chainedError.message))
           nc.close()
           done()
         })
