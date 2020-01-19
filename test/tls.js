@@ -143,4 +143,44 @@ describe('TLS', function () {
       done()
     })
   })
+
+  describe('OpenSSL preflight verification errors', function () {
+    const testTable = [
+      {
+        errorCode: 'ERR_OSSL_X509_KEY_VALUES_MISMATCH',
+        tls: {
+          key: fs.readFileSync('./test/certs/client-key.pem'),
+          cert: fs.readFileSync('./test/certs/ca.pem'),
+          ca: [fs.readFileSync('./test/certs/server.pem')]
+        }
+      },
+      {
+        errorCode: 'ERR_OSSL_PEM_NO_START_LINE',
+        tls: {
+          key: fs.readFileSync('./test/certs/client-cert.pem'),
+          cert: fs.readFileSync('./test/certs/client-key.pem'),
+          ca: [fs.readFileSync('./test/certs/ca.pem')]
+        }
+      }
+    ]
+
+    testTable.forEach(({ errorCode, tls }) => {
+      it(`should handle ${errorCode}`, function (done) {
+        const nc = NATS.connect({
+          port: TLSPORT,
+          tls
+        })
+        nc.once('connect', function (done) {
+          done(new Error(`was expecting a ${errorCode} OpenSSL error`))
+        })
+        nc.once('error', function (error) {
+          should.exist(error)
+          should(error.code).equal('OPENSSL_ERR')
+          should(error.chainedError.code).equal(errorCode)
+          nc.close()
+          done()
+        })
+      })
+    })
+  })
 })
