@@ -12,8 +12,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import {connect} from '..'
+import {
+    connect,
+    BAD_AUTHENTICATION,
+    BAD_CREDS,
+    BAD_JSON,
+    BAD_MSG,
+    BAD_OPTIONS,
+    BAD_REPLY,
+    BAD_SUBJECT,
+    CLIENT_CERT_REQ,
+    CONN_CLOSED,
+    CONN_DRAINING,
+    CONN_ERR,
+    INVALID_ENCODING,
+    NATS_PROTOCOL_ERR,
+    NKEY_OR_JWT_REQ,
+    NO_ECHO_NOT_SUPPORTED,
+    NO_SEED_IN_CREDS,
+    NO_USER_JWT_IN_CREDS,
+    NON_SECURE_CONN_REQ,
+    OPENSSL_ERR,
+    PERMISSIONS_ERR,
+    REQ_TIMEOUT,
+    SECURE_CONN_REQ,
+    SIGCB_NOTFUNC,
+    SIGNATURE_REQUIRED,
+    STALE_CONNECTION_ERR,
+    SUB_DRAINING
+} from '..';
 
 const dnc = connect();
 const nc = connect("localhost:4222");
@@ -121,3 +148,41 @@ roid = nc.requestOne('bar', 'payload', {max: 10}, 100, (payload:string) => {
     console.log(`requestOne expecting payload: ${payload}`);
 });
 console.log(roid);
+
+
+const codes = [
+    BAD_AUTHENTICATION,
+    BAD_CREDS,
+    BAD_JSON,
+    BAD_MSG,
+    BAD_OPTIONS,
+    BAD_REPLY,
+    BAD_SUBJECT,
+    CLIENT_CERT_REQ,
+    CONN_CLOSED,
+    CONN_DRAINING,
+    CONN_ERR,
+    INVALID_ENCODING,
+    NATS_PROTOCOL_ERR,
+    NKEY_OR_JWT_REQ,
+    NON_SECURE_CONN_REQ,
+    NO_ECHO_NOT_SUPPORTED,
+    NO_SEED_IN_CREDS,
+    NO_USER_JWT_IN_CREDS,
+    OPENSSL_ERR,
+    PERMISSIONS_ERR,
+    REQ_TIMEOUT,
+    SECURE_CONN_REQ,
+    SIGCB_NOTFUNC,
+    SIGNATURE_REQUIRED,
+    STALE_CONNECTION_ERR,
+    SUB_DRAINING
+];
+
+codes.forEach((v) => {
+    if(v.length === 0) {
+        throw new Error("there's a problem with a constant");
+    } else {
+        console.log(v);
+    }
+});
