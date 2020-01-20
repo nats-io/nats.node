@@ -23,8 +23,10 @@ export const version: string;
  * Error codes
  */
 export const BAD_AUTHENTICATION: string;
+export const BAD_CREDS: string;
 export const BAD_JSON: string;
 export const BAD_MSG: string;
+export const BAD_OPTIONS: string;
 export const BAD_REPLY: string;
 export const BAD_SUBJECT: string;
 export const CLIENT_CERT_REQ: string;
@@ -33,10 +35,17 @@ export const CONN_DRAINING: string;
 export const CONN_ERR: string;
 export const INVALID_ENCODING: string;
 export const NATS_PROTOCOL_ERR: string;
+export const NKEY_OR_JWT_REQ: string;
 export const NON_SECURE_CONN_REQ: string;
+export const NO_ECHO_NOT_SUPPORTED: string;
+export const NO_SEED_IN_CREDS: string;
+export const NO_USER_JWT_IN_CREDS: string;
+export const OPENSSL_ERR: string;
 export const PERMISSIONS_ERR: string;
 export const REQ_TIMEOUT: string;
 export const SECURE_CONN_REQ: string;
+export const SIGCB_NOTFUNC: string;
+export const SIGNATURE_REQUIRED: string;
 export const STALE_CONNECTION_ERR: string;
 export const SUB_DRAINING: string;
 
