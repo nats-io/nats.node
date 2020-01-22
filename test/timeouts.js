@@ -20,6 +20,7 @@
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const net = require('net')
 
 const PORT = 1428
 
@@ -34,6 +35,72 @@ describe('Timeout and max received events for subscriptions', function () {
   // Shutdown our server after we are done
   after(function (done) {
     nsc.stopServer(server, done)
+  })
+
+  // connect to a server that never sends data
+  it('conn timeout - socket timeout', (done) => {
+    const srv = net.createServer((c) => {})
+    srv.listen(0, () => {
+      const p = srv.address().port
+      const nc = NATS.connect({ port: p, timeout: 1000 })
+      nc.on('connect', () => {
+        done(new Error('should have failed'))
+      })
+      nc.on('error', (err) => {
+        err.should.be.instanceof(NATS.NatsError)
+        err.chainedError.should.be.instanceof(NATS.NatsError)
+        err.chainedError.should.have.property('code', NATS.CONN_TIMEOUT)
+        srv.close(done)
+      })
+    })
+  }, 15000)
+
+  it('connection timeout - fail to connect quickly enough', (done) => {
+    // this is not expecting to have enough time to connect
+    const nc = NATS.connect('nats://connect.ngs.global', { timeout: 1 })
+    nc.on('error', (err) => {
+      err.should.be.instanceof(NATS.NatsError)
+      err.chainedError.should.be.instanceof(NATS.NatsError)
+      err.chainedError.should.have.property('code', NATS.CONN_TIMEOUT)
+      done()
+    })
+
+    nc.on('connect', () => {
+      done(new Error('should have failed'))
+    })
+  })
+
+  // connect to a server that never sends data
+  it('conn timeout - reconnects work', (done) => {
+    const srv = net.createServer((c) => {})
+    srv.listen(0, () => {
+      const p = srv.address().port
+      const nc = NATS.connect('nats://localhost:' + p, {
+        timeout: 1000,
+        servers: ['nats://localhost:' + PORT]
+      })
+      nc.on('connect', () => {
+        nc.currentServer.url.host.should.be.equal('localhost:' + PORT)
+        nc.close()
+        srv.close(done)
+      })
+      nc.on('error', (err) => {
+        done(new Error('shouldnt have failed: ' + err))
+      })
+    })
+  }, 15000)
+
+  it('connection timeout doesnt trigger', (done) => {
+    const nc = NATS.connect({ port: PORT, timeout: 1000 })
+    nc.on('error', (err) => {
+      // shouldn't fail
+      done(err)
+    })
+    setTimeout(() => {
+      nc.connected.should.be.true()
+      nc.close()
+      done()
+    }, 1500)
   })
 
   it('should perform simple timeouts on subscriptions', function (done) {

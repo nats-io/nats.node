@@ -471,6 +471,7 @@ The following is the list of connection options and default values.
 | `reconnectTimeWait`    | `2000`                    | If disconnected, the client will wait the specified number of milliseconds between reconnect attempts
 | `reconnect`            | `true`                    | If false server will not attempt reconnecting
 | `servers`              |                           | Array of connection `url`s
+| `timeout`              | node default - no timeout | Number of milliseconds the client will wait for a connection to be established. If it fails it will emit a `connection_timeout` event with a NatsError that provides the hostport of the server where the connection was attempted.
 | `tls`                  | `false`                   | This property can be a boolean or an Object. If true the client requires a TLS connection. If false a non-tls connection is required.  The value can also be an object specifying TLS certificate data. The properties `ca`, `key`, `cert` should contain the certificate file data. `ca` should be provided for self-signed certificates. `key` and `cert` are required for client provided certificates. `rejectUnauthorized` if `true` validates server's credentials
 | `token`                |                           | Sets a authorization token for a connection
 | `tokenHandler`         |                           | A function returning a `token` used for authentication.

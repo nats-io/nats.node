@@ -33,6 +33,7 @@ export const CLIENT_CERT_REQ: string;
 export const CONN_CLOSED: string;
 export const CONN_DRAINING: string;
 export const CONN_ERR: string;
+export const CONN_TIMEOUT: string;
 export const INVALID_ENCODING: string;
 export const NATS_PROTOCOL_ERR: string;
 export const NKEY_OR_JWT_REQ: string;
@@ -79,6 +80,7 @@ export interface ClientOpts {
 	reconnect?: boolean,
 	reconnectTimeWait?: number,
 	servers?: Array<string>,
+	timeout?: number,
 	tls?: boolean | tls.TlsOptions,
 	token?: string,
 	tokenHandler?: Function,
