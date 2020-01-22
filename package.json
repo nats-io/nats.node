@@ -33,7 +33,7 @@
     "test:unit": "mkdir -p reports/ && NODE_ENV=test multi='spec=- xunit=reports/mocha-xunit.xml' nyc mocha --timeout 10000 --slow 750",
     "test": "npm run depcheck && npm run depcheck:unused && npm run lint && npm run test:typescript && npm run test:unit",
     "test:typescript": "./node_modules/typescript/bin/tsc --strict --noEmit tstest/main.ts",
-    "coveralls": "npm run test && nyc report --reporter=text-lcov | coveralls",
+    "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "cover": "nyc report --reporter=html && open coverage/index.html",
     "lint": "standard './**/*.js'",
     "fmt": "standard --fix './**/*.js'"
