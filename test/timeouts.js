@@ -91,7 +91,6 @@ describe('Timeout and max received events for subscriptions', function () {
   }, 15000)
 
   it('connection timeout doesnt trigger', (done) => {
-    // this is not expecting to have enough time to connect
     const nc = NATS.connect({ port: PORT, timeout: 1000 })
     nc.on('error', (err) => {
       // shouldn't fail
