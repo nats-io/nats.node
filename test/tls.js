@@ -14,15 +14,18 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const fs = require('fs')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('TLS', function () {
+describe('TLS', () => {
   const PORT = 1442
   const TLSPORT = 1443
   const TLSVERIFYPORT = 1444
@@ -33,12 +36,12 @@ describe('TLS', function () {
 
   // Start up our own nats-server for each test
   // We will start a plain, a no client cert, and a client cert required.
-  before(function (done) {
-    server = nsc.startServer(PORT, function () {
+  before(done => {
+    server = nsc.startServer(PORT, () => {
       const flags = ['--tls', '--tlscert', './test/certs/server.pem',
         '--tlskey', './test/certs/key.pem'
       ]
-      tlsServer = nsc.startServer(TLSPORT, flags, function () {
+      tlsServer = nsc.startServer(TLSPORT, flags, () => {
         const flags = ['--tlsverify', '--tlscert', './test/certs/server.pem',
           '--tlskey', './test/certs/key.pem',
           '--tlscacert', './test/certs/ca.pem'
@@ -49,16 +52,16 @@ describe('TLS', function () {
   })
 
   // Shutdown our server after each test.
-  after(function (done) {
+  after(done => {
     nsc.stopCluster([server, tlsServer, tlsVerifyServer], done)
   })
 
-  it('should error if server does not support TLS', function (done) {
+  it('should error if server does not support TLS', done => {
     const nc = NATS.connect({
       port: PORT,
       tls: true
     })
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       should.exist(err)
       should.exist((/Server does not support a secure/).exec(err))
       nc.close()
@@ -66,12 +69,12 @@ describe('TLS', function () {
     })
   })
 
-  it('should reject without proper CA', function (done) {
+  it('should reject without proper CA', done => {
     const nc = NATS.connect({
       port: TLSPORT,
       tls: true
     })
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       should.exist(err)
       should.exist((/unable to verify the first certificate/).exec(err))
       nc.close()
@@ -79,7 +82,7 @@ describe('TLS', function () {
     })
   })
 
-  it('should connect if authorized is overridden', function (done) {
+  it('should connect if authorized is overridden', done => {
     const tlsOptions = {
       rejectUnauthorized: false
     }
@@ -88,7 +91,7 @@ describe('TLS', function () {
       tls: tlsOptions
     })
     should.exist(nc)
-    nc.on('connect', function (client) {
+    nc.on('connect', client => {
       client.should.equal(nc)
       nc.stream.authorized.should.equal(false)
       nc.close()
@@ -96,7 +99,7 @@ describe('TLS', function () {
     })
   })
 
-  it('should connect with proper ca and be authorized', function (done) {
+  it('should connect with proper ca and be authorized', done => {
     const tlsOptions = {
       ca: [fs.readFileSync('./test/certs/ca.pem')]
     }
@@ -105,7 +108,7 @@ describe('TLS', function () {
       tls: tlsOptions
     })
     should.exist(nc)
-    nc.on('connect', function (client) {
+    nc.on('connect', client => {
       client.should.equal(nc)
       nc.stream.authorized.should.equal(true)
       nc.close()
@@ -113,12 +116,12 @@ describe('TLS', function () {
     })
   })
 
-  it('should reject without proper cert if required by server', function (done) {
+  it('should reject without proper cert if required by server', done => {
     const nc = NATS.connect({
       port: TLSVERIFYPORT,
       tls: true
     })
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       should.exist(err)
       should.exist((/Server requires a client certificate/).exec(err))
       nc.close()
@@ -126,7 +129,7 @@ describe('TLS', function () {
     })
   })
 
-  it('should be authorized with proper cert', function (done) {
+  it('should be authorized with proper cert', done => {
     const tlsOptions = {
       key: fs.readFileSync('./test/certs/client-key.pem'),
       cert: fs.readFileSync('./test/certs/client-cert.pem'),
@@ -136,7 +139,7 @@ describe('TLS', function () {
       port: TLSPORT,
       tls: tlsOptions
     })
-    nc.on('connect', function (client) {
+    nc.on('connect', client => {
       client.should.equal(nc)
       nc.stream.authorized.should.equal(true)
       nc.close()
@@ -144,7 +147,7 @@ describe('TLS', function () {
     })
   })
 
-  describe('OpenSSL preflight verification errors', function () {
+  describe('OpenSSL preflight verification errors', () => {
     const testTable = [
       {
         errorCode: 'ERR_OSSL_X509_KEY_VALUES_MISMATCH',
@@ -167,15 +170,15 @@ describe('TLS', function () {
     ]
 
     testTable.forEach(({ errorCode, regex, tls }) => {
-      it(`should handle ${errorCode}`, function (done) {
+      it(`should handle ${errorCode}`, done => {
         const nc = NATS.connect({
           port: TLSPORT,
           tls
         })
-        nc.once('connect', function (done) {
+        nc.once('connect', done => {
           done(new Error(`was expecting a ${errorCode} OpenSSL error`))
         })
-        nc.once('error', function (error) {
+        nc.once('error', error => {
           should.exist(error)
           should(error.code).equal('OPENSSL_ERR')
           should.exist(regex.exec(error.chainedError.message))

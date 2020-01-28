@@ -14,7 +14,6 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 /* jshint -W030 */
 'use strict'
 
@@ -22,8 +21,12 @@ const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const url = require('url')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Cluster', function () {
+describe('Cluster', () => {
   const WAIT = 20
   const ATTEMPTS = 4
 
@@ -37,20 +40,20 @@ describe('Cluster', function () {
   let s2
 
   // Start up our own nats-server
-  before(function (done) {
-    s1 = nsc.startServer(PORT1, function () {
-      s2 = nsc.startServer(PORT2, function () {
+  before(done => {
+    s1 = nsc.startServer(PORT1, () => {
+      s2 = nsc.startServer(PORT2, () => {
         done()
       })
     })
   })
 
   // Shutdown our server
-  after(function (done) {
+  after(done => {
     nsc.stopCluster([s1, s2], done)
   })
 
-  it('should accept servers options', function (done) {
+  it('should accept servers options', done => {
     const nc = NATS.connect({
       servers: [s1Url, s2Url]
     })
@@ -60,13 +63,13 @@ describe('Cluster', function () {
     nc.should.have.property('servers')
     nc.servers.should.be.a.Array()
     nc.should.have.property('url')
-    nc.flush(function () {
+    nc.flush(() => {
       nc.close()
       done()
     })
   })
 
-  it('should randomly connect to servers by default', function (done) {
+  it('should randomly connect to servers by default', done => {
     const conns = []
     let s1Count = 0
     for (var i = 0; i < 100; i++) {
@@ -86,20 +89,20 @@ describe('Cluster', function () {
     done()
   })
 
-  it('should connect to first valid server', function (done) {
+  it('should connect to first valid server', done => {
     const nc = NATS.connect({
       servers: ['nats://localhost:' + 21022, s1Url, s2Url]
     })
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       done(err)
     })
-    nc.on('connect', function () {
+    nc.on('connect', () => {
       nc.close()
       done()
     })
   })
 
-  it('should emit error if no servers are available', function (done) {
+  it('should emit error if no servers are available', done => {
     const nc = NATS.connect({
       servers: ['nats://localhost:' + 21022, 'nats://localhost:' + 21023]
     })
@@ -113,7 +116,7 @@ describe('Cluster', function () {
     })
   })
 
-  it('should not randomly connect to servers if noRandomize is set', function (done) {
+  it('should not randomly connect to servers if noRandomize is set', done => {
     const conns = []
     let s1Count = 0
     for (var i = 0; i < 100; i++) {
@@ -134,7 +137,7 @@ describe('Cluster', function () {
     done()
   })
 
-  it('should not randomly connect to servers if dontRandomize is set', function (done) {
+  it('should not randomly connect to servers if dontRandomize is set', done => {
     const conns = []
     let s1Count = 0
     for (var i = 0; i < 100; i++) {
@@ -155,7 +158,7 @@ describe('Cluster', function () {
     done()
   })
 
-  it('should fail after maxReconnectAttempts when servers killed', function (done) {
+  it('should fail after maxReconnectAttempts when servers killed', done => {
     const nc = NATS.connect({
       noRandomize: true,
       servers: [s1Url, s2Url],
@@ -164,24 +167,24 @@ describe('Cluster', function () {
     })
     let startTime
     let numAttempts = 0
-    nc.on('connect', function () {
-      nsc.stopServer(s1, function () {
+    nc.on('connect', () => {
+      nsc.stopServer(s1, () => {
         s1 = null
         startTime = new Date()
       })
     })
-    nc.on('reconnect', function () {
-      nsc.stopServer(s2, function () {
+    nc.on('reconnect', () => {
+      nsc.stopServer(s2, () => {
         s2 = null
       })
     })
-    nc.on('reconnecting', function (client) {
+    nc.on('reconnecting', client => {
       const elapsed = new Date() - startTime
       elapsed.should.be.within(WAIT, 5 * WAIT)
       startTime = new Date()
       numAttempts += 1
     })
-    nc.on('close', function () {
+    nc.on('close', () => {
       numAttempts.should.equal(ATTEMPTS)
       nc.close()
       done()

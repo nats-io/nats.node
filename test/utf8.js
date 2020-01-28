@@ -14,12 +14,15 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const describe = require('mocha').describe
+const after = require('mocha').after
+const before = require('mocha').before
+const it = require('mocha').it
 
 describe('UTF8', function () {
   const PORT = 1430

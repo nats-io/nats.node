@@ -14,25 +14,28 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const crypto = require('crypto')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Binary', function () {
+describe('Binary', () => {
   const PORT = 1432
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
@@ -48,14 +51,14 @@ describe('Binary', function () {
     const embeddednull = Buffer.from('\x00\xf0\x00\x28\x00\x00\xf0\x9f\x92\xa9\x00', 'binary')
 
     let count = 6
-    const finished = function () {
+    const finished = () => {
       if (--count <= 0) {
         nc.close()
         done()
       }
     }
 
-    nc.subscribe('invalid2octet', function (msg) {
+    nc.subscribe('invalid2octet', msg => {
       msg.length.should.equal(2)
       if (nc.options.preserveBuffers) {
         should.ok(invalid2octet.equals(msg))
@@ -65,7 +68,7 @@ describe('Binary', function () {
       finished()
     })
 
-    nc.subscribe('invalidsequenceidentifier', function (msg) {
+    nc.subscribe('invalidsequenceidentifier', msg => {
       msg.length.should.equal(2)
       if (nc.options.preserveBuffers) {
         should.ok(invalidsequenceidentifier.equals(msg))
@@ -75,7 +78,7 @@ describe('Binary', function () {
       finished()
     })
 
-    nc.subscribe('invalid3octet', function (msg) {
+    nc.subscribe('invalid3octet', msg => {
       msg.length.should.equal(3)
       if (nc.options.preserveBuffers) {
         should.ok(invalid3octet.equals(msg))
@@ -85,7 +88,7 @@ describe('Binary', function () {
       finished()
     })
 
-    nc.subscribe('invalid4octet', function (msg) {
+    nc.subscribe('invalid4octet', msg => {
       msg.length.should.equal(4)
       if (nc.options.preserveBuffers) {
         should.ok(invalid4octet.equals(msg))
@@ -95,7 +98,7 @@ describe('Binary', function () {
       finished()
     })
 
-    nc.subscribe('embeddednull', function (msg) {
+    nc.subscribe('embeddednull', msg => {
       msg.length.should.equal(11)
       if (nc.options.preserveBuffers) {
         should.ok(embeddednull.equals(msg))
@@ -105,7 +108,7 @@ describe('Binary', function () {
       finished()
     })
 
-    nc.subscribe('bigbuffer', function (msg) {
+    nc.subscribe('bigbuffer', msg => {
       msg.length.should.equal(bigBuffer.length)
       if (nc.options.preserveBuffers) {
         should.ok(bigBuffer.equals(msg))
@@ -123,7 +126,7 @@ describe('Binary', function () {
     nc.publish('bigbuffer', bigBuffer)
   }
 
-  it('should allow sending and receiving binary data', function (done) {
+  it('should allow sending and receiving binary data', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
       encoding: 'binary'
@@ -131,7 +134,7 @@ describe('Binary', function () {
     binaryDataTests(done, nc)
   })
 
-  it('should allow sending binary buffers', function (done) {
+  it('should allow sending binary buffers', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
       preserveBuffers: true
@@ -139,7 +142,7 @@ describe('Binary', function () {
     binaryDataTests(done, nc)
   })
 
-  it('should not append control characters on chunk processing', function (done) {
+  it('should not append control characters on chunk processing', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
       preserveBuffers: true
@@ -147,14 +150,14 @@ describe('Binary', function () {
     const buffer = crypto.randomBytes(1024)
 
     let count = 0
-    const finished = function () {
+    const finished = () => {
       if (++count === 100) {
         nc.close()
         done()
       }
     }
 
-    nc.subscribe('trailingData', function (msg) {
+    nc.subscribe('trailingData', msg => {
       should.ok(msg.equals(buffer))
       finished()
     })

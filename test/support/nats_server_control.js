@@ -56,7 +56,7 @@ function startServerFn (port, optFlags, done) {
   let socket
   let timer
 
-  const resetSocket = function () {
+  const resetSocket = () => {
     if (socket !== undefined) {
       socket.removeAllListeners()
       socket.destroy()
@@ -64,7 +64,7 @@ function startServerFn (port, optFlags, done) {
     }
   }
 
-  const finish = function (err) {
+  const finish = err => {
     resetSocket()
     if (timer !== undefined) {
       clearInterval(timer)
@@ -76,7 +76,7 @@ function startServerFn (port, optFlags, done) {
   }
 
   // Test for when socket is bound.
-  timer = setInterval(function () {
+  timer = setInterval(() => {
     resetSocket()
 
     wait = new Date() - start
@@ -88,7 +88,7 @@ function startServerFn (port, optFlags, done) {
     socket = net.createConnection(port)
 
     // Success
-    socket.on('connect', function () {
+    socket.on('connect', () => {
       if (server.pid === null) {
         // We connected but not to our server..
         finish(new Error('Server already running on port: ' + port))
@@ -98,20 +98,20 @@ function startServerFn (port, optFlags, done) {
     })
 
     // Wait for next try..
-    socket.on('error', function (error) {
+    socket.on('error', error => {
       finish(new Error('Problem connecting to server on port: ' + port + ' (' + error + ')'))
     })
   }, delta)
 
   // Other way to catch another server running.
-  server.on('exit', function (code, signal) {
+  server.on('exit', (code, signal) => {
     if (code === 1) {
       finish(new Error('Server exited with bad code, already running? (' + code + ' / ' + signal + ')'))
     }
   })
 
   // Server does not exist..
-  server.stderr.on('data', function (data) {
+  server.stderr.on('data', data => {
     if ((/^execvp\(\)/).test(data)) {
       clearInterval(timer)
       finish(new Error('Can\'t find the ' + SERVER))
@@ -130,7 +130,7 @@ function waitStopFn (server, done) {
       done()
     }
   } else {
-    setTimeout(function () {
+    setTimeout(() => {
       waitStopFn(server, done)
     })
   }
@@ -156,7 +156,7 @@ function startClusterFn (ports, routePort, optFlags, done) {
   }
   const servers = []
   let started = 0
-  const server = addMemberFn(ports[0], routePort, routePort, optFlags, function () {
+  const server = addMemberFn(ports[0], routePort, routePort, optFlags, () => {
     started++
     servers.push(server)
     if (started === ports.length) {
@@ -165,8 +165,8 @@ function startClusterFn (ports, routePort, optFlags, done) {
   })
 
   const others = ports.slice(1)
-  others.forEach(function (p) {
-    const s = addMemberFn(p, routePort, p + 1000, optFlags, function () {
+  others.forEach(p => {
+    const s = addMemberFn(p, routePort, p + 1000, optFlags, () => {
       started++
       servers.push(s)
       if (started === ports.length) {
@@ -185,9 +185,9 @@ function addMemberWithDelayFn (ports, routePort, delay, optFlags, done) {
     optFlags = null
   }
   const servers = []
-  ports.forEach(function (p, i) {
-    setTimeout(function () {
-      const s = addMemberFn(p, routePort, p + 1000, optFlags, function () {
+  ports.forEach((p, i) => {
+    setTimeout(() => {
+      const s = addMemberFn(p, routePort, p + 1000, optFlags, () => {
         servers.push(s)
         if (servers.length === ports.length) {
           done()
@@ -216,7 +216,7 @@ function addMemberFn (port, routePort, clusterPort, optFlags, done) {
 exports.startCluster = startClusterFn
 exports.addMember = addMemberFn
 
-exports.stopCluster = function (servers, done) {
+exports.stopCluster = (servers, done) => {
   let count = servers.length
 
   function latch () {
@@ -225,13 +225,9 @@ exports.stopCluster = function (servers, done) {
       done()
     }
   }
-  servers.forEach(function (s) {
+  servers.forEach(s => {
     stopServerFn(s, latch)
   })
 }
 
-exports.findServer = function (port, servers) {
-  return servers.find(function (s) {
-    return s.spawnargs[2] === port
-  })
-}
+exports.findServer = (port, servers) => servers.find(s => s.spawnargs[2] === port)

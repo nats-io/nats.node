@@ -27,8 +27,8 @@ const nats = NATS.connect({
   port: port
 })
 
-nats.on('connect', function () {
-  fs.writeFile('/tmp/existing_client.log', 'connected\n', function (err) {
+nats.on('connect', () => {
+  fs.writeFile('/tmp/existing_client.log', 'connected\n', err => {
     console.error(err)
   })
 })
@@ -36,28 +36,28 @@ nats.on('connect', function () {
 /* eslint-disable no-console */
 /* eslint-disable no-process-exit */
 
-nats.on('error', function (e) {
-  fs.appendFile('/tmp/existing_client.log', 'got error\n' + e, function (err) {
+nats.on('error', e => {
+  fs.appendFile('/tmp/existing_client.log', 'got error\n' + e, err => {
     console.error(err)
   })
   process.exit(1)
 })
 
-nats.subscribe('close', function (msg, replyTo) {
-  fs.appendFile('/tmp/existing_client.log', 'got close\n', function (err) {
+nats.subscribe('close', (msg, replyTo) => {
+  fs.appendFile('/tmp/existing_client.log', 'got close\n', err => {
     console.error(err)
   })
   if (replyTo) {
     nats.publish(replyTo, 'closing')
   }
-  nats.flush(function () {
+  nats.flush(() => {
     nats.close()
-    fs.appendFile('/tmp/existing_client.log', 'closed\n', function (err) {
+    fs.appendFile('/tmp/existing_client.log', 'closed\n', err => {
       console.error(err)
     })
   })
 })
 
-nats.flush(function () {
+nats.flush(() => {
   nats.publish('started', '')
 })

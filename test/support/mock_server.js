@@ -56,7 +56,7 @@ util.inherits(ScriptedServer, events.EventEmitter)
 
 ScriptedServer.prototype.start = function () {
   const that = this
-  this.stream = net.createServer(function (client) {
+  this.stream = net.createServer(client => {
     that.emit('connect_request')
     sendInfo(that, client)
     client.script = Array.from(that.script)
@@ -84,7 +84,7 @@ ScriptedServer.prototype.start = function () {
 
 ScriptedServer.prototype.stop = function (cb) {
   this.stream.close(cb)
-  this.sockets.forEach(function (socket) {
+  this.sockets.forEach(socket => {
     if (!socket.destroyed) {
       socket.destroy()
     }
@@ -92,7 +92,7 @@ ScriptedServer.prototype.stop = function (cb) {
 }
 
 function handleData (server, client) {
-  return function (data) {
+  return data => {
     // if we have a buffer append to it or make one
     if (client.buffer) {
       client.buffer = Buffer.concat([client.buffer, data])

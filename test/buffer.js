@@ -14,28 +14,31 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Buffer', function () {
+describe('Buffer', () => {
   const PORT = 1432
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should allow sending and receiving raw buffers', function (done) {
+  it('should allow sending and receiving raw buffers', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
       preserveBuffers: true
@@ -43,7 +46,7 @@ describe('Buffer', function () {
 
     const validBuffer = Buffer.from('foo-bar')
 
-    nc.subscribe('validBuffer', function (msg) {
+    nc.subscribe('validBuffer', msg => {
       should(validBuffer.equals(msg)).equal(true)
       nc.close()
       done()
@@ -52,7 +55,7 @@ describe('Buffer', function () {
     nc.publish('validBuffer', validBuffer)
   })
 
-  it('should allow parsing raw buffers to json', function (done) {
+  it('should allow parsing raw buffers to json', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
       preserveBuffers: true,
@@ -62,7 +65,7 @@ describe('Buffer', function () {
     const jsonString = '{ "foo-bar": true }'
     const validBuffer = Buffer.from(jsonString)
 
-    nc.subscribe('validBuffer', function (msg) {
+    nc.subscribe('validBuffer', msg => {
       msg.should.eql({
         'foo-bar': true
       })

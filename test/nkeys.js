@@ -14,12 +14,15 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nkeys = require('ts-nkeys')
 const nsc = require('./support/nats_server_control')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
 describe('Direct NKeys and Signatures', function () {
   this.timeout(5000)
@@ -28,7 +31,7 @@ describe('Direct NKeys and Signatures', function () {
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before((done) => {
     // We need v2 or above for these tests.
     const version = nsc.serverVersion()
     if ((/\s+2\./).exec(version) !== null) {
@@ -45,7 +48,7 @@ describe('Direct NKeys and Signatures', function () {
     nsc.stopServer(server, done)
   })
 
-  it('should connect with direct nkey and sig', function (done) {
+  it('should connect with direct nkey and sig', (done) => {
     const nc = NATS.connect({
       port: PORT,
       nkey: 'UAH42UG6PV552P5SWLWTBP3H3S5BHAVCO2IEKEXUANJXR75J63RQ5WM6',

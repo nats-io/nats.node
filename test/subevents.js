@@ -14,31 +14,34 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Subscription Events', function () {
+describe('Subscription Events', () => {
   const PORT = 9422
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server after we are done
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should generate subscribe events', function (done) {
+  it('should generate subscribe events', done => {
     const nc = NATS.connect(PORT)
     const subj = 'sub.event'
-    nc.on('subscribe', function (sid, subject) {
+    nc.on('subscribe', (sid, subject) => {
       should.exist(sid)
       should.exist(subject)
       subject.should.equal(subj)
@@ -48,11 +51,11 @@ describe('Subscription Events', function () {
     nc.subscribe(subj)
   })
 
-  it('should generate subscribe events with opts', function (done) {
+  it('should generate subscribe events with opts', done => {
     const nc = NATS.connect(PORT)
     const subj = 'sub.event'
     const queuegroup = 'bar'
-    nc.on('subscribe', function (sid, subject, opts) {
+    nc.on('subscribe', (sid, subject, opts) => {
       should.exist(sid)
       should.exist(subject)
       subject.should.equal(subj)
@@ -67,10 +70,10 @@ describe('Subscription Events', function () {
     })
   })
 
-  it('should generate unsubscribe events', function (done) {
+  it('should generate unsubscribe events', done => {
     const nc = NATS.connect(PORT)
     const subj = 'sub.event'
-    nc.on('unsubscribe', function (sid, subject) {
+    nc.on('unsubscribe', (sid, subject) => {
       should.exist(sid)
       should.exist(subject)
       subject.should.equal(subj)
@@ -81,10 +84,10 @@ describe('Subscription Events', function () {
     nc.unsubscribe(sid)
   })
 
-  it('should generate unsubscribe events on auto-unsub', function (done) {
+  it('should generate unsubscribe events on auto-unsub', done => {
     const nc = NATS.connect(PORT)
     const subj = 'autounsub.event'
-    nc.on('unsubscribe', function (sid, subject) {
+    nc.on('unsubscribe', (sid, subject) => {
       should.exist(sid)
       should.exist(subject)
       subject.should.equal(subj)
@@ -97,13 +100,13 @@ describe('Subscription Events', function () {
     nc.publish(subj)
   })
 
-  it('should generate only one unsubscribe events on auto-unsub', function (done) {
+  it('should generate only one unsubscribe events on auto-unsub', done => {
     const nc = NATS.connect(PORT)
     const subj = 'autounsub.event'
     let eventsReceived = 0
     const want = 5
 
-    nc.on('unsubscribe', function (sid, subject) {
+    nc.on('unsubscribe', (sid, subject) => {
       eventsReceived++
     })
     const sid = nc.subscribe(subj)
@@ -111,25 +114,25 @@ describe('Subscription Events', function () {
     for (let i = 0; i < want; i++) {
       nc.publish(subj)
     }
-    nc.flush(function () {
+    nc.flush(() => {
       eventsReceived.should.equal(1)
       nc.close()
       done()
     })
   })
 
-  it('should generate unsubscribe events on request max', function (done) {
+  it('should generate unsubscribe events on request max', done => {
     const nc = NATS.connect(PORT)
     const subj = 'request.autounsub.event'
 
-    nc.subscribe(subj, function (subject, reply) {
+    nc.subscribe(subj, (subject, reply) => {
       nc.publish(reply, 'OK')
     })
     nc.request(subj, null, {
       max: 1
     })
 
-    nc.on('unsubscribe', function (sid, subject) {
+    nc.on('unsubscribe', (sid, subject) => {
       should.exist(sid)
       should.exist(subject)
       nc.close()

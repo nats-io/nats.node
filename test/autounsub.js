@@ -14,28 +14,31 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Max responses and Auto-unsub', function () {
+describe('Max responses and Auto-unsub', () => {
   const PORT = 1422
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server after we are done
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should only received max responses requested', function (done) {
+  it('should only received max responses requested', done => {
     const nc = NATS.connect(PORT)
     const WANT = 10
     const SEND = 20
@@ -43,13 +46,13 @@ describe('Max responses and Auto-unsub', function () {
 
     nc.subscribe('foo', {
       max: WANT
-    }, function () {
+    }, () => {
       received += 1
     })
     for (let i = 0; i < SEND; i++) {
       nc.publish('foo')
     }
-    nc.flush(function () {
+    nc.flush(() => {
       should.exists(received)
       received.should.equal(WANT)
       nc.close()
@@ -57,13 +60,13 @@ describe('Max responses and Auto-unsub', function () {
     })
   })
 
-  it('should only received max responses requested (client support)', function (done) {
+  it('should only received max responses requested (client support)', done => {
     const nc = NATS.connect(PORT)
     const WANT = 10
     const SEND = 20
     let received = 0
 
-    const sid = nc.subscribe('foo', function () {
+    const sid = nc.subscribe('foo', () => {
       received += 1
     })
     for (let i = 0; i < SEND; i++) {
@@ -71,7 +74,7 @@ describe('Max responses and Auto-unsub', function () {
     }
     nc.unsubscribe(sid, WANT)
 
-    nc.flush(function () {
+    nc.flush(() => {
       should.exists(received)
       received.should.equal(WANT)
       nc.close()
@@ -79,21 +82,21 @@ describe('Max responses and Auto-unsub', function () {
     })
   })
 
-  it('should not complain when unsubscribing an auto-unsubscribed sid', function (done) {
+  it('should not complain when unsubscribing an auto-unsubscribed sid', done => {
     const nc = NATS.connect(PORT)
     const SEND = 20
     let received = 0
 
     const sid = nc.subscribe('foo', {
       max: 1
-    }, function () {
+    }, () => {
       received += 1
     })
     for (let i = 0; i < SEND; i++) {
       nc.publish('foo')
     }
 
-    nc.flush(function () {
+    nc.flush(() => {
       nc.unsubscribe(sid)
       should.exists(received)
       received.should.equal(1)
@@ -102,12 +105,12 @@ describe('Max responses and Auto-unsub', function () {
     })
   })
 
-  it('should allow proper override to a lesser value ', function (done) {
+  it('should allow proper override to a lesser value ', done => {
     const nc = NATS.connect(PORT)
     const SEND = 20
     let received = 0
 
-    const sid = nc.subscribe('foo', function () {
+    const sid = nc.subscribe('foo', () => {
       received += 1
       nc.unsubscribe(sid, 1)
     })
@@ -117,7 +120,7 @@ describe('Max responses and Auto-unsub', function () {
       nc.publish('foo')
     }
 
-    nc.flush(function () {
+    nc.flush(() => {
       should.exists(received)
       received.should.equal(1)
       nc.close()
@@ -125,13 +128,13 @@ describe('Max responses and Auto-unsub', function () {
     })
   })
 
-  it('should allow proper override to a higher value', function (done) {
+  it('should allow proper override to a higher value', done => {
     const nc = NATS.connect(PORT)
     const WANT = 10
     const SEND = 20
     let received = 0
 
-    const sid = nc.subscribe('foo', function () {
+    const sid = nc.subscribe('foo', () => {
       received += 1
     })
     nc.unsubscribe(sid, 1)
@@ -141,7 +144,7 @@ describe('Max responses and Auto-unsub', function () {
       nc.publish('foo')
     }
 
-    nc.flush(function () {
+    nc.flush(() => {
       should.exists(received)
       received.should.equal(WANT)
       nc.close()
@@ -149,23 +152,23 @@ describe('Max responses and Auto-unsub', function () {
     })
   })
 
-  it('should only receive N msgs in request mode with multiple helpers', function (done) {
+  it('should only receive N msgs in request mode with multiple helpers', done => {
     /* jshint loopfunc: true */
     const nc = NATS.connect(PORT)
     let received = 0
 
     // Create 5 helpers
     for (let i = 0; i < 5; i++) {
-      nc.subscribe('help', function (msg, reply) {
+      nc.subscribe('help', (msg, reply) => {
         nc.publish(reply, 'I can help!')
       })
     }
 
     nc.request('help', null, {
       max: 1
-    }, function () {
+    }, () => {
       received += 1
-      nc.flush(function () {
+      nc.flush(() => {
         should.exists(received)
         received.should.equal(1)
         nc.close()
@@ -177,7 +180,7 @@ describe('Max responses and Auto-unsub', function () {
   function requestSubscriptions (nc, done) {
     let received = 0
 
-    nc.subscribe('help', function (msg, reply) {
+    nc.subscribe('help', (msg, reply) => {
       nc.publish(reply, 'I can help!')
     })
 
@@ -186,12 +189,12 @@ describe('Max responses and Auto-unsub', function () {
     for (let i = 0; i < 5; i++) {
       nc.request('help', null, {
         max: 1
-      }, function () {
+      }, () => {
         received += 1
       })
     }
-    nc.flush(function () {
-      setTimeout(function () {
+    nc.flush(() => {
+      setTimeout(() => {
         received.should.equal(5)
         const expectedSubs = (nc.options.useOldRequestStyle ? 1 : 2)
         Object.keys(nc.subs).length.should.equal(expectedSubs)
@@ -201,12 +204,12 @@ describe('Max responses and Auto-unsub', function () {
     })
   }
 
-  it('should not leak subscriptions when using max', function (done) {
+  it('should not leak subscriptions when using max', done => {
     const nc = NATS.connect(PORT)
     requestSubscriptions(nc, done)
   })
 
-  it('oldRequest should not leak subscriptions when using max', function (done) {
+  it('oldRequest should not leak subscriptions when using max', done => {
     const nc = NATS.connect({
       port: PORT,
       useOldRequestStyle: true
@@ -217,7 +220,7 @@ describe('Max responses and Auto-unsub', function () {
   function requestGetsWantedNumberOfMessages (nc, done) {
     let received = 0
 
-    nc.subscribe('help', function (msg, reply) {
+    nc.subscribe('help', (msg, reply) => {
       nc.publish(reply, 'I can help!')
       nc.publish(reply, 'I can help!')
       nc.publish(reply, 'I can help!')
@@ -228,12 +231,12 @@ describe('Max responses and Auto-unsub', function () {
 
     nc.request('help', null, {
       max: 3
-    }, function () {
+    }, () => {
       received++
     })
 
-    nc.flush(function () {
-      setTimeout(function () {
+    nc.flush(() => {
+      setTimeout(() => {
         received.should.equal(3)
         nc.close()
         done()
@@ -241,13 +244,13 @@ describe('Max responses and Auto-unsub', function () {
     })
   }
 
-  it('request should received specified number of messages', function (done) {
+  it('request should received specified number of messages', done => {
     /* jshint loopfunc: true */
     const nc = NATS.connect(PORT)
     requestGetsWantedNumberOfMessages(nc, done)
   })
 
-  it('old request should received specified number of messages', function (done) {
+  it('old request should received specified number of messages', done => {
     /* jshint loopfunc: true */
     const nc = NATS.connect({
       port: PORT,

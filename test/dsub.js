@@ -14,33 +14,36 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Double SUBS', function () {
+describe('Double SUBS', () => {
   const PORT = 1922
   const flags = ['-DV']
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, flags, done)
   })
 
   // Shutdown our server after we are done
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should not send multiple subscriptions on startup', function (done) {
+  it('should not send multiple subscriptions on startup', done => {
     let subsSeen = 0
     const subRe = /(\[SUB foo \d\])+/g
 
     // Capture log output from nats-server and check for double SUB protos.
-    server.stderr.on('data', function (data) {
+    server.stderr.on('data', data => {
       while (subRe.exec(data) !== null) {
         subsSeen++
       }
@@ -48,8 +51,8 @@ describe('Double SUBS', function () {
 
     const nc = NATS.connect(PORT)
     nc.subscribe('foo')
-    nc.on('connect', function (nc) {
-      setTimeout(function () {
+    nc.on('connect', nc => {
+      setTimeout(() => {
         nc.close()
         subsSeen.should.equal(1)
         done()

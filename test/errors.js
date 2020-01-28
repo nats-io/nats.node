@@ -14,29 +14,32 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Errors', function () {
+describe('Errors', () => {
   const PORT = 1491
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server after we are done
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should throw errors on connect', function (done) {
-    (function () {
+  it('should throw errors on connect', done => {
+    (() => {
       NATS.connect({
         url: 'nats://localhost:' + PORT,
         token: 'token1',
@@ -46,42 +49,42 @@ describe('Errors', function () {
     done()
   })
 
-  it('should throw errors on publish', function (done) {
+  it('should throw errors on publish', done => {
     const nc = NATS.connect(PORT);
     // No subject
-    (function () {
+    (() => {
       nc.publish()
     }).should.throw(Error);
     // bad args
-    (function () {
-      nc.publish('foo', function () {}, 'bar')
+    (() => {
+      nc.publish('foo', () => {}, 'bar')
     }).should.throw(Error);
-    (function () {
-      nc.publish('foo', 'bar', function () {}, 'bar')
+    (() => {
+      nc.publish('foo', 'bar', () => {}, 'bar')
     }).should.throw(Error)
     // closed
     nc.close();
-    (function () {
+    (() => {
       nc.publish('foo')
     }).should.throw(Error)
     done()
   })
 
-  it('should throw errors on flush', function (done) {
+  it('should throw errors on flush', done => {
     const nc = NATS.connect(PORT)
     nc.close();
-    (function () {
+    (() => {
       nc.flush()
     }).should.throw(Error)
     done()
   })
 
-  it('should pass errors on publish with callbacks', function (done) {
+  it('should pass errors on publish with callbacks', done => {
     const nc = NATS.connect(PORT)
     const expectedErrors = 4
     let received = 0
 
-    const cb = function (err) {
+    const cb = err => {
       should.exist(err)
       if (++received === expectedErrors) {
         done()
@@ -91,31 +94,31 @@ describe('Errors', function () {
     // No subject
     nc.publish(cb)
     // bad args
-    nc.publish('foo', function () {}, 'bar', cb)
-    nc.publish('foo', 'bar', function () {}, cb)
+    nc.publish('foo', () => {}, 'bar', cb)
+    nc.publish('foo', 'bar', () => {}, cb)
 
     // closed will still throw since we remove event listeners.
     nc.close()
     nc.publish('foo', cb)
   })
 
-  it('should throw errors on subscribe', function (done) {
+  it('should throw errors on subscribe', done => {
     const nc = NATS.connect(PORT)
     nc.close();
     // Closed
-    (function () {
+    (() => {
       nc.subscribe('foo')
     }).should.throw(Error)
     done()
   })
 
-  it('NatsErrors have code', function () {
+  it('NatsErrors have code', () => {
     const err = new NATS.NatsError('hello', 'helloid')
     should.equal(err.message, 'hello')
     should.equal(err.code, 'helloid')
   })
 
-  it('NatsErrors can chain an error', function () {
+  it('NatsErrors can chain an error', () => {
     const srcErr = new Error('foo')
     const err = new NATS.NatsError('hello', 'helloid', srcErr)
     should.equal(err.message, 'hello')
@@ -124,14 +127,14 @@ describe('Errors', function () {
     should.equal(err.name, 'NatsError')
   })
 
-  it('should emit error on exception during handler', function (done) {
+  it('should emit error on exception during handler', done => {
     const nc = NATS.connect(PORT)
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       err.message.should.equal('die')
       nc.close()
       done()
     })
-    nc.subscribe('*', function () {
+    nc.subscribe('*', () => {
       throw new Error('die')
     })
     nc.publish('baz')

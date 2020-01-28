@@ -14,13 +14,16 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nkeys = require('ts-nkeys')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const describe = require('mocha').describe
+const after = require('mocha').after
+const before = require('mocha').before
+const it = require('mocha').it
 
 describe('NKeys, Signatures and User JWTs', function () {
   this.timeout(5000)
@@ -45,13 +48,13 @@ describe('NKeys, Signatures and User JWTs', function () {
   const uri = 'nats://localhost:' + PORT
 
   // Shutdown our server after we are done
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should error when no signature callback provided', function (done) {
+  it('should error when no signature callback provided', done => {
     const nc = NATS.connect(PORT)
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       should.exist(err)
       should.exist((/requires an nkey signature/i).exec(err))
       nc.close()
@@ -59,12 +62,12 @@ describe('NKeys, Signatures and User JWTs', function () {
     })
   })
 
-  it('should error when nonceSigner not a function', function (done) {
+  it('should error when nonceSigner not a function', done => {
     const nc = NATS.connect({
       port: PORT,
       nonceSigner: 'BAD'
     })
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       should.exist(err)
       should.exist((/not a function/).exec(err))
       nc.close()
@@ -72,13 +75,13 @@ describe('NKeys, Signatures and User JWTs', function () {
     })
   })
 
-  it('should error when no nkey or userJWT callback defined', function (done) {
+  it('should error when no nkey or userJWT callback defined', done => {
     const nc = NATS.connect({
       port: PORT,
-      nonceSigner: function (nonce) {
+      nonceSigner: nonce => {
       }
     })
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       should.exist(err)
       should.exist((/Nkey or User JWT/).exec(err))
       nc.close()
@@ -86,72 +89,70 @@ describe('NKeys, Signatures and User JWTs', function () {
     })
   })
 
-  it('should connect when userJWT and sig provided', function (done) {
+  it('should connect when userJWT and sig provided', done => {
     const nc = NATS.connect({
       port: PORT,
-      nonceSigner: function (nonce) {
+      nonceSigner: nonce => {
         const sk = nkeys.fromSeed(Buffer.from(uSeed))
         return sk.sign(nonce)
       },
       userJWT: uJWT
     })
-    nc.on('connect', function (client) {
+    nc.on('connect', client => {
       client.should.equal(nc)
       nc.close()
       done()
     })
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       nc.close()
       done(err)
     })
   })
 
-  it('should connect when userJWT is a callback function', function (done) {
+  it('should connect when userJWT is a callback function', done => {
     const nc = NATS.connect({
       port: PORT,
-      nonceSigner: function (nonce) {
+      nonceSigner: nonce => {
         const sk = nkeys.fromSeed(Buffer.from(uSeed))
         return sk.sign(nonce)
       },
-      userJWT: function () {
-        return uJWT
-      }
+      userJWT: () => uJWT
     })
-    nc.on('connect', function (client) {
+    nc.on('connect', client => {
       client.should.equal(nc)
       nc.close()
       done()
     })
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       nc.close()
       done(err)
     })
   })
 
-  it('should connect with a user credentials file', function (done) {
+  it('should connect with a user credentials file', done => {
     const nc = NATS.connect({
       port: PORT,
       userCreds: './test/configs/nkeys/test.creds'
     })
-    nc.on('connect', function (client) {
+    nc.on('connect', client => {
       client.should.equal(nc)
       nc.close()
       done()
     })
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       nc.close()
       done(err)
     })
   })
 
-  it('should connect with new style of connect with url and a user credentials file', function (done) {
+  it('should connect with new style of connect with url and a user credentials file', done => {
     const nc = NATS.connect(uri, NATS.creds('./test/configs/nkeys/test.creds'))
-    nc.on('connect', function (client) {
+    nc.on('connect', (client) => {
       client.should.equal(nc)
       nc.close()
       done()
     })
-    nc.on('error', function (err) {
+    nc.on('error', (err) => {
       nc.close()
       done(err)
     })

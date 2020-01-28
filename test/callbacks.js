@@ -14,55 +14,58 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Callbacks', function () {
+describe('Callbacks', () => {
   const PORT = 1429
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should properly do a publish callback after connection is closed', function (done) {
+  it('should properly do a publish callback after connection is closed', done => {
     const nc = NATS.connect(PORT)
     nc.close()
-    nc.publish('foo', function (err) {
+    nc.publish('foo', err => {
       should.exist(err)
       done()
     })
   })
 
-  it('should properly do a flush callback after connection is closed', function (done) {
+  it('should properly do a flush callback after connection is closed', done => {
     const nc = NATS.connect(PORT)
     nc.close()
-    nc.flush(function (err) {
+    nc.flush(err => {
       should.exist(err)
       done()
     })
   })
 
-  it('request callbacks have message and reply', function (done) {
+  it('request callbacks have message and reply', done => {
     const nc = NATS.connect(PORT)
-    nc.flush(function () {
-      nc.subscribe('rr', function (msg, reply) {
+    nc.flush(() => {
+      nc.subscribe('rr', (msg, reply) => {
         nc.publish(reply, 'data', 'foo')
       })
     })
 
-    nc.flush(function () {
-      nc.requestOne('rr', 5000, function (msg, reply) {
+    nc.flush(() => {
+      nc.requestOne('rr', 5000, (msg, reply) => {
         if (msg instanceof NATS.NatsError) {
           nc.close()
           done('Error making request', msg)

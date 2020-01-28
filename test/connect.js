@@ -14,41 +14,44 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Basic Connectivity', function () {
+describe('Basic Connectivity', () => {
   const PORT = 1424
   const u = 'nats://localhost:' + PORT
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server after we are done
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should perform basic connect with port', function () {
+  it('should perform basic connect with port', () => {
     const nc = NATS.connect(PORT)
     should.exist(nc)
     nc.close()
   })
 
-  it('should perform basic connect with uri', function () {
+  it('should perform basic connect with uri', () => {
     const nc = NATS.connect(u)
     should.exist(nc)
     nc.close()
   })
 
-  it('should perform basic connect with options arg', function () {
+  it('should perform basic connect with options arg', () => {
     const options = {
       url: u
     }
@@ -57,24 +60,24 @@ describe('Basic Connectivity', function () {
     nc.close()
   })
 
-  it('should emit a connect event', function (done) {
+  it('should emit a connect event', done => {
     const nc = NATS.connect(PORT)
-    nc.on('connect', function (client) {
+    nc.on('connect', client => {
       client.should.equal(nc)
       nc.close()
       done()
     })
   })
 
-  it('should emit error if no server available', function (done) {
+  it('should emit error if no server available', done => {
     const nc = NATS.connect('nats://localhost:22222')
-    nc.on('error', function () {
+    nc.on('error', () => {
       nc.close()
       done()
     })
   })
 
-  it('should emit connecting events and try repeatedly if configured and no server available', function (done) {
+  it('should emit connecting events and try repeatedly if configured and no server available', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:22222',
       waitOnFirstConnect: true,
@@ -82,21 +85,21 @@ describe('Basic Connectivity', function () {
       maxReconnectAttempts: 20
     })
     let connectingEvents = 0
-    nc.on('error', function () {
+    nc.on('error', () => {
       nc.close()
       done('should not have produced error')
     })
-    nc.on('reconnecting', function () {
+    nc.on('reconnecting', () => {
       connectingEvents++
     })
-    setTimeout(function () {
+    setTimeout(() => {
       connectingEvents.should.equal(5)
       nc.close()
       done()
     }, 550)
   })
 
-  it('should still receive publish when some servers are invalid', function (done) {
+  it('should still receive publish when some servers are invalid', done => {
     const natsServers = ['nats://localhost:22222', u, 'nats://localhost:22223']
     const ua = NATS.connect({
       servers: natsServers
@@ -105,13 +108,13 @@ describe('Basic Connectivity', function () {
       servers: natsServers
     })
     let recvMsg = ''
-    ua.subscribe('topic1', function (msg, reply, subject) {
+    ua.subscribe('topic1', (msg, reply, subject) => {
       recvMsg = msg
     })
-    setTimeout(function () {
+    setTimeout(() => {
       ub.publish('topic1', 'hello')
     }, 100 * 1)
-    setTimeout(function () {
+    setTimeout(() => {
       recvMsg.should.equal('hello')
       ua.close()
       ub.close()
@@ -119,7 +122,7 @@ describe('Basic Connectivity', function () {
     }, 100 * 2)
   })
 
-  it('should still receive publish when some servers[noRandomize] are invalid', function (done) {
+  it('should still receive publish when some servers[noRandomize] are invalid', done => {
     const natsServers = ['nats://localhost:22222', u, 'nats://localhost:22223']
     const ua = NATS.connect({
       servers: natsServers,
@@ -130,13 +133,13 @@ describe('Basic Connectivity', function () {
       noRandomize: true
     })
     let recvMsg = ''
-    ua.subscribe('topic1', function (msg, reply, subject) {
+    ua.subscribe('topic1', (msg, reply, subject) => {
       recvMsg = msg
     })
-    setTimeout(function () {
+    setTimeout(() => {
       ub.publish('topic1', 'hello')
     }, 100 * 1)
-    setTimeout(function () {
+    setTimeout(() => {
       recvMsg.should.equal('hello')
       ua.close()
       ub.close()
@@ -144,16 +147,16 @@ describe('Basic Connectivity', function () {
     }, 100 * 2)
   })
 
-  it('should add a new cluster server', function (done) {
+  it('should add a new cluster server', done => {
     const servers = [u, 'nats://localhost:22223']
     const nc = NATS.connect({
       servers: new Array(servers[0])
     })
     let contains = 0
 
-    nc.on('connect', function (client) {
+    nc.on('connect', client => {
       client.addServer(servers[1])
-      client.servers.forEach(function (_server) {
+      client.servers.forEach(_server => {
         if (servers.indexOf(_server.url.href) !== -1) {
           contains++
         }
