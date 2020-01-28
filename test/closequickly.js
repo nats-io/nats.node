@@ -14,52 +14,55 @@
  */
 
 /* jslint node: true */
-/* global describe: false, beforeEach: false, afterEach: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const childProcess = require('child_process')
 const should = require('should')
+const afterEach = require('mocha').afterEach
+const beforeEach = require('mocha').beforeEach
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Close functionality', function () {
+describe('Close functionality', () => {
   const PORT = 8459
   let server
 
   // Start up our own nats-server
-  beforeEach(function (done) {
+  beforeEach(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server after we are done
-  afterEach(function (done) {
+  afterEach(done => {
     nsc.stopServer(server, done)
   })
 
-  it('close quickly', function (done) {
+  it('close quickly', done => {
     const nc = NATS.connect({
       port: PORT
     })
 
     let timer
 
-    nc.flush(function () {
-      nc.subscribe('started', function (m) {
+    nc.flush(() => {
+      nc.subscribe('started', m => {
         nc.publish('close')
       })
-      timer = setTimeout(function () {
+      timer = setTimeout(() => {
         done(new Error("process didn't exit quickly"))
       }, 10000)
     })
 
-    const child = childProcess.execFile('node', ['./test/support/exiting_client.js', PORT], function (error) {
+    const child = childProcess.execFile('node', ['./test/support/exiting_client.js', PORT], error => {
       if (error) {
         nc.close()
         done(error)
       }
     })
 
-    child.on('exit', function (code, signal) {
+    child.on('exit', (code, signal) => {
       if (timer) {
         clearTimeout(timer)
         timer = null

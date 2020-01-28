@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-/* eslint-env node, es6 */
-/* global describe: false, it: false, beforeEach: false, afterEach: false */
+/* eslint-env node */
 /* jshint -W030 */
 
 'use strict'
@@ -22,19 +21,23 @@
 const NATS = require('../')
 const mockserver = require('./support/mock_server')
 const should = require('should')
+const afterEach = require('mocha').afterEach
+const beforeEach = require('mocha').beforeEach
+const describe = require('mocha').describe
+const it = require('mocha').it
 
 describe('Ping Timer', () => {
   const PORT = 1966
   let server
 
-  beforeEach(function (done) {
+  beforeEach(done => {
     // default server simply sends connect and responds to one ping
     server = new mockserver.ScriptedServer(PORT)
     server.on('listening', done)
     server.start()
   })
 
-  afterEach(function (done) {
+  afterEach(done => {
     server.stop(done)
   })
 
@@ -50,7 +53,7 @@ describe('Ping Timer', () => {
     })
   }).timeout(10000)
 
-  it('timer pings are sent', function (done) {
+  it('timer pings are sent', done => {
     const nc = NATS.connect({
       port: PORT,
       pingInterval: 200,

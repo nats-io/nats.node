@@ -14,35 +14,38 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Split Messages', function () {
+describe('Split Messages', () => {
   const PORT = 1427
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should properly handle large # of messages from split buffers', function (done) {
+  it('should properly handle large # of messages from split buffers', done => {
     const nc = NATS.connect(PORT)
 
     const data = 'Hello World!'
     let received = 0
     const expected = 10000
 
-    nc.subscribe('foo', function (msg) {
+    nc.subscribe('foo', msg => {
       should.exists(msg)
       msg.should.equal(data)
       msg.length.should.equal(data.length)
@@ -58,7 +61,7 @@ describe('Split Messages', function () {
     }
   })
 
-  it('should properly handle large # of utf8 messages from split buffers', function (done) {
+  it('should properly handle large # of utf8 messages from split buffers', done => {
     const nc = NATS.connect(PORT)
 
     // Use utf8 string to make sure encoding works too.
@@ -66,7 +69,7 @@ describe('Split Messages', function () {
     let received = 0
     const expected = 10000
 
-    nc.subscribe('foo', function (msg) {
+    nc.subscribe('foo', msg => {
       msg.should.equal(data)
       msg.length.should.equal(data.length)
       received += 1

@@ -14,12 +14,15 @@
  */
 
 /* jslint node: true */
-/* global describe: false, it: false, beforeEach: false, afterEach: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const afterEach = require('mocha').afterEach
+const beforeEach = require('mocha').beforeEach
+const describe = require('mocha').describe
+const it = require('mocha').it
 
 describe('Reconnect functionality', () => {
   const PORT = 1426

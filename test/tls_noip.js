@@ -14,13 +14,15 @@
  */
 
 /* jslint node: true */
-/* global describe: false, afterEach: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const fs = require('fs')
+const describe = require('mocha').describe
+const afterEach = require('mocha').afterEach
+const it = require('mocha').it
 
 describe('TLS No IPs', function () {
   this.timeout(5000)

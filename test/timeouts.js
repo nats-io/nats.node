@@ -14,26 +14,29 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const net = require('net')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
 const PORT = 1428
 
-describe('Timeout and max received events for subscriptions', function () {
+describe('Timeout and max received events for subscriptions', () => {
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server after we are done
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
@@ -103,12 +106,12 @@ describe('Timeout and max received events for subscriptions', function () {
     }, 1500)
   })
 
-  it('should perform simple timeouts on subscriptions', function (done) {
+  it('should perform simple timeouts on subscriptions', done => {
     const nc = NATS.connect(PORT)
-    nc.on('connect', function () {
+    nc.on('connect', () => {
       const startTime = new Date()
       const sid = nc.subscribe('foo')
-      nc.timeout(sid, 50, 1, function () {
+      nc.timeout(sid, 50, 1, () => {
         const elapsed = new Date() - startTime
         should.exists(elapsed)
         elapsed.should.be.within(45, 75)
@@ -118,36 +121,36 @@ describe('Timeout and max received events for subscriptions', function () {
     })
   })
 
-  it('should not timeout if exepected has been received', function (done) {
+  it('should not timeout if exepected has been received', done => {
     const nc = NATS.connect(PORT)
-    nc.on('connect', function () {
+    nc.on('connect', () => {
       const sid = nc.subscribe('foo')
-      nc.timeout(sid, 50, 1, function () {
+      nc.timeout(sid, 50, 1, () => {
         done(new Error('Timeout improperly called'))
       })
-      nc.publish('foo', function () {
+      nc.publish('foo', () => {
         nc.close()
         done()
       })
     })
   })
 
-  it('should not timeout if unsubscribe is called', function (done) {
+  it('should not timeout if unsubscribe is called', done => {
     const nc = NATS.connect(PORT)
-    nc.on('connect', function () {
+    nc.on('connect', () => {
       let count = 0
-      const sid = nc.subscribe('bar', function (m) {
+      const sid = nc.subscribe('bar', m => {
         count++
         if (count === 1) {
           nc.unsubscribe(sid)
         }
       })
-      nc.timeout(sid, 1000, 2, function () {
+      nc.timeout(sid, 1000, 2, () => {
         done(new Error('Timeout improperly called'))
       })
       nc.publish('bar', '')
       nc.flush()
-      setTimeout(function () {
+      setTimeout(() => {
         // terminate the test
         nc.close()
         done()
@@ -155,20 +158,20 @@ describe('Timeout and max received events for subscriptions', function () {
     })
   })
 
-  it('timeout should unsubscribe', function (done) {
+  it('timeout should unsubscribe', done => {
     const nc = NATS.connect(PORT)
-    nc.on('connect', function () {
+    nc.on('connect', () => {
       let count = 0
-      const sid = nc.subscribe('bar', function (m) {
+      const sid = nc.subscribe('bar', m => {
         count++
       })
-      nc.timeout(sid, 250, 2, function () {
-        process.nextTick(function () {
+      nc.timeout(sid, 250, 2, () => {
+        process.nextTick(() => {
           nc.publish('bar', '')
           nc.flush()
         })
       })
-      setTimeout(function () {
+      setTimeout(() => {
         nc.close()
         should(count).equal(0)
         done()
@@ -176,13 +179,13 @@ describe('Timeout and max received events for subscriptions', function () {
     })
   })
 
-  it('should perform simple timeouts on requests', function (done) {
+  it('should perform simple timeouts on requests', done => {
     const nc = NATS.connect(PORT)
-    nc.on('connect', function () {
+    nc.on('connect', () => {
       nc.request('foo', null, {
         max: 1,
         timeout: 1000
-      }, function (err) {
+      }, err => {
         err.should.be.instanceof(NATS.NatsError)
         err.should.have.property('code', NATS.REQ_TIMEOUT)
         nc.close()
@@ -191,10 +194,10 @@ describe('Timeout and max received events for subscriptions', function () {
     })
   })
 
-  it('should perform simple timeouts on requests without specified number of messages', function (done) {
+  it('should perform simple timeouts on requests without specified number of messages', done => {
     const nc = NATS.connect(PORT)
-    nc.on('connect', function () {
-      nc.subscribe('foo', function (msg, reply) {
+    nc.on('connect', () => {
+      nc.subscribe('foo', (msg, reply) => {
         nc.publish(reply)
       })
 
@@ -202,7 +205,7 @@ describe('Timeout and max received events for subscriptions', function () {
       nc.request('foo', null, {
         max: 2,
         timeout: 1000
-      }, function (err) {
+      }, err => {
         if (!Object.hasOwnProperty.call(err, 'code')) {
           responses++
           return
@@ -216,10 +219,10 @@ describe('Timeout and max received events for subscriptions', function () {
     })
   })
 
-  it('should override request autoset timeouts', function (done) {
+  it('should override request autoset timeouts', done => {
     const nc = NATS.connect(PORT)
     let calledOnRequestHandler = false
-    nc.on('connect', function () {
+    nc.on('connect', () => {
       const sid = nc.request('foo', null, {
         max: 2,
         timeout: 1000
@@ -227,7 +230,7 @@ describe('Timeout and max received events for subscriptions', function () {
         calledOnRequestHandler = true
       })
 
-      nc.timeout(sid, 1500, 2, function (v) {
+      nc.timeout(sid, 1500, 2, v => {
         calledOnRequestHandler.should.be.false()
         v.should.be.equal(sid)
         nc.close()

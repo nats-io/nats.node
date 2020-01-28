@@ -14,12 +14,13 @@
  */
 
 'use strict'
-/* global describe: false, it: false */
 
 const NATS = require('../')
 const should = require('should')
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('shifter', function () {
+describe('shifter', () => {
   it('should handle empty', () => {
     const a = new Array(0)
     const b = NATS.callbackShifter(0, a)
@@ -27,7 +28,7 @@ describe('shifter', function () {
   })
 
   it('should handle just fun', () => {
-    const a = [function () {}]
+    const a = [() => {}]
     const b = NATS.callbackShifter(10, a)
     b.should.have.length(10)
     for (let i = 0; i < 9; i++) {
@@ -38,13 +39,13 @@ describe('shifter', function () {
   })
 
   it('should handle all', () => {
-    const a = ['a', '1', function () {}]
+    const a = ['a', '1', () => {}]
     const b = NATS.callbackShifter(3, a)
     should.deepEqual(a, b)
   })
 
   it('should handle holes', () => {
-    const a = ['a', '1', undefined, function () {}]
+    const a = ['a', '1', undefined, () => {}]
     const b = NATS.callbackShifter(4, a)
     should.deepEqual(a, b)
   })

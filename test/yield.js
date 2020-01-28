@@ -14,12 +14,16 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const sleep = require('./support/sleep')
+const describe = require('mocha').describe
+const before = require('mocha').before
+const after = require('mocha').after
+const it = require('mocha').it
+const should = require('should')
 
 describe('Yield', function () {
   const PORT = 1469
@@ -47,6 +51,7 @@ describe('Yield', function () {
       const delta = Date.now() - start
       nc.close()
       clearTimeout(timer)
+      should.exist(delta)
       delta.should.within(10, 25)
       done()
     }, 10)

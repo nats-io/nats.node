@@ -14,53 +14,54 @@
  */
 
 /* jslint node: true */
-/* global describe: false, it: false */
 /* jshint -W030 */
 'use strict'
 
 const NATS = require('../')
 const should = require('should')
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Base Properties', function () {
-  it('should have a version property', function () {
+describe('Base Properties', () => {
+  it('should have a version property', () => {
     NATS.version.should.match(/[0-9]+\.[0-9]+\.[0-9]+/)
   })
 
-  it('should have the same version as package.json', function () {
+  it('should have the same version as package.json', () => {
     const v = require('../package.json').version
     NATS.version.should.equal(v)
   })
 
-  it('should have a connect function', function () {
+  it('should have a connect function', () => {
     NATS.connect.should.be.a.Function()
   })
 
-  it('should have a createInbox function', function () {
+  it('should have a createInbox function', () => {
     NATS.createInbox.should.be.a.Function()
   })
 })
 
-describe('Connection Properties', function () {
+describe('Connection Properties', () => {
   let nc = NATS.connect()
   should.exist(nc)
 
-  it('should have a publish function', function () {
+  it('should have a publish function', () => {
     nc.publish.should.be.a.Function()
   })
 
-  it('should have a subscribe function', function () {
+  it('should have a subscribe function', () => {
     nc.subscribe.should.be.a.Function()
   })
 
-  it('should have an unsubscribe function', function () {
+  it('should have an unsubscribe function', () => {
     nc.unsubscribe.should.be.a.Function()
   })
 
-  it('should have a request function', function () {
+  it('should have a request function', () => {
     nc.request.should.be.a.Function()
   })
 
-  it('should have an options hash with proper fields', function () {
+  it('should have an options hash with proper fields', () => {
     nc.should.have.property('options')
     nc.options.should.have.property('url')
     nc.options.should.have.property('verbose')
@@ -73,7 +74,7 @@ describe('Connection Properties', function () {
     nc.options.noEcho.should.be.false()
   })
 
-  it('should have an parsed url', function () {
+  it('should have an parsed url', () => {
     nc.should.have.property('url')
     nc.url.should.be.an.Object()
     nc.url.should.have.property('protocol')
@@ -83,7 +84,7 @@ describe('Connection Properties', function () {
 
   nc.close()
 
-  it('should allow options to be overridden', function () {
+  it('should allow options to be overridden', () => {
     const options = {
       url: 'nats://localhost:22421',
       verbose: true,
@@ -95,7 +96,7 @@ describe('Connection Properties', function () {
     }
 
     nc = NATS.connect(options)
-    nc.on('error', function () {}) // Eat error
+    nc.on('error', () => {}) // Eat error
 
     nc.options.url.should.equal('nats://localhost:22421')
     nc.options.verbose.should.equal(true)

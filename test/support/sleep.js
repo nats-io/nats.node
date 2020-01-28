@@ -16,7 +16,7 @@
 /* jslint node: true */
 'use strict'
 
-exports.sleep = function (ms) {
+exports.sleep = ms => {
   const start = new Date().getTime()
   const expire = start + ms
   while (new Date().getTime() < expire) {

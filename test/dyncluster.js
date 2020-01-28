@@ -14,33 +14,35 @@
  */
 
 /* jslint node: true */
-/* global describe: false, it: false, afterEach: false */
 /* jshint -W030 */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const afterEach = require('mocha').afterEach
+const describe = require('mocha').describe
+const it = require('mocha').it
 
 describe('Dynamic Cluster - Connect URLs', function () {
-  this.timeout(10000)
+  this.timeout()
 
   // this to enable per test cleanup
   let servers
   // Shutdown our servers
-  afterEach(function (done) {
-    nsc.stopCluster(servers, function () {
+  afterEach(done => {
+    nsc.stopCluster(servers, () => {
       servers = []
       done()
     })
   })
 
-  it('adding cluster performs update', function (done) {
+  it('adding cluster performs update', done => {
     const routePort = 54220
     const port = 54221
 
     // start a new cluster with single server
-    servers = nsc.startCluster([port], routePort, function () {
+    servers = nsc.startCluster([port], routePort, () => {
       should(servers.length).be.equal(1)
 
       // connect the client
@@ -48,18 +50,18 @@ describe('Dynamic Cluster - Connect URLs', function () {
         url: 'nats://127.0.0.1:' + port,
         reconnectTimeWait: 100
       })
-      nc.on('connect', function () {
+      nc.on('connect', () => {
         // start adding servers
-        process.nextTick(function () {
-          const others = nsc.addMemberWithDelay([port + 1, port + 2], routePort, 250, function () {
+        process.nextTick(() => {
+          const others = nsc.addMemberWithDelay([port + 1, port + 2], routePort, 250, () => {
             // verify that 2 servers were added
             should(others.length).be.equal(2)
-            others.forEach(function (o) {
+            others.forEach(o => {
               // add them so they can be reaped
               servers.push(o)
             })
             // give some time for the server to send infos
-            setTimeout(function () {
+            setTimeout(() => {
               // we should know of 3 servers - the one we connected and the 2 we added
               should(nc.servers.length).be.equal(3)
               nc.close()
@@ -71,7 +73,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
     })
   })
 
-  it('servers are shuffled', function (done) {
+  it('servers are shuffled', done => {
     const routePort = 54320
     const port = 54321
     // start a cluster of one server
@@ -79,12 +81,12 @@ describe('Dynamic Cluster - Connect URLs', function () {
     for (let i = 0; i < 10; i++) {
       ports.push(port + i)
     }
-    servers = nsc.startCluster(ports, routePort, function () {
+    servers = nsc.startCluster(ports, routePort, () => {
       should(servers.length).be.equal(10)
 
       // added in order
       const uris = []
-      ports.forEach(function (p) {
+      ports.forEach(p => {
         uris.push('nats://127.0.0.1:' + p)
       })
 
@@ -92,9 +94,9 @@ describe('Dynamic Cluster - Connect URLs', function () {
         reconnectTimeWait: 100,
         servers: uris
       })
-      nc.on('connect', function () {
+      nc.on('connect', () => {
         const found = []
-        nc.servers.forEach(function (s) {
+        nc.servers.forEach(s => {
           found.push(s.url.href)
         })
 
@@ -106,7 +108,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
     })
   })
 
-  it('added servers not shuffled when noRandomize is set', function (done) {
+  it('added servers not shuffled when noRandomize is set', done => {
     const routePort = 54320
     const port = 54321
     // start a cluster of one server
@@ -115,7 +117,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
       ports.push(port + i)
     }
     const map = {}
-    servers = nsc.startCluster(ports, routePort, function () {
+    servers = nsc.startCluster(ports, routePort, () => {
       should(servers.length).be.equal(10)
 
       let connectCount = 0
@@ -126,9 +128,9 @@ describe('Dynamic Cluster - Connect URLs', function () {
           reconnectTimeWait: 100,
           noRandomize: true
         })
-        nc.on('connect', function () {
+        nc.on('connect', () => {
           const have = []
-          nc.servers.forEach(function (s) {
+          nc.servers.forEach(s => {
             have.push(parseInt(s.url.port))
           })
 
@@ -158,7 +160,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
     })
   })
 
-  it('joins url and servers', function (done) {
+  it('joins url and servers', done => {
     const routePort = 54320
     const port = 54321
     // start a cluster of one server
@@ -172,16 +174,16 @@ describe('Dynamic Cluster - Connect URLs', function () {
     for (i = 1; i < 4; i++) {
       urls.push('nats://127.0.0.1:' + (port + i))
     }
-    servers = nsc.startCluster(ports, routePort, function () {
+    servers = nsc.startCluster(ports, routePort, () => {
       const nc = NATS.connect({
         url: 'nats://127.0.0.1:' + port,
         reconnectTimeWait: 100,
         servers: urls
       })
 
-      nc.on('connect', function (c) {
+      nc.on('connect', c => {
         c.servers.should.have.length(10)
-        setTimeout(function () {
+        setTimeout(() => {
           c.close()
         }, 0)
         done()
@@ -189,12 +191,12 @@ describe('Dynamic Cluster - Connect URLs', function () {
     })
   })
 
-  it('discovered servers', function (done) {
+  it('discovered servers', done => {
     const routePort = 12892
     const port = 14526
     const ports = [port, port + 1, port + 2]
 
-    servers = nsc.startCluster(ports, routePort, function () {
+    servers = nsc.startCluster(ports, routePort, () => {
       const nc = NATS.connect({
         url: 'nats://127.0.0.1:' + port,
         reconnectTimeWait: 100,
@@ -203,7 +205,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
 
       function countImplicit (c) {
         let count = 0
-        c.servers.forEach(function (s) {
+        c.servers.forEach(s => {
           if (s.implicit) {
             count++
           }
@@ -211,11 +213,9 @@ describe('Dynamic Cluster - Connect URLs', function () {
         return count
       }
 
-      nc.on('serversDiscovered', function () {
+      nc.on('serversDiscovered', () => {
         if (countImplicit(nc) === 1) {
-          const found = nc.servers.find(function (s) {
-            return s.url.href === 'nats://127.0.0.1:' + (port + 3)
-          })
+          const found = nc.servers.find(s => s.url.href === 'nats://127.0.0.1:' + (port + 3))
           if (found) {
             nc.close()
             done()
@@ -223,7 +223,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
         }
       })
 
-      nc.on('connect', function () {
+      nc.on('connect', () => {
         if (!testVersion('1.0.7', nc)) {
           nc.close()
           done()
@@ -232,9 +232,9 @@ describe('Dynamic Cluster - Connect URLs', function () {
         countImplicit(nc).should.be.equal(1)
 
         // remove the implicit one
-        process.nextTick(function () {
+        process.nextTick(() => {
           const s2 = nsc.findServer(port + 2, servers)
-          nsc.stopServer(s2, function () {
+          nsc.stopServer(s2, () => {
             // add another
             const added = nsc.addMember(port + 3, routePort, port + 1003)
             servers.push(added)

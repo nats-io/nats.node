@@ -14,22 +14,23 @@
  */
 
 /* jslint node: true */
-/* global describe: false, it: false */
 /* jshint -W030 */
 'use strict'
 
 const u = require('./support/nats_conf_utils')
 const should = require('should')
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('NATS Conf Utils', function () {
-  it('test serializing simple', function () {
+describe('NATS Conf Utils', () => {
+  it('test serializing simple', () => {
     const x = {
       test: 'one'
     }
     const y = u.j(x)
 
     const buf = y.split('\n')
-    buf.forEach(function (e, i) {
+    buf.forEach((e, i) => {
       buf[i] = e.trim()
     })
 
@@ -37,7 +38,7 @@ describe('NATS Conf Utils', function () {
     should(z).be.equal('test: one')
   })
 
-  it('test serializing nested', function () {
+  it('test serializing nested', () => {
     const x = {
       a: 'one',
       b: {
@@ -47,7 +48,7 @@ describe('NATS Conf Utils', function () {
     const y = u.j(x)
 
     const buf = y.split('\n')
-    buf.forEach(function (e, i) {
+    buf.forEach((e, i) => {
       buf[i] = e.trim()
     })
 
@@ -55,7 +56,7 @@ describe('NATS Conf Utils', function () {
     should(z).be.equal('a: one b { a: two }')
   })
 
-  it('test serializing array', function () {
+  it('test serializing array', () => {
     const x = {
       a: 'one',
       b: ['a', 'b', 'c']
@@ -63,7 +64,7 @@ describe('NATS Conf Utils', function () {
     const y = u.j(x)
 
     const buf = y.split('\n')
-    buf.forEach(function (e, i) {
+    buf.forEach((e, i) => {
       buf[i] = e.trim()
     })
 
@@ -71,7 +72,7 @@ describe('NATS Conf Utils', function () {
     should(z).be.equal('a: one b [ a b c ]')
   })
 
-  it('test serializing array objs', function () {
+  it('test serializing array objs', () => {
     const x = {
       a: 'one',
       b: [{
@@ -84,7 +85,7 @@ describe('NATS Conf Utils', function () {
     }
     const y = u.j(x)
     const buf = y.split('\n')
-    buf.forEach(function (e, i) {
+    buf.forEach((e, i) => {
       buf[i] = e.trim()
     })
 
@@ -92,7 +93,7 @@ describe('NATS Conf Utils', function () {
     should(z).be.equal('a: one b [ { a: a } { b: b } { c: c } ]')
   })
 
-  it('test serializing array arrays', function () {
+  it('test serializing array arrays', () => {
     const x = {
       a: 'one',
       b: [{
@@ -106,7 +107,7 @@ describe('NATS Conf Utils', function () {
     }
     const y = u.j(x)
     const buf = y.split('\n')
-    buf.forEach(function (e, i) {
+    buf.forEach((e, i) => {
       buf[i] = e.trim()
     })
 

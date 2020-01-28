@@ -14,60 +14,63 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Basics', function () {
+describe('Basics', () => {
   const PORT = 1423
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should do basic subscribe and unsubscribe', function (done) {
+  it('should do basic subscribe and unsubscribe', done => {
     const nc = NATS.connect(PORT)
     const sid = nc.subscribe('foo')
     should.exist(sid)
     nc.unsubscribe(sid)
-    nc.flush(function () {
+    nc.flush(() => {
       nc.close()
       done()
     })
   })
 
-  it('should do basic publish', function (done) {
+  it('should do basic publish', done => {
     const nc = NATS.connect(PORT)
     nc.publish('foo')
-    nc.flush(function () {
+    nc.flush(() => {
       nc.close()
       done()
     })
   })
 
-  it('should fire a callback for subscription', function (done) {
+  it('should fire a callback for subscription', done => {
     const nc = NATS.connect(PORT)
-    nc.subscribe('foo', function () {
+    nc.subscribe('foo', () => {
       nc.close()
       done()
     })
     nc.publish('foo')
   })
 
-  it('should include the correct message in the callback', function (done) {
+  it('should include the correct message in the callback', done => {
     const nc = NATS.connect(PORT)
     const data = 'Hello World'
-    nc.subscribe('foo', function (msg) {
+    nc.subscribe('foo', msg => {
       should.exist(msg)
       msg.should.equal(data)
       nc.close()
@@ -76,11 +79,11 @@ describe('Basics', function () {
     nc.publish('foo', data)
   })
 
-  it('should include the correct reply in the callback', function (done) {
+  it('should include the correct reply in the callback', done => {
     const nc = NATS.connect(PORT)
     const data = 'Hello World'
     const inbox = nc.createInbox()
-    nc.subscribe('foo', function (msg, reply) {
+    nc.subscribe('foo', (msg, reply) => {
       should.exist(msg)
       msg.should.equal(data)
       should.exist(reply)
@@ -91,12 +94,12 @@ describe('Basics', function () {
     nc.publish('foo', data, inbox)
   })
 
-  it('should do request-reply', function (done) {
+  it('should do request-reply', done => {
     const nc = NATS.connect(PORT)
     const initMsg = 'Hello World'
     const replyMsg = 'Hello Back!'
 
-    nc.subscribe('foo', function (msg, reply) {
+    nc.subscribe('foo', (msg, reply) => {
       should.exist(msg)
       msg.should.equal(initMsg)
       should.exist(reply)
@@ -104,7 +107,7 @@ describe('Basics', function () {
       nc.publish(reply, replyMsg)
     })
 
-    nc.request('foo', initMsg, function (reply) {
+    nc.request('foo', initMsg, reply => {
       should.exist(reply)
       reply.should.equal(replyMsg)
       nc.close()
@@ -112,7 +115,7 @@ describe('Basics', function () {
     })
   })
 
-  it('should return a sub id for requests', function (done) {
+  it('should return a sub id for requests', done => {
     const nc = NATS.connect(PORT)
     const initMsg = 'Hello World'
     const replyMsg = 'Hello Back!'
@@ -120,16 +123,16 @@ describe('Basics', function () {
     let received = 0
 
     // Add two subscribers. We will only receive a reply from one.
-    nc.subscribe('foo', function (msg, reply) {
+    nc.subscribe('foo', (msg, reply) => {
       nc.publish(reply, replyMsg)
     })
 
-    nc.subscribe('foo', function (msg, reply) {
+    nc.subscribe('foo', (msg, reply) => {
       nc.publish(reply, replyMsg)
     })
 
-    const sub = nc.request('foo', initMsg, function (reply) {
-      nc.flush(function () {
+    const sub = nc.request('foo', initMsg, reply => {
+      nc.flush(() => {
         received.should.equal(expected)
         nc.close()
         done()
@@ -140,11 +143,11 @@ describe('Basics', function () {
     })
   })
 
-  it('should do single partial wildcard subscriptions correctly', function (done) {
+  it('should do single partial wildcard subscriptions correctly', done => {
     const nc = NATS.connect(PORT)
     const expected = 3
     let received = 0
-    nc.subscribe('*', function () {
+    nc.subscribe('*', () => {
       received += 1
       if (received === expected) {
         nc.close()
@@ -159,11 +162,11 @@ describe('Basics', function () {
     nc.publish('baz')
   })
 
-  it('should do partial wildcard subscriptions correctly', function (done) {
+  it('should do partial wildcard subscriptions correctly', done => {
     const nc = NATS.connect(PORT)
     const expected = 3
     let received = 0
-    nc.subscribe('foo.bar.*', function () {
+    nc.subscribe('foo.bar.*', () => {
       received += 1
       if (received === expected) {
         nc.close()
@@ -178,11 +181,11 @@ describe('Basics', function () {
     nc.publish('foo.bar.3')
   })
 
-  it('should do full wildcard subscriptions correctly', function (done) {
+  it('should do full wildcard subscriptions correctly', done => {
     const nc = NATS.connect(PORT)
     const expected = 5
     let received = 0
-    nc.subscribe('foo.>', function () {
+    nc.subscribe('foo.>', () => {
       received += 1
       if (received === expected) {
         nc.close()
@@ -200,7 +203,7 @@ describe('Basics', function () {
   it('should pass exact subject to callback', (done) => {
     const nc = NATS.connect(PORT)
     const subject = 'foo.bar.baz'
-    nc.subscribe('*.*.*', function (msg, reply, subj) {
+    nc.subscribe('*.*.*', (msg, reply, subj) => {
       should.exist(subj)
       subj.should.equal(subject)
       nc.close()
@@ -211,7 +214,7 @@ describe('Basics', function () {
 
   it('should do callback after publish is flushed', (done) => {
     const nc = NATS.connect(PORT)
-    nc.publish('foo', function () {
+    nc.publish('foo', () => {
       nc.close()
       done()
     })
@@ -219,7 +222,7 @@ describe('Basics', function () {
 
   it('should do callback after flush', (done) => {
     const nc = NATS.connect(PORT)
-    nc.flush(function () {
+    nc.flush(() => {
       nc.close()
       done()
     })
@@ -238,14 +241,14 @@ describe('Basics', function () {
     let received = 0
     const expected = 1
 
-    const sid = nc.subscribe('foo', function () {
+    const sid = nc.subscribe('foo', () => {
       nc.unsubscribe(sid)
       received += 1
     })
 
     nc.publish('foo')
     nc.publish('foo')
-    nc.publish('foo', function () {
+    nc.publish('foo', () => {
       received.should.equal(expected)
       nc.close()
       done()
@@ -254,7 +257,7 @@ describe('Basics', function () {
 
   it('should pass sid properly to a message callback if requested', (done) => {
     const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo', function (msg, reply, subj, lsid) {
+    const sid = nc.subscribe('foo', (msg, reply, subj, lsid) => {
       sid.should.equal(lsid)
       nc.close()
       done()
@@ -271,7 +274,7 @@ describe('Basics', function () {
     const jsonMsg = {
       key: true
     }
-    nc.subscribe('foo1', function (msg) {
+    nc.subscribe('foo1', msg => {
       msg.should.have.property('key').and.be.a.Boolean()
       nc.close()
       done()
@@ -288,7 +291,7 @@ describe('Basics', function () {
     const utf8msg = {
       key: 'CEDILA-Ç'
     }
-    nc.subscribe('foo2', function (msg) {
+    nc.subscribe('foo2', msg => {
       msg.should.have.property('key')
       msg.key.should.equal('CEDILA-Ç')
       nc.close()
@@ -301,7 +304,7 @@ describe('Basics', function () {
     const initMsg = 'Hello World'
     const replyMsg = 'Hello Back!'
 
-    nc.subscribe('foo', function (msg, reply) {
+    nc.subscribe('foo', (msg, reply) => {
       should.exist(msg)
       msg.should.equal(initMsg)
       should.exist(reply)
@@ -310,7 +313,7 @@ describe('Basics', function () {
     })
 
     let gotOne = false
-    nc.requestOne('foo', initMsg, null, 1000, function (reply) {
+    nc.requestOne('foo', initMsg, null, 1000, reply => {
       should.exist(reply)
       reply.should.equal(replyMsg)
       if (!gotOne) {
@@ -338,16 +341,16 @@ describe('Basics', function () {
     const rsub = 'x.y.z'
     let count = 0
 
-    nc.subscribe(rsub, function (msg, reply) {
+    nc.subscribe(rsub, (msg, reply) => {
       reply.should.match(/_INBOX\.*/)
       nc.publish(reply, 'y')
       nc.publish(reply, 'yy')
       nc.flush()
-      setTimeout(function () {
+      setTimeout(() => {
         nc.publish(reply, 'z')
         nc.flush()
         nc.close()
-        setTimeout(function () {
+        setTimeout(() => {
           count.should.equal(1)
           nc.close()
           done()
@@ -355,23 +358,23 @@ describe('Basics', function () {
       }, 1500)
     })
 
-    nc.requestOne(rsub, '', null, 1000, function (reply) {
+    nc.requestOne(rsub, '', null, 1000, reply => {
       reply.should.not.be.instanceof(NATS.NatsError)
       should.exist(reply)
       count++
     })
   }
 
-  it('should do requestone-will-unsubscribe', (done) => {
+  it('should do requestone-will-unsubscribe', function (done) {
     // eslint-disable-next-line
-        this.timeout(3000);
+    this.timeout(3000);
     const nc = NATS.connect(PORT)
     requestOneWillUnsubscribe(nc, done)
   })
 
-  it('oldRequest: should do requestone-will-unsubscribe', (done) => {
+  it('oldRequest: should do requestone-will-unsubscribe', function (done) {
     // eslint-disable-next-line
-        this.timeout(3000);
+    this.timeout(3000);
     const nc = NATS.connect({
       port: PORT,
       useOldRequestStyle: true
@@ -380,7 +383,7 @@ describe('Basics', function () {
   })
 
   function requestTimeoutTest (nc, done) {
-    nc.requestOne('a.b.c', '', null, 1000, function (reply) {
+    nc.requestOne('a.b.c', '', null, 1000, reply => {
       should.exist(reply)
       reply.should.be.instanceof(NATS.NatsError)
       reply.should.have.property('code', NATS.REQ_TIMEOUT)
@@ -389,12 +392,12 @@ describe('Basics', function () {
     })
   }
 
-  it('should do requestone-can-timeout', function (done) {
+  it('should do requestone-can-timeout', done => {
     const nc = NATS.connect(PORT)
     requestTimeoutTest(nc, done)
   })
 
-  it('old request one - should do requestone-can-timeout', function (done) {
+  it('old request one - should do requestone-can-timeout', done => {
     const nc = NATS.connect({
       port: PORT,
       useOldRequestStyle: true
@@ -408,8 +411,8 @@ describe('Basics', function () {
     // set a subscriber to respond to the request
     nc.subscribe('a.b.c', {
       max: 1
-    }, function (msg, reply) {
-      setTimeout(function () {
+    }, (msg, reply) => {
+      setTimeout(() => {
         nc.publish(reply, '')
         nc.flush()
         replies++
@@ -417,7 +420,7 @@ describe('Basics', function () {
     })
 
     // request one - we expect a timeout
-    nc.requestOne('a.b.c', '', null, 250, function (reply) {
+    nc.requestOne('a.b.c', '', null, 250, reply => {
       reply.should.be.instanceof(NATS.NatsError)
       reply.should.have.property('code', NATS.REQ_TIMEOUT)
       if (!Object.hasOwnProperty.call(reply, 'code')) {
@@ -426,7 +429,7 @@ describe('Basics', function () {
     })
 
     // verify reply was sent, but we didn't get it
-    setTimeout(function () {
+    setTimeout(() => {
       should(replies).equal(1)
       should(responses).equal(0)
       nc.close()
@@ -453,8 +456,8 @@ describe('Basics', function () {
 
   it('requestone has negative sids', (done) => {
     const nc = NATS.connect(PORT)
-    nc.flush(function () {
-      const sid = nc.requestOne('121.2.13.4', 1000, function (r) {
+    nc.flush(() => {
+      const sid = nc.requestOne('121.2.13.4', 1000, r => {
         should.fail("got message when it shouldn't have", r)
       })
       sid.should.be.type('number')
@@ -475,18 +478,18 @@ describe('Basics', function () {
     let four = false
     let three = true
     let count = 0
-    nc.flush(function () {
-      nc.requestOne('a', NATS.EMPTY, {}, 1, function () {
+    nc.flush(() => {
+      nc.requestOne('a', NATS.EMPTY, {}, 1, () => {
         all = true
         called()
       })
 
-      nc.requestOne('b', NATS.EMPTY, 1, function () {
+      nc.requestOne('b', NATS.EMPTY, 1, () => {
         four = true
         called()
       })
 
-      nc.requestOne('c', 1, function () {
+      nc.requestOne('c', 1, () => {
         three = true
         called()
       })
@@ -517,24 +520,24 @@ describe('Basics', function () {
     paramTranspositions(nc, done)
   })
 
-  it('echo false is honored', function (done) {
+  it('echo false is honored', done => {
     let nc1 = NATS.connect({
       port: PORT,
       noEcho: true,
       name: 'no echo client'
     })
-    nc1.on('error', function (err) {
+    nc1.on('error', err => {
       if (err.code === NATS.NATS_PROTOCOL_ERR) {
         nc1 = null
         done()
       }
     })
 
-    nc1.flush(function () {
+    nc1.flush(() => {
       var subj = NATS.createInbox()
 
       var count = 0
-      nc1.subscribe(subj, function () {
+      nc1.subscribe(subj, () => {
         count++
       })
 
@@ -542,16 +545,16 @@ describe('Basics', function () {
         port: PORT,
         name: 'default client'
       })
-      nc2.on('connect', function () {
-        nc2.subscribe(subj, function () {
+      nc2.on('connect', () => {
+        nc2.subscribe(subj, () => {
           count++
         })
       })
 
-      nc2.flush(function () {
+      nc2.flush(() => {
         nc1.publish(subj)
-        nc2.flush(function () {
-          nc1.flush(function () {
+        nc2.flush(() => {
+          nc1.flush(() => {
             should(count).be.equal(1)
             nc1.close()
             nc2.close()
@@ -562,23 +565,23 @@ describe('Basics', function () {
     })
   })
 
-  it('echo is on by default', function (done) {
+  it('echo is on by default', done => {
     let nc1 = NATS.connect({
       port: PORT,
       name: 'echo client'
     })
-    nc1.on('error', function (err) {
+    nc1.on('error', err => {
       if (err.code === NATS.NATS_PROTOCOL_ERR) {
         nc1 = null
         done()
       }
     })
 
-    nc1.flush(function () {
+    nc1.flush(() => {
       var subj = NATS.createInbox()
 
       var count = 0
-      nc1.subscribe(subj, function () {
+      nc1.subscribe(subj, () => {
         count++
       })
 
@@ -586,16 +589,16 @@ describe('Basics', function () {
         port: PORT,
         name: 'default client'
       })
-      nc2.on('connect', function () {
-        nc2.subscribe(subj, function () {
+      nc2.on('connect', () => {
+        nc2.subscribe(subj, () => {
           count++
         })
       })
 
-      nc2.flush(function () {
+      nc2.flush(() => {
         nc1.publish(subj)
-        nc2.flush(function () {
-          nc1.flush(function () {
+        nc2.flush(() => {
+          nc1.flush(() => {
             count.should.be.equal(2)
             nc1.close()
             nc2.close()
@@ -606,12 +609,12 @@ describe('Basics', function () {
     })
   })
 
-  it('connection drains when no subs', function (done) {
+  it('connection drains when no subs', done => {
     const nc = NATS.connect(PORT)
-    nc.on('error', function (err) {
+    nc.on('error', err => {
       done(err)
     })
-    nc.on('connect', function () {
+    nc.on('connect', () => {
       nc.drain(() => {
         nc.closed.should.be.true()
         done()
@@ -619,16 +622,16 @@ describe('Basics', function () {
     })
   })
 
-  it('connection drain', function (done) {
+  it('connection drain', done => {
     const subj = NATS.createInbox()
 
     const nc1 = NATS.connect(PORT)
     let c1 = 0
-    nc1.on('error', function (err) {
+    nc1.on('error', err => {
       done(err)
     })
     let drainCB = false
-    nc1.on('connect', function () {
+    nc1.on('connect', () => {
       nc1.subscribe(subj, { queue: 'q1' }, () => {
         c1++
         if (c1 === 1) {
@@ -645,10 +648,10 @@ describe('Basics', function () {
 
     const nc2 = NATS.connect(PORT)
     let c2 = 0
-    nc2.on('error', function (err) {
+    nc2.on('error', err => {
       done(err)
     })
-    nc2.on('connect', function () {
+    nc2.on('connect', () => {
       nc2.subscribe(subj, { queue: 'q1' }, () => {
         c2++
       })
@@ -682,18 +685,18 @@ describe('Basics', function () {
     }
   })
 
-  it('subscription drain', function (done) {
+  it('subscription drain', done => {
     const subj = NATS.createInbox()
 
     const nc1 = NATS.connect(PORT)
     let c1 = 0
     let c2 = 0
 
-    nc1.on('error', function (err) {
+    nc1.on('error', err => {
       done(err)
     })
     let sid1 = 0
-    nc1.on('connect', function () {
+    nc1.on('connect', () => {
       sid1 = nc1.subscribe(subj, { queue: 'q1' }, () => {
         c1++
         if (c1 === 1) {
@@ -728,7 +731,7 @@ describe('Basics', function () {
     }
   })
 
-  it('publish after drain fails', function (done) {
+  it('publish after drain fails', done => {
     const subj = NATS.createInbox()
     const nc1 = NATS.connect(PORT)
 
@@ -746,7 +749,7 @@ describe('Basics', function () {
     })
   })
 
-  it('request after drain fails toss', function (done) {
+  it('request after drain fails toss', done => {
     const subj = NATS.createInbox()
     const nc1 = NATS.connect(PORT)
 
@@ -764,7 +767,7 @@ describe('Basics', function () {
     })
   })
 
-  it('request after drain fails callback', function (done) {
+  it('request after drain fails callback', done => {
     const subj = NATS.createInbox()
     const nc1 = NATS.connect(PORT)
 
@@ -780,7 +783,7 @@ describe('Basics', function () {
     })
   })
 
-  it('oldrequest after drain fails callback', function (done) {
+  it('oldrequest after drain fails callback', done => {
     const subj = NATS.createInbox()
     const nc1 = NATS.connect(PORT)
 
@@ -796,7 +799,7 @@ describe('Basics', function () {
     })
   })
 
-  it('reject drain after close', function (done) {
+  it('reject drain after close', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       nc1.close()
@@ -810,7 +813,7 @@ describe('Basics', function () {
     })
   })
 
-  it('reject drainsubscription after close', function (done) {
+  it('reject drainsubscription after close', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       nc1.close()
@@ -824,7 +827,7 @@ describe('Basics', function () {
     })
   })
 
-  it('reject subscribe on draining', function (done) {
+  it('reject subscribe on draining', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       nc1.drain()
@@ -838,7 +841,7 @@ describe('Basics', function () {
     })
   })
 
-  it('reject drain on draining', function (done) {
+  it('reject drain on draining', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       nc1.drain()
@@ -852,7 +855,7 @@ describe('Basics', function () {
     })
   })
 
-  it('drain cleared timeout', function (done) {
+  it('drain cleared timeout', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       const sid = nc1.subscribe(NATS.createInbox(), () => {})
@@ -868,7 +871,7 @@ describe('Basics', function () {
     })
   })
 
-  it('json requests', function (done) {
+  it('json requests', done => {
     const nc = NATS.connect({ port: PORT, json: true })
     nc.on('connect', () => {
       let c = 0
@@ -880,7 +883,7 @@ describe('Basics', function () {
       let str = 0
       let obj = 0
       let num = 0
-      const h = function (m) {
+      const h = m => {
         switch (typeof m) {
           case 'number':
             num++
@@ -925,7 +928,7 @@ describe('Basics', function () {
     })
   })
 
-  it('json json old requests', function (done) {
+  it('json json old requests', done => {
     const nc = NATS.connect({ port: PORT, json: true, useOldRequestStyle: true })
     nc.on('connect', () => {
       let c = 0
@@ -937,7 +940,7 @@ describe('Basics', function () {
       let str = 0
       let obj = 0
       let num = 0
-      const h = function (m) {
+      const h = m => {
         switch (typeof m) {
           case 'number':
             num++

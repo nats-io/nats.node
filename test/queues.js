@@ -14,36 +14,39 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 'use strict'
 
 const NATS = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Queues', function () {
+describe('Queues', () => {
   const PORT = 1425
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     server = nsc.startServer(PORT, done)
   })
 
   // Shutdown our server
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('should deliver a message to single member of a queue group', function (done) {
+  it('should deliver a message to single member of a queue group', done => {
     const nc = NATS.connect(PORT)
     let received = 0
     nc.subscribe('foo', {
       queue: 'myqueue'
-    }, function () {
+    }, () => {
       received += 1
     })
-    nc.publish('foo', function () {
+    nc.publish('foo', () => {
       should.exists(received)
       received.should.equal(1)
       nc.close()
@@ -51,10 +54,10 @@ describe('Queues', function () {
     })
   })
 
-  it('should deliver a message to only one member of a queue group', function (done) {
+  it('should deliver a message to only one member of a queue group', done => {
     const nc = NATS.connect(PORT)
     let received = 0
-    const cb = function () {
+    const cb = () => {
       received += 1
     }
     for (let i = 0; i < 5; i++) {
@@ -62,18 +65,18 @@ describe('Queues', function () {
         queue: 'myqueue'
       }, cb)
     }
-    nc.publish('foo', function () {
+    nc.publish('foo', () => {
       received.should.equal(1)
       nc.close()
       done()
     })
   })
 
-  it('should allow queue subscribers and normal subscribers to work together', function (done) {
+  it('should allow queue subscribers and normal subscribers to work together', done => {
     const nc = NATS.connect(PORT)
     const expected = 4
     let received = 0
-    const recv = function () {
+    const recv = () => {
       received += 1
       if (received === expected) {
         nc.close()
@@ -90,7 +93,7 @@ describe('Queues', function () {
     nc.flush()
   })
 
-  it('should spread messages out equally (given random)', function (done) {
+  it('should spread messages out equally (given random)', done => {
     /* jshint loopfunc: true */
     const nc = NATS.connect(PORT)
     const total = 5000
@@ -103,18 +106,16 @@ describe('Queues', function () {
       received[i] = 0
       nc.subscribe('foo.bar', {
         queue: 'spreadtest'
-      }, (function (index) {
-        return function () {
-          received[index] += 1
-        }
-      }(i)))
+      }, ((index => () => {
+        received[index] += 1
+      })(i)))
     }
 
     for (i = 0; i < total; i++) {
       nc.publish('foo.bar', 'ok')
     }
 
-    nc.flush(function () {
+    nc.flush(() => {
       for (let i = 0; i < numSubscribers; i++) {
         Math.abs(received[i] - avg).should.be.below(allowedVariance)
       }
@@ -123,32 +124,32 @@ describe('Queues', function () {
     })
   })
 
-  it('should deliver only one mesage to queue subscriber regardless of wildcards', function (done) {
+  it('should deliver only one mesage to queue subscriber regardless of wildcards', done => {
     const nc = NATS.connect(PORT)
     let received = 0
     nc.subscribe('foo.bar', {
       queue: 'wcqueue'
-    }, function () {
+    }, () => {
       received += 1
     })
     nc.subscribe('foo.*', {
       queue: 'wcqueue'
-    }, function () {
+    }, () => {
       received += 1
     })
     nc.subscribe('foo.>', {
       queue: 'wcqueue'
-    }, function () {
+    }, () => {
       received += 1
     })
-    nc.publish('foo.bar', function () {
+    nc.publish('foo.bar', () => {
       received.should.equal(1)
       nc.close()
       done()
     })
   })
 
-  it('should deliver to multiple queue groups', function (done) {
+  it('should deliver to multiple queue groups', done => {
     const nc = NATS.connect(PORT)
     let received1 = 0
     let received2 = 0
@@ -156,12 +157,12 @@ describe('Queues', function () {
 
     nc.subscribe('foo.bar', {
       queue: 'r1'
-    }, function () {
+    }, () => {
       received1 += 1
     })
     nc.subscribe('foo.bar', {
       queue: 'r2'
-    }, function () {
+    }, () => {
       received2 += 1
     })
 
@@ -169,7 +170,7 @@ describe('Queues', function () {
       nc.publish('foo.bar')
     }
 
-    nc.flush(function () {
+    nc.flush(() => {
       received1.should.equal(num)
       received2.should.equal(num)
       nc.close()

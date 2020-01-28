@@ -14,7 +14,6 @@
  */
 
 /* jslint node: true */
-/* global describe: false, before: false, after: false, it: false */
 /* jshint -W030 */
 'use strict'
 
@@ -25,13 +24,17 @@ const os = require('os')
 const path = require('path')
 const fs = require('fs')
 const nuid = require('nuid')
+const after = require('mocha').after
+const before = require('mocha').before
+const describe = require('mocha').describe
+const it = require('mocha').it
 
-describe('Auth Basics', function () {
+describe('Auth Basics', () => {
   const PORT = 6758
   let server
 
   // Start up our own nats-server
-  before(function (done) {
+  before(done => {
     const conf = {
       authorization: {
         SUB: {
@@ -46,7 +49,7 @@ describe('Auth Basics', function () {
       }
     }
     const cf = path.resolve(os.tmpdir(), 'conf-' + nuid.next() + '.conf')
-    fs.writeFile(cf, ncu.j(conf), function (err) {
+    fs.writeFile(cf, ncu.j(conf), err => {
       if (err) {
         done(err)
       } else {
@@ -56,11 +59,11 @@ describe('Auth Basics', function () {
   })
 
   // Shutdown our server
-  after(function (done) {
+  after(done => {
     nsc.stopServer(server, done)
   })
 
-  it('bar cannot subscribe/pub foo', function (done) {
+  it('bar cannot subscribe/pub foo', done => {
     const nc = NATS.connect({
       port: PORT,
       user: 'bar',
@@ -68,15 +71,15 @@ describe('Auth Basics', function () {
     })
 
     let perms = 0
-    nc.on('permission_error', function () {
+    nc.on('permission_error', () => {
       perms++
       if (perms === 2) {
         nc.close()
         done()
       }
     })
-    nc.flush(function () {
-      nc.subscribe('foo', function () {
+    nc.flush(() => {
+      nc.subscribe('foo', () => {
         nc.close()
         done("Shouldn't be able to publish foo")
       })
@@ -84,7 +87,7 @@ describe('Auth Basics', function () {
     })
   })
 
-  it('permission_error is not fatal', function (done) {
+  it('permission_error is not fatal', done => {
     const nc = NATS.connect({
       port: PORT,
       user: 'bar',
@@ -92,7 +95,7 @@ describe('Auth Basics', function () {
     })
 
     const errs = []
-    nc.on('permission_error', function (err) {
+    nc.on('permission_error', err => {
       errs.push(err)
     })
 
