@@ -368,6 +368,53 @@ describe('Reconnect functionality', () => {
     })
   })
 
+  it('should not lose messages if published after disconnect', (done) => {
+    const nc = NATS.connect({
+      port: PORT,
+      reconnectTimeWait: 100
+    })
+    nc.subscribe('foo', () => {
+      nc.close()
+      done()
+    })
+    nc.on('disconnect', (client) => {
+      // restart server
+      if (server === null) {
+        nc.publish('foo')
+        server = nsc.startServer(PORT)
+      }
+    })
+    nc.on('connect', () => {
+      const s = server
+      server = null
+      nsc.stopServer(s)
+    })
+  })
+
+  it('should properly do a publish callback if published after disconnect', (done) => {
+    const nc = NATS.connect({
+      port: PORT,
+      reconnectTimeWait: 100
+    })
+    nc.subscribe('foo')
+    nc.on('disconnect', (client) => {
+      // restart server
+      if (server === null) {
+        nc.publish('foo', (err) => {
+          should.not.exist(err)
+          nc.close()
+          done()
+        })
+        server = nsc.startServer(PORT)
+      }
+    })
+    nc.on('connect', () => {
+      const s = server
+      server = null
+      nsc.stopServer(s)
+    })
+  })
+
   it('should emit reconnect before flush callbacks are called', (done) => {
     const nc = NATS.connect({
       port: PORT,
