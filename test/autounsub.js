@@ -60,6 +60,25 @@ describe('Max responses and Auto-unsub', () => {
     })
   })
 
+  it('should unsub if max messages already received', done => {
+    const nc = NATS.connect(PORT)
+    let gotOne = false
+    const sid = nc.subscribe('foo', () => {
+      if (!gotOne) {
+        gotOne = true
+        nc.unsubscribe(sid, 1)
+      }
+    })
+    for (let i = 0; i < 2; i++) {
+      nc.publish('foo')
+    }
+    nc.flush(() => {
+      nc.numSubscriptions().should.be.equal(0)
+      nc.close()
+      done()
+    })
+  })
+
   it('should only received max responses requested (client support)', done => {
     const nc = NATS.connect(PORT)
     const WANT = 10

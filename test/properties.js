@@ -18,9 +18,10 @@
 'use strict'
 
 const NATS = require('../')
-const should = require('should')
 const describe = require('mocha').describe
 const it = require('mocha').it
+const net = require('net')
+const should = require('should')
 
 describe('Base Properties', () => {
   it('should have a version property', () => {
@@ -106,5 +107,57 @@ describe('Connection Properties', () => {
     nc.options.reconnectTimeWait.should.equal(11)
     nc.options.useOldRequestStyle.should.equal(true)
     nc.close()
+  })
+
+  it('should reject non-object options', () => {
+    try {
+      NATS.connect('localhost:4222', 'some string')
+    } catch (err) {
+      err.should.be.instanceof(NATS.NatsError)
+      err.should.have.property('code', NATS.BAD_OPTIONS)
+    }
+  })
+
+  it('should honor noEcho', (done) => {
+    let client
+    const srv = net.createServer((c) => {
+      client = c
+      client.write('INFO ' + JSON.stringify({
+        server_id: 'TEST',
+        version: '0.0.0',
+        node: 'node0.0.0',
+        host: '127.0.0.1',
+        port: srv.address.port,
+        auth_required: false,
+        ssl_required: false,
+        tls_required: false,
+        tls_verify: false
+      }) + '\r\n')
+    })
+    srv.listen(0, () => {
+      const p = srv.address().port
+      const nc = NATS.connect('nats://localhost:' + p, {
+        noEcho: true,
+        reconnect: false
+      })
+      nc.on('error', (err) => {
+        // nc.close()
+        err.should.be.instanceof(NATS.NatsError)
+        err.should.have.property('code', NATS.NO_ECHO_NOT_SUPPORTED)
+        client.end(() => {
+          srv.close(done)
+        })
+      })
+    })
+  })
+
+  it('timeout should be a number', () => {
+    try {
+      NATS.connect({ timeout: '500' })
+    } catch (err) {
+      err.should.be.instanceof(NATS.NatsError)
+      err.should.have.property('code', NATS.BAD_OPTIONS)
+      err.should.have.property('message', 'timeout should be a number')
+    }
   })
 })

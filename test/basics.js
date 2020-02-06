@@ -49,6 +49,26 @@ describe('Basics', () => {
     })
   })
 
+  it('should do count subscriptions', done => {
+    const nc = NATS.connect(PORT)
+    nc.numSubscriptions().should.be.equal(0)
+    const sid = nc.subscribe('foo', () => {})
+    nc.numSubscriptions().should.be.equal(1)
+    nc.unsubscribe(sid)
+    nc.numSubscriptions().should.be.equal(0)
+    nc.close()
+    done()
+  })
+
+  it('url is sanitized', done => {
+    const nc = NATS.connect('localhost:' + PORT)
+    nc.on('connect', () => {
+      nc.currentServer.toString().should.equal('nats://localhost:' + PORT)
+      nc.close()
+      done()
+    })
+  })
+
   it('should do basic publish', done => {
     const nc = NATS.connect(PORT)
     nc.publish('foo')
@@ -982,6 +1002,16 @@ describe('Basics', () => {
         nc.requestOne(subj, {}, { queue: 'worker' }, 1000, h)
         nc.requestOne(subj, 10, { queue: 'worker' }, 1000, h)
       })
+    })
+  })
+
+  it('reject non-tls server', (done) => {
+    const nc = NATS.connect({ port: PORT, tls: true })
+    nc.on('error', (err) => {
+      nc.close()
+      err.should.be.instanceof(NATS.NatsError)
+      err.should.have.property('code', NATS.NON_SECURE_CONN_REQ)
+      done()
     })
   })
 })
