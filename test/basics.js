@@ -23,6 +23,7 @@ const after = require('mocha').after
 const before = require('mocha').before
 const describe = require('mocha').describe
 const it = require('mocha').it
+const net = require('net')
 
 describe('Basics', () => {
   const PORT = 1423
@@ -151,7 +152,7 @@ describe('Basics', () => {
       nc.publish(reply, replyMsg)
     })
 
-    const sub = nc.request('foo', initMsg, reply => {
+    const sub = nc.request('foo', initMsg, _ => {
       nc.flush(() => {
         received.should.equal(expected)
         nc.close()
@@ -1012,6 +1013,74 @@ describe('Basics', () => {
       err.should.be.instanceof(NATS.NatsError)
       err.should.have.property('code', NATS.NON_SECURE_CONN_REQ)
       done()
+    })
+  })
+
+  it('should resend unsubs', (done) => {
+    let conn
+    let unsubs = 0
+    const srv = net.createServer((c) => {
+      c.write('INFO ' + JSON.stringify({
+        server_id: 'TEST',
+        version: '0.0.0',
+        host: '127.0.0.1',
+        port: srv.address.port,
+        auth_required: false
+      }) + '\r\n')
+      c.on('data', (d) => {
+        const r = d.toString()
+        const lines = r.split('\r\n')
+        lines.forEach((line) => {
+          if (line === '\r\n') {
+            return
+          }
+          if (/^CONNECT\s+/.test(line)) {
+          } else if (/^PING/.test(line)) {
+            c.write('PONG\r\n')
+          } else if (/^SUB\s+/i.test(line)) {
+            c.write('MSG test 2 11\r\nHello World\r\n')
+          } else if (/^UNSUB\s+/i.test(line)) {
+            unsubs++
+            if (unsubs === 1) {
+              const args = line.split(' ')
+              args.length.should.equal(3)
+              // number of messages to when to unsub
+              args[2].should.equal('10')
+              // kick the client
+              c.destroy()
+              return
+            }
+            if (unsubs === 2) {
+              const args = line.split(' ')
+              args.length.should.equal(3)
+              args[2].should.equal('9')
+              conn.close()
+              srv.close(() => {
+                done()
+              })
+            }
+          } else if (/^MSG\s+/i.test(line)) {
+          } else if (/^INFO\s+/i.test(line)) {
+          } else {
+            // unknown
+          }
+        })
+      })
+      c.on('error', () => {
+        // we are messing with the server so this will raise connection reset
+      })
+    })
+    srv.listen(0, () => {
+      const p = srv.address().port
+      const nc = NATS.connect('nats://localhost:' + p, {
+        reconnect: true,
+        reconnectTimeWait: 250
+      })
+      conn = nc
+      nc.on('connect', () => {
+        const opts = { max: 10 }
+        nc.subscribe('test', opts, () => {})
+      })
     })
   })
 })
