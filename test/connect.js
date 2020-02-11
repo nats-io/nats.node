@@ -93,7 +93,7 @@ describe('Basic Connectivity', () => {
       connectingEvents++
     })
     setTimeout(() => {
-      connectingEvents.should.equal(5)
+      connectingEvents.should.be.within(5, 7)
       nc.close()
       done()
     }, 550)
@@ -108,12 +108,12 @@ describe('Basic Connectivity', () => {
       servers: natsServers
     })
     let recvMsg = ''
-    ua.subscribe('topic1', (msg, reply, subject) => {
+    ua.subscribe('topic1', (msg) => {
       recvMsg = msg
     })
     setTimeout(() => {
       ub.publish('topic1', 'hello')
-    }, 100 * 1)
+    }, 100)
     setTimeout(() => {
       recvMsg.should.equal('hello')
       ua.close()
@@ -132,13 +132,13 @@ describe('Basic Connectivity', () => {
       servers: natsServers,
       noRandomize: true
     })
-    let recvMsg = ''
-    ua.subscribe('topic1', (msg, reply, subject) => {
+    let recvMsg
+    ua.subscribe('topic1', (msg) => {
       recvMsg = msg
     })
     setTimeout(() => {
       ub.publish('topic1', 'hello')
-    }, 100 * 1)
+    }, 100)
     setTimeout(() => {
       recvMsg.should.equal('hello')
       ua.close()

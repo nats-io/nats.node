@@ -49,7 +49,7 @@ describe('Reconnect functionality', () => {
     nc.on('connect', () => {
       nsc.stopServer(server)
     })
-    nc.on('reconnecting', (client) => {
+    nc.on('reconnecting', () => {
       done(new Error('Reconnecting improperly called'))
     })
     nc.on('close', () => {
@@ -70,11 +70,14 @@ describe('Reconnect functionality', () => {
         startTime = new Date()
       })
     })
-    nc.on('reconnecting', (client) => {
-      const elapsed = new Date() - startTime
-      elapsed.should.be.within(WAIT, 5 * WAIT)
-      nc.close()
-      done()
+    // first time it tries immediately, second time it waits
+    nc.once('reconnecting', () => {
+      nc.on('reconnecting', () => {
+        const elapsed = new Date() - startTime
+        elapsed.should.be.within(WAIT, WAIT * 2)
+        nc.close()
+        done()
+      })
     })
     nc.on('disconnect', () => {
       const elapsed = new Date() - startTime
@@ -122,17 +125,11 @@ describe('Reconnect functionality', () => {
       reconnectTimeWait: WAIT,
       maxReconnectAttempts: ATTEMPTS
     })
-    let startTime
     let numAttempts = 0
     nc.on('connect', () => {
-      nsc.stopServer(server, () => {
-        startTime = new Date()
-      })
+      nsc.stopServer(server, () => {})
     })
-    nc.on('reconnecting', (client) => {
-      const elapsed = new Date() - startTime
-      elapsed.should.be.within(WAIT, 5 * WAIT)
-      startTime = new Date()
+    nc.on('reconnecting', () => {
       numAttempts += 1
     })
     nc.on('close', () => {
@@ -163,7 +160,7 @@ describe('Reconnect functionality', () => {
         server = null
       })
     })
-    nc.on('reconnecting', (client) => {
+    nc.on('reconnecting', () => {
       numAttempts += 1
       // attempt indefinitely to reconnect
       nc.reconnects.should.equal(numAttempts)
@@ -192,7 +189,7 @@ describe('Reconnect functionality', () => {
         server = null
       })
     })
-    nc.on('reconnecting', (client) => {
+    nc.on('reconnecting', () => {
       // restart server and make sure next flush works ok
       if (server === null) {
         server = nsc.startServer(PORT)
@@ -221,7 +218,7 @@ describe('Reconnect functionality', () => {
       nc.close()
       done()
     })
-    nc.on('reconnecting', (client) => {
+    nc.on('reconnecting', () => {
       // restart server and make sure next flush works ok
       if (server === null) {
         server = nsc.startServer(PORT)
@@ -253,7 +250,7 @@ describe('Reconnect functionality', () => {
         queue: 'myReconnectQueue'
       }, cb)
     }
-    nc.on('reconnecting', (client) => {
+    nc.on('reconnecting', () => {
       // restart server and make sure next flush works ok
       if (server === null) {
         server = nsc.startServer(PORT)
@@ -325,7 +322,7 @@ describe('Reconnect functionality', () => {
       port: PORT,
       reconnectTimeWait: 100
     })
-    nc.on('reconnecting', (client) => {
+    nc.on('reconnecting', () => {
       // restart server
       if (server === null) {
         nc.publish('foo', () => {
@@ -354,7 +351,7 @@ describe('Reconnect functionality', () => {
       nc.close()
       done()
     })
-    nc.on('reconnecting', (client) => {
+    nc.on('reconnecting', () => {
       // restart server
       if (server === null) {
         nc.publish('foo')
