@@ -1038,7 +1038,7 @@ describe('Basics', () => {
           } else if (/^PING/.test(line)) {
             c.write('PONG\r\n')
           } else if (/^SUB\s+/i.test(line)) {
-            c.write('MSG test 2 11\r\nHello World\r\n')
+            c.write('MSG test 1 11\r\nHello World\r\n')
           } else if (/^UNSUB\s+/i.test(line)) {
             unsubs++
             if (unsubs === 1) {
@@ -1081,6 +1081,16 @@ describe('Basics', () => {
         const opts = { max: 10 }
         nc.subscribe('test', opts, () => {})
       })
+    })
+  })
+
+  it('sub ids should start at 1', (done) => {
+    const nc = NATS.connect({ port: PORT, json: true, useOldRequestStyle: true })
+    nc.on('connect', () => {
+      const ssid = nc.subscribe(nc.createInbox(), () => {})
+      ssid.should.be.equal(1)
+      nc.close()
+      done()
     })
   })
 })
