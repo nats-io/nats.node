@@ -178,14 +178,16 @@ describe('Cluster', () => {
         s2 = null
       })
     })
-    nc.on('reconnecting', client => {
+    nc.on('reconnecting', () => {
       const elapsed = new Date() - startTime
-      elapsed.should.be.within(WAIT, 5 * WAIT)
+      if (nc.currentServer.lastConnect !== 0) {
+        elapsed.should.be.within(nc.currentServer.lastConnect - Date.now(), 2 * WAIT)
+      }
       startTime = new Date()
       numAttempts += 1
     })
     nc.on('close', () => {
-      numAttempts.should.equal(ATTEMPTS)
+      numAttempts.should.equal(ATTEMPTS * 2)
       nc.close()
       done()
     })
