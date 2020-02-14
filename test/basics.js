@@ -804,22 +804,6 @@ describe('Basics', () => {
     })
   })
 
-  it('oldrequest after drain fails callback', done => {
-    const subj = NATS.createInbox()
-    const nc1 = NATS.connect(PORT)
-
-    nc1.flush(() => {
-      nc1.drain()
-      nc1.oldRequest(subj, (err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      })
-    })
-  })
-
   it('reject drain after close', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
@@ -834,7 +818,7 @@ describe('Basics', () => {
     })
   })
 
-  it('reject drainsubscription after close', done => {
+  it('reject drain subscription after close', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       nc1.close()
