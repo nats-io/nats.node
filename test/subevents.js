@@ -124,9 +124,7 @@ describe('Subscription Events', () => {
     nc.subscribe(subj, (subject, reply) => {
       nc.publish(reply, 'OK')
     })
-    nc.request(subj, null, {
-      max: 1
-    })
+    nc.request(subj, () => {}, null, { max: 1 })
 
     nc.on('unsubscribe', (sid, subject) => {
       should.exist(sid)

@@ -179,9 +179,7 @@ describe('Max responses and Auto-unsub', () => {
       })
     }
 
-    nc.request('help', null, {
-      max: 1
-    }, () => {
+    nc.request('help', () => {
       received += 1
       nc.flush(() => {
         should.exists(received)
@@ -189,7 +187,7 @@ describe('Max responses and Auto-unsub', () => {
         nc.close()
         done()
       })
-    })
+    }, null, { max: 1 })
   })
 
   function requestSubscriptions (nc, done) {
@@ -202,11 +200,9 @@ describe('Max responses and Auto-unsub', () => {
     /* jshint loopfunc: true */
     // Create 5 requests
     for (let i = 0; i < 5; i++) {
-      nc.request('help', null, {
-        max: 1
-      }, () => {
+      nc.request('help', () => {
         received += 1
-      })
+      }, null, { max: 1 })
     }
     nc.flush(() => {
       setTimeout(() => {
@@ -244,11 +240,9 @@ describe('Max responses and Auto-unsub', () => {
       nc.publish(reply, 'I can help!')
     })
 
-    nc.request('help', null, {
-      max: 3
-    }, () => {
+    nc.request('help', () => {
       received++
-    })
+    }, null, { max: 3 })
 
     nc.flush(() => {
       setTimeout(() => {
@@ -262,15 +256,6 @@ describe('Max responses and Auto-unsub', () => {
   it('request should received specified number of messages', done => {
     /* jshint loopfunc: true */
     const nc = NATS.connect(PORT)
-    requestGetsWantedNumberOfMessages(nc, done)
-  })
-
-  it('old request should received specified number of messages', done => {
-    /* jshint loopfunc: true */
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
     requestGetsWantedNumberOfMessages(nc, done)
   })
 })

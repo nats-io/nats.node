@@ -183,15 +183,12 @@ describe('Timeout and max received events for subscriptions', () => {
   it('should perform simple timeouts on requests', done => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
-      nc.request('foo', null, {
-        max: 1,
-        timeout: 1000
-      }, err => {
+      nc.request('foo', (err) => {
         err.should.be.instanceof(NATS.NatsError)
         err.should.have.property('code', NATS.REQ_TIMEOUT)
         nc.close()
         done()
-      })
+      }, null, { max: 1, timeout: 1000 })
     })
   })
 
@@ -203,10 +200,7 @@ describe('Timeout and max received events for subscriptions', () => {
       })
 
       let responses = 0
-      nc.request('foo', null, {
-        max: 2,
-        timeout: 1000
-      }, err => {
+      nc.request('foo', err => {
         if (!Object.hasOwnProperty.call(err, 'code')) {
           responses++
           return
@@ -216,7 +210,7 @@ describe('Timeout and max received events for subscriptions', () => {
         err.should.have.property('code', NATS.REQ_TIMEOUT)
         nc.close()
         done()
-      })
+      }, null, { max: 2, timeout: 1000 })
     })
   })
 
@@ -224,12 +218,9 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     let calledOnRequestHandler = false
     nc.on('connect', () => {
-      const sid = nc.request('foo', null, {
-        max: 2,
-        timeout: 1000
-      }, () => {
+      const sid = nc.request('foo', () => {
         calledOnRequestHandler = true
-      })
+      }, null, { max: 2, timeout: 1000 })
 
       nc.timeout(sid, 1500, 2, v => {
         calledOnRequestHandler.should.be.false()

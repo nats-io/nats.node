@@ -171,21 +171,7 @@ declare class Client extends events.EventEmitter {
 	 * opt_options = {max:N, timeout:N}. Otherwise you will need to unsubscribe to stop
 	 * the message stream manually by calling unsubscribe() on the subscription id returned.
 	 */
-	request(subject: string, callback: Function): number;
-	request(subject: string, msg: any, callback: Function): number;
-	request(subject: string, msg: any, options: RequestOptions, callback: Function): number;
-
-	/**
-	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
-	 * This should be treated as a subscription. Request one, will terminate the subscription
-	 * after the first response is received or the timeout is reached.
-	 * The callback can be called with either a message payload or a NatsError to indicate
-	 * a timeout has been reached.
-	 * The subscription id is returned.
-	 */
-	requestOne(subject: string, timeout: number, callback: Function): number;
-	requestOne(subject: string, msg: any, timeout: number, callback: Function): number;
-	requestOne(subject: string, msg: any, options: RequestOptions, timeout: number, callback: Function): number;
+	request(subject: string, callback: Function, data?: any, options?: RequestOptions)
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.

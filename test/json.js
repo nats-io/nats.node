@@ -81,7 +81,7 @@ describe('JSON payloads', () => {
         nc.publish(reply, msg)
       }, { max: 1 })
 
-      nc.request('reqrep', input, (msg) => {
+      nc.request('reqrep', (msg) => {
         if (msg instanceof Object) {
           msg.should.deepEqual(expected)
         } else {
@@ -90,7 +90,7 @@ describe('JSON payloads', () => {
         nc.close()
 
         done()
-      })
+      }, input)
     }
   }
 

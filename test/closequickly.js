@@ -131,9 +131,9 @@ describe('Close functionality', () => {
     })
 
     nc.on('connect', () => {
-      nc.request('foo', undefined, { timeout: 1000, max: 1 }, (err) => {
+      nc.request('foo', (err) => {
         throw err
-      })
+      }, undefined, { timeout: 1000, max: 1 })
       nc.flush(() => {
         server.kill()
       })

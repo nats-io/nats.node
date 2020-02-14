@@ -66,7 +66,7 @@ describe('Callbacks', () => {
     })
 
     nc.flush(() => {
-      nc.requestOne('rr', 5000, (msg, reply) => {
+      nc.request('rr', (msg, reply) => {
         if (msg instanceof NATS.NatsError) {
           nc.close()
           done('Error making request', msg)
@@ -76,7 +76,7 @@ describe('Callbacks', () => {
         reply.should.be.equal('foo')
         nc.close()
         done()
-      })
+      }, '', { timeout: 5000 })
     })
   })
 })

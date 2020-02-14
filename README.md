@@ -61,13 +61,13 @@ nc.request('request', (msg) => {
 // the first max messages are received. You can also specify the number
 // of milliseconds you are willing to wait for the response - when a timeout
 // is specified, you can receive an error
-nc.request('help', null, { max: 1, timeout: 1000 }, (msg) => {
+nc.request('help', (msg) => {
   if (msg instanceof NATS.NatsError && msg.code === NATS.REQ_TIMEOUT) {
     console.log('request timed out')
   } else {
     console.log('Got a response for help: ' + msg)
   }
-})
+}, null, { max: 1, timeout: 1000 })
 
 // Replies
 nc.subscribe('help', function (request, replyTo) {

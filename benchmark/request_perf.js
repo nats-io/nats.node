@@ -39,9 +39,7 @@ nc1.on('connect', function () {
   // Need to flush here since using separate connections.
   nc1.flush(function () {
     for (let i = 0; i < loop; i++) {
-      nc2.request('request.test', 'help', {
-        max: 1
-      }, function () {
+      nc2.request('request.test', function () {
         received += 1
         if (received === loop) {
           const stop = new Date()
@@ -54,7 +52,7 @@ nc1.on('connect', function () {
         } else if (received % hash === 0) {
           process.stdout.write('+')
         }
-      })
+      }, 'help', { max: 1 })
     }
   })
 

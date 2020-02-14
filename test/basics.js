@@ -128,12 +128,12 @@ describe('Basics', () => {
       nc.publish(reply, replyMsg)
     })
 
-    nc.request('foo', initMsg, reply => {
+    nc.request('foo', reply => {
       should.exist(reply)
       reply.should.equal(replyMsg)
       nc.close()
       done()
-    })
+    }, initMsg)
   })
 
   it('should return a sub id for requests', done => {
@@ -152,7 +152,7 @@ describe('Basics', () => {
       nc.publish(reply, replyMsg)
     })
 
-    const sub = nc.request('foo', initMsg, _ => {
+    const sub = nc.request('foo', _ => {
       nc.flush(() => {
         received.should.equal(expected)
         nc.close()
@@ -161,7 +161,7 @@ describe('Basics', () => {
 
       received += 1
       nc.unsubscribe(sub)
-    })
+    }, initMsg)
   })
 
   it('should do single partial wildcard subscriptions correctly', done => {
@@ -323,214 +323,6 @@ describe('Basics', () => {
     nc.publish('foo2', utf8msg)
   })
 
-  function requestOneGetsReply (nc, done) {
-    const initMsg = 'Hello World'
-    const replyMsg = 'Hello Back!'
-
-    nc.subscribe('foo', (msg, reply) => {
-      should.exist(msg)
-      msg.should.equal(initMsg)
-      should.exist(reply)
-      reply.should.match(/_INBOX\.*/)
-      nc.publish(reply, replyMsg)
-    })
-
-    let gotOne = false
-    nc.requestOne('foo', initMsg, null, 1000, reply => {
-      should.exist(reply)
-      reply.should.equal(replyMsg)
-      if (!gotOne) {
-        gotOne = true
-        nc.close()
-        done()
-      }
-    })
-  }
-
-  it('should do requestone-get-reply', (done) => {
-    const nc = NATS.connect(PORT)
-    requestOneGetsReply(nc, done)
-  })
-
-  it('oldRequestOne should do requestone-get-reply', (done) => {
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    requestOneGetsReply(nc, done)
-  })
-
-  function requestOneWillUnsubscribe (nc, done) {
-    const rsub = 'x.y.z'
-    let count = 0
-
-    nc.subscribe(rsub, (msg, reply) => {
-      reply.should.match(/_INBOX\.*/)
-      nc.publish(reply, 'y')
-      nc.publish(reply, 'yy')
-      nc.flush()
-      setTimeout(() => {
-        nc.publish(reply, 'z')
-        nc.flush()
-        nc.close()
-        setTimeout(() => {
-          count.should.equal(1)
-          nc.close()
-          done()
-        }, 1000)
-      }, 1500)
-    })
-
-    nc.requestOne(rsub, '', null, 1000, reply => {
-      reply.should.not.be.instanceof(NATS.NatsError)
-      should.exist(reply)
-      count++
-    })
-  }
-
-  it('should do requestone-will-unsubscribe', function (done) {
-    // eslint-disable-next-line
-    this.timeout(3000);
-    const nc = NATS.connect(PORT)
-    requestOneWillUnsubscribe(nc, done)
-  })
-
-  it('oldRequest: should do requestone-will-unsubscribe', function (done) {
-    // eslint-disable-next-line
-    this.timeout(3000);
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    requestOneWillUnsubscribe(nc, done)
-  })
-
-  function requestTimeoutTest (nc, done) {
-    nc.requestOne('a.b.c', '', null, 1000, reply => {
-      should.exist(reply)
-      reply.should.be.instanceof(NATS.NatsError)
-      reply.should.have.property('code', NATS.REQ_TIMEOUT)
-      nc.close()
-      done()
-    })
-  }
-
-  it('should do requestone-can-timeout', done => {
-    const nc = NATS.connect(PORT)
-    requestTimeoutTest(nc, done)
-  })
-
-  it('old request one - should do requestone-can-timeout', done => {
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    requestTimeoutTest(nc, done)
-  })
-
-  function shouldUnsubscribeWhenRequestOneTimeout (nc, done) {
-    let replies = 0
-    let responses = 0
-    // set a subscriber to respond to the request
-    nc.subscribe('a.b.c', (msg, reply) => {
-      setTimeout(() => {
-        nc.publish(reply, '')
-        nc.flush()
-        replies++
-      }, 500)
-    }, { max: 1 })
-
-    // request one - we expect a timeout
-    nc.requestOne('a.b.c', '', null, 250, reply => {
-      reply.should.be.instanceof(NATS.NatsError)
-      reply.should.have.property('code', NATS.REQ_TIMEOUT)
-      if (!Object.hasOwnProperty.call(reply, 'code')) {
-        responses++
-      }
-    })
-
-    // verify reply was sent, but we didn't get it
-    setTimeout(() => {
-      should(replies).equal(1)
-      should(responses).equal(0)
-      nc.close()
-      done()
-    }, 1000)
-  }
-
-  it('should unsubscribe when request one timesout', function (done) {
-    // eslint-disable-next-line
-        this.timeout(3000);
-    const nc = NATS.connect(PORT)
-    shouldUnsubscribeWhenRequestOneTimeout(nc, done)
-  })
-
-  it('requestone has negative sids', (done) => {
-    const nc = NATS.connect(PORT)
-    nc.flush(() => {
-      const sid = nc.requestOne('121.2.13.4', 1000, r => {
-        should.fail("got message when it shouldn't have", r)
-      })
-      sid.should.be.type('number')
-      sid.should.be.below(0)
-
-      // this cancel returns the config
-      const conf = nc.cancelMuxRequest(sid)
-
-      // after cancel it shouldn't exit
-      nc.respmux.requestMap.should.not.have.ownProperty(conf.token)
-      nc.close()
-      done()
-    })
-  })
-
-  function paramTranspositions (nc, done) {
-    let all = false
-    let four = false
-    let three = true
-    let count = 0
-    nc.flush(() => {
-      nc.requestOne('a', NATS.EMPTY, {}, 1, () => {
-        all = true
-        called()
-      })
-
-      nc.requestOne('b', NATS.EMPTY, 1, () => {
-        four = true
-        called()
-      })
-
-      nc.requestOne('c', 1, () => {
-        three = true
-        called()
-      })
-    })
-
-    function called () {
-      count++
-      if (count === 3) {
-        all.should.be.true()
-        four.should.be.true()
-        three.should.be.true()
-        nc.close()
-        done()
-      }
-    }
-  }
-
-  it('requestOne: optional param transpositions', (done) => {
-    const nc = NATS.connect(PORT)
-    paramTranspositions(nc, done)
-  })
-
-  it('old requestOne: optional param transpositions', (done) => {
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    paramTranspositions(nc, done)
-  })
-
   it('echo false is honored', done => {
     let nc1 = NATS.connect({
       port: PORT,
@@ -545,14 +337,14 @@ describe('Basics', () => {
     })
 
     nc1.flush(() => {
-      var subj = NATS.createInbox()
+      const subj = NATS.createInbox()
 
-      var count = 0
+      let count = 0
       nc1.subscribe(subj, () => {
         count++
       })
 
-      var nc2 = NATS.connect({
+      const nc2 = NATS.connect({
         port: PORT,
         name: 'default client'
       })
@@ -784,13 +576,15 @@ describe('Basics', () => {
 
     nc1.flush(() => {
       nc1.drain()
-      nc1.request(subj, (err) => {
+      try {
+        nc1.request(subj, () => {})
+      } catch (err) {
         if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
           done()
         } else {
           done(err)
         }
-      })
+      }
     })
   })
 
@@ -868,7 +662,7 @@ describe('Basics', () => {
     })
   })
 
-  it('json requests', done => {
+  it.skip('json requests', done => {
     const nc = NATS.connect({ port: PORT, json: true })
     nc.on('connect', () => {
       let c = 0
@@ -904,64 +698,7 @@ describe('Basics', () => {
 
       nc.flush(() => {
         // simplest signature - empty resolves to ''
-        nc.requestOne(subj, 1000, h)
-
-        // subj, payload, timeout, handler
-        nc.requestOne(subj, 'a', 1000, h)
-        nc.requestOne(subj, {}, 1000, h)
-        nc.requestOne(subj, 10, 1000, h)
-
-        nc.requestOne(subj, 'a', 1000, h)
-        nc.requestOne(subj, {}, 1000, h)
-        nc.requestOne(subj, 10, 1000, h)
-
-        // this one is misleading, the option is really a payload
-        nc.requestOne(subj, { queue: 'bar' }, 1000, h)
-
-        nc.requestOne(subj, 'a', { queue: 'worker' }, 1000, h)
-        nc.requestOne(subj, {}, { queue: 'worker' }, 1000, h)
-        nc.requestOne(subj, 10, { queue: 'worker' }, 1000, h)
-      })
-    })
-  })
-
-  it('json json old requests', done => {
-    const nc = NATS.connect({ port: PORT, json: true, useOldRequestStyle: true })
-    nc.on('connect', () => {
-      let c = 0
-      const subj = NATS.createInbox()
-      nc.subscribe(subj, (m, reply) => {
-        nc.publish(reply, m)
-      })
-
-      let str = 0
-      let obj = 0
-      let num = 0
-      const h = m => {
-        switch (typeof m) {
-          case 'number':
-            num++
-            break
-          case 'string':
-            str++
-            break
-          case 'object':
-            obj++
-            break
-        }
-        c++
-        if (c === 11) {
-          str.should.be.equal(4)
-          obj.should.be.equal(4)
-          num.should.be.equal(3)
-          nc.close()
-          done()
-        }
-      }
-
-      nc.flush(() => {
-        // simplest signature - empty resolves to ''
-        nc.requestOne(subj, 1000, h)
+        nc.requestOne(subj, h, 1000)
 
         // subj, payload, timeout, handler
         nc.requestOne(subj, 'a', 1000, h)
