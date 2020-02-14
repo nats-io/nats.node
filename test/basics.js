@@ -41,7 +41,7 @@ describe('Basics', () => {
 
   it('should do basic subscribe and unsubscribe', done => {
     const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo')
+    const sid = nc.subscribe('foo', () => {})
     should.exist(sid)
     nc.unsubscribe(sid)
     nc.flush(() => {
@@ -252,7 +252,7 @@ describe('Basics', () => {
 
   it('should handle an unsubscribe after close of connection', (done) => {
     const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo')
+    const sid = nc.subscribe('foo', () => {})
     nc.close()
     nc.unsubscribe(sid)
     done()
@@ -432,15 +432,13 @@ describe('Basics', () => {
     let replies = 0
     let responses = 0
     // set a subscriber to respond to the request
-    nc.subscribe('a.b.c', {
-      max: 1
-    }, (msg, reply) => {
+    nc.subscribe('a.b.c', (msg, reply) => {
       setTimeout(() => {
         nc.publish(reply, '')
         nc.flush()
         replies++
       }, 500)
-    })
+    }, { max: 1 })
 
     // request one - we expect a timeout
     nc.requestOne('a.b.c', '', null, 250, reply => {
@@ -464,16 +462,6 @@ describe('Basics', () => {
     // eslint-disable-next-line
         this.timeout(3000);
     const nc = NATS.connect(PORT)
-    shouldUnsubscribeWhenRequestOneTimeout(nc, done)
-  })
-
-  it('old requestOne should unsubscribe when request one timesout', function (done) {
-    // eslint-disable-next-line
-        this.timeout(3000);
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
     shouldUnsubscribeWhenRequestOneTimeout(nc, done)
   })
 
@@ -655,7 +643,7 @@ describe('Basics', () => {
     })
     let drainCB = false
     nc1.on('connect', () => {
-      nc1.subscribe(subj, { queue: 'q1' }, () => {
+      nc1.subscribe(subj, () => {
         c1++
         if (c1 === 1) {
           nc1.drain(() => {
@@ -663,7 +651,7 @@ describe('Basics', () => {
             finish()
           })
         }
-      })
+      }, { queue: 'q1' })
     })
     nc1.flush(() => {
       start()
@@ -675,9 +663,9 @@ describe('Basics', () => {
       done(err)
     })
     nc2.on('connect', () => {
-      nc2.subscribe(subj, { queue: 'q1' }, () => {
+      nc2.subscribe(subj, () => {
         c2++
-      })
+      }, { queue: 'q1' })
     })
     nc2.flush(() => {
       start()
@@ -720,18 +708,18 @@ describe('Basics', () => {
     })
     let sid1 = 0
     nc1.on('connect', () => {
-      sid1 = nc1.subscribe(subj, { queue: 'q1' }, () => {
+      sid1 = nc1.subscribe(subj, () => {
         c1++
         if (c1 === 1) {
           nc1.drainSubscription(sid1, () => {
             finish()
           })
         }
-      })
+      }, { queue: 'q1' })
 
-      nc1.subscribe(subj, { queue: 'q1' }, () => {
+      nc1.subscribe(subj, () => {
         c2++
-      })
+      }, { queue: 'q1' })
     })
 
     nc1.flush(() => {
@@ -838,13 +826,15 @@ describe('Basics', () => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       nc1.drain()
-      nc1.subscribe(NATS.createInbox(), (err) => {
+      try {
+        nc1.subscribe(NATS.createInbox(), () => {})
+      } catch (err) {
         if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
           done()
         } else {
           done(err)
         }
-      })
+      }
     })
   })
 
@@ -1065,7 +1055,7 @@ describe('Basics', () => {
       conn = nc
       nc.on('connect', () => {
         const opts = { max: 10 }
-        nc.subscribe('test', opts, () => {})
+        nc.subscribe('test', () => {}, opts)
       })
     })
   })

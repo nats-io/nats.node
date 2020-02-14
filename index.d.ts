@@ -94,7 +94,7 @@ export interface ClientOpts {
 	yieldTime?: number
 }
 
-export interface SubscribeOptions {
+export interface SubscriptionOptions {
 	queue?: string,
 	max?: number
 }
@@ -124,14 +124,13 @@ declare class Client extends events.EventEmitter {
 	/**
 	 * Publish a message to the given subject, with optional reply and callback.
 	 */
-	publish(subject: string, msg?: Buffer|string|Object, reply?: string): void;
+	publish(subject: string, msg?: any, reply?: string): void;
 
 	/**
 	 * Subscribe to a given subject, with optional options and callback. opts can be
 	 * omitted, even with a callback. A subscription id is returned.
 	 */
-	subscribe(subject: string, callback: Function): number;
-	subscribe(subject: string, opts: SubscribeOptions, callback: Function): number;
+	subscribe(subject: string, callback: Function, opts?: SubscriptionOptions): number;
 
 	/**
 	 * Unsubscribe to a given subscription id, with optional max number of messages before unsubscribing.

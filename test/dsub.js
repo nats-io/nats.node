@@ -50,7 +50,7 @@ describe('Double SUBS', () => {
     })
 
     const nc = NATS.connect(PORT)
-    nc.subscribe('foo')
+    nc.subscribe('foo', () => {})
     nc.on('connect', nc => {
       setTimeout(() => {
         nc.close()

@@ -158,9 +158,9 @@ nc.on('connect', () => {
   // Each message will be delivered to only one subscriber per queue group,
   // queuing semantics. You can have as many queue groups as you wish.
   // Normal subscribers will continue to work as expected.
-  nc.subscribe('foo', { queue: 'job.workers' }, function () {
+  nc.subscribe('foo', function () {
     received += 1
-  })
+  }, { queue: 'job.workers' })
 ```
 ## Clustered Usage
 
@@ -199,7 +199,7 @@ nc = NATS.connect({ noRandomize: true, servers: servers })
 // messages from being lost.
 
 let c1 = 0
-const sid1 = nc.subscribe('foo', { queue: 'q1' }, () => {
+const sid1 = nc.subscribe('foo', () => {
   c1++
   if (c1 === 1) {
     nc.drainSubscription(sid1, () => {
@@ -208,7 +208,7 @@ const sid1 = nc.subscribe('foo', { queue: 'q1' }, () => {
       // subscription
     })
   }
-})
+}, { queue: 'q1' })
 
 // It is possible to drain a connection, draining a connection:
 // - drains all subscriptions
@@ -218,7 +218,7 @@ const sid1 = nc.subscribe('foo', { queue: 'q1' }, () => {
 // - finally, the callback handler is called (with possibly an error).
 
 let c2 = 0
-nc.subscribe('foo', { queue: 'q1' }, () => {
+nc.subscribe('foo', () => {
   c2++
   if (c2 === 1) {
     nc.drain(() => {
@@ -227,7 +227,7 @@ nc.subscribe('foo', { queue: 'q1' }, () => {
       // called.
     })
   }
-})
+}, { queue: 'q1' })
 
 ```
 
@@ -355,7 +355,7 @@ nc.timeout(sid, 1000, 1, () => {
 })
 
 // Auto-unsubscribe after max messages received
-sid = nc.subscribe('foo', { max: 100 })
+sid = nc.subscribe('foo', () => {}, { max: 100 })
 nc.unsubscribe(sid, 100)
 
 // Multiple connections

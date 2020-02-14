@@ -44,11 +44,9 @@ describe('Max responses and Auto-unsub', () => {
     const SEND = 20
     let received = 0
 
-    nc.subscribe('foo', {
-      max: WANT
-    }, () => {
+    nc.subscribe('foo', () => {
       received += 1
-    })
+    }, { max: WANT })
     for (let i = 0; i < SEND; i++) {
       nc.publish('foo')
     }
@@ -106,11 +104,9 @@ describe('Max responses and Auto-unsub', () => {
     const SEND = 20
     let received = 0
 
-    const sid = nc.subscribe('foo', {
-      max: 1
-    }, () => {
+    const sid = nc.subscribe('foo', () => {
       received += 1
-    })
+    }, { max: 1 })
     for (let i = 0; i < SEND; i++) {
       nc.publish('foo')
     }

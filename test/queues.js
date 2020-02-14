@@ -41,11 +41,9 @@ describe('Queues', () => {
   it('should deliver a message to single member of a queue group', done => {
     const nc = NATS.connect(PORT)
     let received = 0
-    nc.subscribe('foo', {
-      queue: 'myqueue'
-    }, () => {
+    nc.subscribe('foo', () => {
       received += 1
-    })
+    }, { queue: 'myqueue' })
     nc.publish('foo')
     nc.flush(() => {
       should.exists(received)
@@ -62,9 +60,7 @@ describe('Queues', () => {
       received += 1
     }
     for (let i = 0; i < 5; i++) {
-      nc.subscribe('foo', {
-        queue: 'myqueue'
-      }, cb)
+      nc.subscribe('foo', cb, { queue: 'myqueue' })
     }
     nc.publish('foo')
     nc.flush(() => {
@@ -86,9 +82,7 @@ describe('Queues', () => {
       }
     }
 
-    nc.subscribe('foo', {
-      queue: 'myqueue'
-    }, recv)
+    nc.subscribe('foo', recv, { queue: 'myqueue' })
     nc.subscribe('foo', recv)
     nc.publish('foo')
     nc.publish('foo')
@@ -106,11 +100,9 @@ describe('Queues', () => {
 
     for (var i = 0; i < numSubscribers; i++) {
       received[i] = 0
-      nc.subscribe('foo.bar', {
-        queue: 'spreadtest'
-      }, ((index => () => {
+      nc.subscribe('foo.bar', ((index => () => {
         received[index] += 1
-      })(i)))
+      })(i)), { queue: 'spreadtest' })
     }
 
     for (i = 0; i < total; i++) {
@@ -129,20 +121,20 @@ describe('Queues', () => {
   it('should deliver only one mesage to queue subscriber regardless of wildcards', done => {
     const nc = NATS.connect(PORT)
     let received = 0
-    nc.subscribe('foo.bar', {
-      queue: 'wcqueue'
-    }, () => {
+    nc.subscribe('foo.bar', () => {
       received += 1
+    }, {
+      queue: 'wcqueue'
     })
-    nc.subscribe('foo.*', {
-      queue: 'wcqueue'
-    }, () => {
+    nc.subscribe('foo.*', () => {
       received += 1
+    }, {
+      queue: 'wcqueue'
     })
-    nc.subscribe('foo.>', {
-      queue: 'wcqueue'
-    }, () => {
+    nc.subscribe('foo.>', () => {
       received += 1
+    }, {
+      queue: 'wcqueue'
     })
     nc.publish('foo.bar')
     nc.flush(() => {
@@ -158,15 +150,15 @@ describe('Queues', () => {
     let received2 = 0
     const num = 10
 
-    nc.subscribe('foo.bar', {
-      queue: 'r1'
-    }, () => {
+    nc.subscribe('foo.bar', () => {
       received1 += 1
+    }, {
+      queue: 'r1'
     })
-    nc.subscribe('foo.bar', {
-      queue: 'r2'
-    }, () => {
+    nc.subscribe('foo.bar', () => {
       received2 += 1
+    }, {
+      queue: 'r2'
     })
 
     for (let i = 0; i < num; i++) {

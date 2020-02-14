@@ -77,11 +77,9 @@ describe('JSON payloads', () => {
         useOldRequestStyle: useOldRequestStyle === true
       })
 
-      nc.subscribe('reqrep', {
-        max: 1
-      }, (msg, reply) => {
+      nc.subscribe('reqrep', (msg, reply) => {
         nc.publish(reply, msg)
-      })
+      }, { max: 1 })
 
       nc.request('reqrep', input, (msg) => {
         if (msg instanceof Object) {

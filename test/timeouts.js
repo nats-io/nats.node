@@ -42,7 +42,7 @@ describe('Timeout and max received events for subscriptions', () => {
 
   // connect to a server that never sends data
   it('conn timeout - socket timeout', (done) => {
-    const srv = net.createServer((c) => {})
+    const srv = net.createServer(() => {})
     srv.listen(0, () => {
       const p = srv.address().port
       const nc = NATS.connect({ port: p, timeout: 1000 })
@@ -75,7 +75,7 @@ describe('Timeout and max received events for subscriptions', () => {
 
   // connect to a server that never sends data
   it('conn timeout - reconnects work', (done) => {
-    const srv = net.createServer((c) => {})
+    const srv = net.createServer(() => {})
     srv.listen(0, () => {
       const p = srv.address().port
       const nc = NATS.connect('nats://localhost:' + p, {
@@ -110,7 +110,7 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       const startTime = new Date()
-      const sid = nc.subscribe('foo')
+      const sid = nc.subscribe('foo', () => {})
       nc.timeout(sid, 50, 1, () => {
         const elapsed = new Date() - startTime
         should.exists(elapsed)
@@ -124,7 +124,7 @@ describe('Timeout and max received events for subscriptions', () => {
   it('should not timeout if exepected has been received', done => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
-      const sid = nc.subscribe('foo')
+      const sid = nc.subscribe('foo', () => {})
       nc.timeout(sid, 50, 1, () => {
         done(new Error('Timeout improperly called'))
       })
@@ -140,7 +140,7 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       let count = 0
-      const sid = nc.subscribe('bar', m => {
+      const sid = nc.subscribe('bar', () => {
         count++
         if (count === 1) {
           nc.unsubscribe(sid)
@@ -163,7 +163,7 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       let count = 0
-      const sid = nc.subscribe('bar', m => {
+      const sid = nc.subscribe('bar', () => {
         count++
       })
       nc.timeout(sid, 250, 2, () => {

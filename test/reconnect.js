@@ -246,9 +246,9 @@ describe('Reconnect functionality', () => {
       received += 1
     }
     for (let i = 0; i < 5; i++) {
-      nc.subscribe('foo', {
+      nc.subscribe('foo', cb, {
         queue: 'myReconnectQueue'
-      }, cb)
+      })
     }
     nc.on('reconnecting', () => {
       // restart server and make sure next flush works ok
