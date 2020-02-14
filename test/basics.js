@@ -235,7 +235,8 @@ describe('Basics', () => {
 
   it('should do callback after publish is flushed', (done) => {
     const nc = NATS.connect(PORT)
-    nc.publish('foo', () => {
+    nc.publish('foo')
+    nc.flush(() => {
       nc.close()
       done()
     })
@@ -269,7 +270,8 @@ describe('Basics', () => {
 
     nc.publish('foo')
     nc.publish('foo')
-    nc.publish('foo', () => {
+    nc.publish('foo')
+    nc.flush(() => {
       received.should.equal(expected)
       nc.close()
       done()

@@ -128,7 +128,8 @@ describe('Timeout and max received events for subscriptions', () => {
       nc.timeout(sid, 50, 1, () => {
         done(new Error('Timeout improperly called'))
       })
-      nc.publish('foo', () => {
+      nc.publish('foo')
+      nc.flush(() => {
         nc.close()
         done()
       })

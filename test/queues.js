@@ -46,7 +46,8 @@ describe('Queues', () => {
     }, () => {
       received += 1
     })
-    nc.publish('foo', () => {
+    nc.publish('foo')
+    nc.flush(() => {
       should.exists(received)
       received.should.equal(1)
       nc.close()
@@ -65,7 +66,8 @@ describe('Queues', () => {
         queue: 'myqueue'
       }, cb)
     }
-    nc.publish('foo', () => {
+    nc.publish('foo')
+    nc.flush(() => {
       received.should.equal(1)
       nc.close()
       done()
@@ -142,7 +144,8 @@ describe('Queues', () => {
     }, () => {
       received += 1
     })
-    nc.publish('foo.bar', () => {
+    nc.publish('foo.bar')
+    nc.flush(() => {
       received.should.equal(1)
       nc.close()
       done()

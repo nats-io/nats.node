@@ -97,20 +97,8 @@ console.log(sid);
 
 
 nc.publish('foo');
-nc.publish('foo', () => {
-   console.log('published');
-});
-
 nc.publish('foo', 'payload');
-nc.publish('foo', 'payload', () => {
-    console.log('published with payload');
-});
-
 nc.publish('foo', 'payload', 'here');
-nc.publish('foo', 'payload', 'here', () => {
-    console.log('published with payload and reply');
-});
-
 
 // request min
 let rid = nc.request('bar', (payload:string) => {

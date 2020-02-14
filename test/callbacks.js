@@ -38,13 +38,14 @@ describe('Callbacks', () => {
     nsc.stopServer(server, done)
   })
 
-  it('should properly do a publish callback after connection is closed', done => {
+  it('should not properly do a publish after connection is closed', done => {
     const nc = NATS.connect(PORT)
     nc.close()
-    nc.publish('foo', err => {
-      should.exist(err)
+    try {
+      nc.publish('foo')
+    } catch (err) {
       done()
-    })
+    }
   })
 
   it('should properly do a flush callback after connection is closed', done => {

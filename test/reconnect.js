@@ -257,7 +257,8 @@ describe('Reconnect functionality', () => {
       }
     })
     nc.on('reconnect', () => {
-      nc.publish('foo', () => {
+      nc.publish('foo')
+      nc.flush(() => {
         received.should.equal(1)
         nc.close()
         done()
@@ -304,7 +305,8 @@ describe('Reconnect functionality', () => {
       nsc.stopServer(server, () => {})
     })
     nc.on('disconnect', () => {
-      nc.publish('foo', 'bar', 'reply', () => {
+      nc.publish('foo', 'bar', 'reply')
+      nc.flush(() => {
         // fails to get here, but should not crash
       })
       server = nsc.startServer(PORT)
@@ -325,7 +327,8 @@ describe('Reconnect functionality', () => {
     nc.on('reconnecting', () => {
       // restart server
       if (server === null) {
-        nc.publish('foo', () => {
+        nc.publish('foo')
+        nc.flush(() => {
           nc.close()
           done()
         })

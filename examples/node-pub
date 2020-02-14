@@ -35,10 +35,7 @@ if (!subject) {
 // Connect to NATS server.
 const nc = nats.connect(url, nats.creds(creds))
 
-nc.publish(subject, msg, () => {
-  console.log('Published [' + subject + '] : "' + msg + '"')
-  process.exit()
-})
+nc.publish(subject, msg)
 
 nc.on('error', (e) => {
   console.log('Error [' + nc.currentServer + ']: ' + e)

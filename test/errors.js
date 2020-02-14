@@ -79,7 +79,7 @@ describe('Errors', () => {
     done()
   })
 
-  it('should pass errors on publish with callbacks', done => {
+  it.skip('should pass errors on publish with callbacks', done => {
     const nc = NATS.connect(PORT)
     const expectedErrors = 4
     let received = 0

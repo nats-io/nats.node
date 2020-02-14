@@ -124,9 +124,7 @@ declare class Client extends events.EventEmitter {
 	/**
 	 * Publish a message to the given subject, with optional reply and callback.
 	 */
-	publish(subject: string, callback?: Function):void;
-	publish(subject: string, msg: any, callback?: Function):void;
-	publish(subject: string, msg: any, reply: string, callback?: Function):void;
+	publish(subject: string, msg?: Buffer|string|Object, reply?: string): void;
 
 	/**
 	 * Subscribe to a given subject, with optional options and callback. opts can be
