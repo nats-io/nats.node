@@ -108,8 +108,8 @@ describe('Basic Connectivity', () => {
       servers: natsServers
     })
     let recvMsg = ''
-    ua.subscribe('topic1', (msg) => {
-      recvMsg = msg
+    ua.subscribe('topic1', (_, msg) => {
+      recvMsg = msg.msg
     })
     setTimeout(() => {
       ub.publish('topic1', 'hello')
@@ -133,8 +133,8 @@ describe('Basic Connectivity', () => {
       noRandomize: true
     })
     let recvMsg
-    ua.subscribe('topic1', (msg) => {
-      recvMsg = msg
+    ua.subscribe('topic1', (_, m) => {
+      recvMsg = m.msg
     })
     setTimeout(() => {
       ub.publish('topic1', 'hello')

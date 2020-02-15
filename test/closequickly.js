@@ -47,7 +47,7 @@ describe('Close functionality', () => {
     let timer
 
     nc.flush(() => {
-      nc.subscribe('started', m => {
+      nc.subscribe('started', () => {
         nc.publish('close')
       })
       timer = setTimeout(() => {

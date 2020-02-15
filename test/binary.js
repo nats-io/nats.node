@@ -58,62 +58,62 @@ describe('Binary', () => {
       }
     }
 
-    nc.subscribe('invalid2octet', msg => {
-      msg.length.should.equal(2)
+    nc.subscribe('invalid2octet', (_, m) => {
+      m.msg.length.should.equal(2)
       if (nc.options.preserveBuffers) {
-        should.ok(invalid2octet.equals(msg))
+        should.ok(invalid2octet.equals(m.msg))
       } else {
-        msg.should.equal(invalid2octet.toString('binary'))
+        m.msg.should.equal(invalid2octet.toString('binary'))
       }
       finished()
     })
 
-    nc.subscribe('invalidsequenceidentifier', msg => {
-      msg.length.should.equal(2)
+    nc.subscribe('invalidsequenceidentifier', (_, m) => {
+      m.msg.length.should.equal(2)
       if (nc.options.preserveBuffers) {
-        should.ok(invalidsequenceidentifier.equals(msg))
+        should.ok(invalidsequenceidentifier.equals(m.msg))
       } else {
-        msg.should.equal(invalidsequenceidentifier.toString('binary'))
+        m.msg.should.equal(invalidsequenceidentifier.toString('binary'))
       }
       finished()
     })
 
-    nc.subscribe('invalid3octet', msg => {
-      msg.length.should.equal(3)
+    nc.subscribe('invalid3octet', (_, m) => {
+      m.msg.length.should.equal(3)
       if (nc.options.preserveBuffers) {
-        should.ok(invalid3octet.equals(msg))
+        should.ok(invalid3octet.equals(m.msg))
       } else {
-        msg.should.equal(invalid3octet.toString('binary'))
+        m.msg.should.equal(invalid3octet.toString('binary'))
       }
       finished()
     })
 
-    nc.subscribe('invalid4octet', msg => {
-      msg.length.should.equal(4)
+    nc.subscribe('invalid4octet', (_, m) => {
+      m.msg.length.should.equal(4)
       if (nc.options.preserveBuffers) {
-        should.ok(invalid4octet.equals(msg))
+        should.ok(invalid4octet.equals(m.msg))
       } else {
-        msg.should.equal(invalid4octet.toString('binary'))
+        m.msg.should.equal(invalid4octet.toString('binary'))
       }
       finished()
     })
 
-    nc.subscribe('embeddednull', msg => {
-      msg.length.should.equal(11)
+    nc.subscribe('embeddednull', (_, m) => {
+      m.msg.length.should.equal(11)
       if (nc.options.preserveBuffers) {
-        should.ok(embeddednull.equals(msg))
+        should.ok(embeddednull.equals(m.msg))
       } else {
-        msg.should.equal(embeddednull.toString('binary'))
+        m.msg.should.equal(embeddednull.toString('binary'))
       }
       finished()
     })
 
-    nc.subscribe('bigbuffer', msg => {
-      msg.length.should.equal(bigBuffer.length)
+    nc.subscribe('bigbuffer', (_, m) => {
+      m.msg.length.should.equal(bigBuffer.length)
       if (nc.options.preserveBuffers) {
-        should.ok(bigBuffer.equals(msg))
+        should.ok(bigBuffer.equals(m.msg))
       } else {
-        msg.should.equal(bigBuffer.toString('binary'))
+        m.msg.should.equal(bigBuffer.toString('binary'))
       }
       finished()
     })
@@ -157,8 +157,8 @@ describe('Binary', () => {
       }
     }
 
-    nc.subscribe('trailingData', msg => {
-      should.ok(msg.equals(buffer))
+    nc.subscribe('trailingData', (_, m) => {
+      should.ok(m.msg.equals(buffer))
       finished()
     })
 

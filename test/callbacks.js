@@ -60,20 +60,20 @@ describe('Callbacks', () => {
   it('request callbacks have message and reply', done => {
     const nc = NATS.connect(PORT)
     nc.flush(() => {
-      nc.subscribe('rr', (msg, reply) => {
-        nc.publish(reply, 'data', 'foo')
+      nc.subscribe('rr', (_, m) => {
+        nc.publish(m.replyTo, 'data', 'foo')
       })
     })
 
     nc.flush(() => {
-      nc.request('rr', (msg, reply) => {
-        if (msg instanceof NATS.NatsError) {
+      nc.request('rr', (err, m) => {
+        if (err) {
           nc.close()
-          done('Error making request', msg)
+          done('Error making request', err)
           return
         }
-        msg.should.be.equal('data')
-        reply.should.be.equal('foo')
+        m.msg.should.be.equal('data')
+        m.replyTo.should.be.equal('foo')
         nc.close()
         done()
       }, '', { timeout: 5000 })

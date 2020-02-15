@@ -91,9 +91,9 @@ describe('Basics', () => {
   it('should include the correct message in the callback', done => {
     const nc = NATS.connect(PORT)
     const data = 'Hello World'
-    nc.subscribe('foo', msg => {
+    nc.subscribe('foo', (_, msg) => {
       should.exist(msg)
-      msg.should.equal(data)
+      msg.msg.should.equal(data)
       nc.close()
       done()
     })
@@ -104,11 +104,11 @@ describe('Basics', () => {
     const nc = NATS.connect(PORT)
     const data = 'Hello World'
     const inbox = nc.createInbox()
-    nc.subscribe('foo', (msg, reply) => {
-      should.exist(msg)
-      msg.should.equal(data)
-      should.exist(reply)
-      reply.should.equal(inbox)
+    nc.subscribe('foo', (_, m) => {
+      should.exist(m)
+      m.msg.should.equal(data)
+      should.exist(m.replyTo)
+      m.replyTo.should.equal(inbox)
       nc.close()
       done()
     })
@@ -120,17 +120,17 @@ describe('Basics', () => {
     const initMsg = 'Hello World'
     const replyMsg = 'Hello Back!'
 
-    nc.subscribe('foo', (msg, reply) => {
-      should.exist(msg)
-      msg.should.equal(initMsg)
-      should.exist(reply)
-      reply.should.match(/_INBOX\.*/)
-      nc.publish(reply, replyMsg)
+    nc.subscribe('foo', (_, m) => {
+      should.exist(m)
+      m.msg.should.equal(initMsg)
+      should.exist(m.replyTo)
+      m.replyTo.should.match(/_INBOX\.*/)
+      nc.publish(m.replyTo, replyMsg)
     })
 
-    nc.request('foo', reply => {
-      should.exist(reply)
-      reply.should.equal(replyMsg)
+    nc.request('foo', (_, m) => {
+      should.exist(m)
+      m.msg.should.equal(replyMsg)
       nc.close()
       done()
     }, initMsg)
@@ -144,12 +144,12 @@ describe('Basics', () => {
     let received = 0
 
     // Add two subscribers. We will only receive a reply from one.
-    nc.subscribe('foo', (msg, reply) => {
-      nc.publish(reply, replyMsg)
+    nc.subscribe('foo', (_, msg) => {
+      nc.publish(msg.replyTo, replyMsg)
     })
 
-    nc.subscribe('foo', (msg, reply) => {
-      nc.publish(reply, replyMsg)
+    nc.subscribe('foo', (_, msg) => {
+      nc.publish(msg.replyTo, replyMsg)
     })
 
     const sub = nc.request('foo', _ => {
@@ -224,9 +224,9 @@ describe('Basics', () => {
   it('should pass exact subject to callback', (done) => {
     const nc = NATS.connect(PORT)
     const subject = 'foo.bar.baz'
-    nc.subscribe('*.*.*', (msg, reply, subj) => {
-      should.exist(subj)
-      subj.should.equal(subject)
+    nc.subscribe('*.*.*', (_, m) => {
+      should.exist(m.subject)
+      m.subject.should.equal(subject)
       nc.close()
       done()
     })
@@ -280,8 +280,8 @@ describe('Basics', () => {
 
   it('should pass sid properly to a message callback if requested', (done) => {
     const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo', (msg, reply, subj, lsid) => {
-      sid.should.equal(lsid)
+    const sid = nc.subscribe('foo', (_, m) => {
+      sid.should.equal(m.sid)
       nc.close()
       done()
     })
@@ -297,8 +297,8 @@ describe('Basics', () => {
     const jsonMsg = {
       key: true
     }
-    nc.subscribe('foo1', msg => {
-      msg.should.have.property('key').and.be.a.Boolean()
+    nc.subscribe('foo1', (_, m) => {
+      m.msg.should.have.property('key').and.be.a.Boolean()
       nc.close()
       done()
     })
@@ -314,9 +314,9 @@ describe('Basics', () => {
     const utf8msg = {
       key: 'CEDILA-Ç'
     }
-    nc.subscribe('foo2', msg => {
-      msg.should.have.property('key')
-      msg.key.should.equal('CEDILA-Ç')
+    nc.subscribe('foo2', (_, m) => {
+      m.msg.should.have.property('key')
+      m.msg.key.should.equal('CEDILA-Ç')
       nc.close()
       done()
     })

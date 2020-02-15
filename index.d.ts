@@ -106,6 +106,17 @@ export interface RequestOptions {
 	timeout?: number
 }
 
+export interface MessageHandler {
+	(err?: NatsError, m?: Message)
+}
+
+export interface Message {
+	msg?: any,
+	subject: string,
+	replyTo?: string,
+	sid: number
+}
+
 declare class Client extends events.EventEmitter {
 	/**
 	 * Create a properly formatted inbox subject.
@@ -132,7 +143,7 @@ declare class Client extends events.EventEmitter {
 	 * Subscribe to a given subject, with optional options and callback. opts can be
 	 * omitted, even with a callback. A subscription id is returned.
 	 */
-	subscribe(subject: string, callback: Function, opts?: SubscriptionOptions): number;
+	subscribe(subject: string, callback: MessageHandler, opts?: SubscriptionOptions): number;
 
 	/**
 	 * Unsubscribe to a given subscription id, with optional max number of messages before unsubscribing.
@@ -168,7 +179,7 @@ declare class Client extends events.EventEmitter {
 	 * opt_options = {max:N, timeout:N}. Otherwise you will need to unsubscribe to stop
 	 * the message stream manually by calling unsubscribe() on the subscription id returned.
 	 */
-	request(subject: string, callback: Function, data?: any, options?: RequestOptions): number;
+	request(subject: string, callback: MessageHandler, data?: any, options?: RequestOptions): number;
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.

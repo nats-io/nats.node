@@ -49,13 +49,13 @@ describe('JSON payloads', () => {
         port: PORT
       })
 
-      nc.subscribe('pubsub', (msg, reply, subj, sid) => {
-        if (msg instanceof Object) {
-          msg.should.deepEqual(expected)
+      nc.subscribe('pubsub', (_, m) => {
+        if (m.msg instanceof Object) {
+          m.msg.should.deepEqual(expected)
         } else {
-          should.strictEqual(msg, expected)
+          should.strictEqual(m.msg, expected)
         }
-        nc.unsubscribe(sid)
+        nc.unsubscribe(m.sid)
         nc.close()
 
         done()
@@ -65,7 +65,7 @@ describe('JSON payloads', () => {
     }
   }
 
-  function testReqRep (input, expected, useOldRequestStyle) {
+  function testReqRep (input, expected) {
     if (expected === undefined) {
       expected = input
     }
@@ -73,19 +73,18 @@ describe('JSON payloads', () => {
     return (done) => {
       const nc = NATS.connect({
         json: true,
-        port: PORT,
-        useOldRequestStyle: useOldRequestStyle === true
+        port: PORT
       })
 
-      nc.subscribe('reqrep', (msg, reply) => {
-        nc.publish(reply, msg)
+      nc.subscribe('reqrep', (_, m) => {
+        nc.publish(m.replyTo, m.msg)
       }, { max: 1 })
 
-      nc.request('reqrep', (msg) => {
-        if (msg instanceof Object) {
-          msg.should.deepEqual(expected)
+      nc.request('reqrep', (_, m) => {
+        if (m.msg instanceof Object) {
+          m.msg.should.deepEqual(expected)
         } else {
-          should.strictEqual(msg, expected)
+          should.strictEqual(m.msg, expected)
         }
         nc.close()
 

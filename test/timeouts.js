@@ -125,8 +125,8 @@ describe('Timeout and max received events for subscriptions', () => {
   it('should not timeout if exepected has been received', done => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
-      nc.subscribe('foo', (m) => {
-        m.should.be.equal('foo')
+      nc.subscribe('foo', (_, m) => {
+        m.msg.should.be.equal('foo')
       }, { timeout: 50, expected: 1 })
       nc.publish('foo', 'foo')
       nc.flush(() => {
@@ -198,21 +198,20 @@ describe('Timeout and max received events for subscriptions', () => {
   it('should perform simple timeouts on requests without specified number of messages', done => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
-      nc.subscribe('foo', (msg, reply) => {
-        nc.publish(reply)
+      nc.subscribe('foo', (_, m) => {
+        nc.publish(m.replyTo)
       })
 
       let responses = 0
-      nc.request('foo', err => {
-        if (!Object.hasOwnProperty.call(err, 'code')) {
-          responses++
-          return
+      nc.request('foo', (err) => {
+        if (err) {
+          responses.should.be.equal(1)
+          err.should.be.instanceof(NATS.NatsError)
+          err.should.have.property('code', NATS.REQ_TIMEOUT)
+          nc.close()
+          done()
         }
-        responses.should.be.equal(1)
-        err.should.be.instanceof(NATS.NatsError)
-        err.should.have.property('code', NATS.REQ_TIMEOUT)
-        nc.close()
-        done()
+        responses++
       }, null, { max: 2, timeout: 1000 })
     })
   })

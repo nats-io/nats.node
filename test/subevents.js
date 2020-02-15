@@ -121,8 +121,8 @@ describe('Subscription Events', () => {
     const nc = NATS.connect(PORT)
     const subj = 'request.autounsub.event'
 
-    nc.subscribe(subj, (subject, reply) => {
-      nc.publish(reply, 'OK')
+    nc.subscribe(subj, (_, m) => {
+      nc.publish(m.replyTo, 'OK')
     })
     nc.request(subj, () => {}, null, { max: 1 })
 

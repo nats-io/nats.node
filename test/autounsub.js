@@ -174,8 +174,12 @@ describe('Max responses and Auto-unsub', () => {
 
     // Create 5 helpers
     for (let i = 0; i < 5; i++) {
-      nc.subscribe('help', (msg, reply) => {
-        nc.publish(reply, 'I can help!')
+      nc.subscribe('help', (err, msg) => {
+        if (err) {
+          nc.close()
+          done(err)
+        }
+        nc.publish(msg.replyTo, 'I can help!')
       })
     }
 
@@ -193,8 +197,8 @@ describe('Max responses and Auto-unsub', () => {
   function requestSubscriptions (nc, done) {
     let received = 0
 
-    nc.subscribe('help', (msg, reply) => {
-      nc.publish(reply, 'I can help!')
+    nc.subscribe('help', (_, msg) => {
+      nc.publish(msg.replyTo, 'I can help!')
     })
 
     /* jshint loopfunc: true */
@@ -220,24 +224,16 @@ describe('Max responses and Auto-unsub', () => {
     requestSubscriptions(nc, done)
   })
 
-  it('oldRequest should not leak subscriptions when using max', done => {
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    requestSubscriptions(nc, done)
-  })
-
   function requestGetsWantedNumberOfMessages (nc, done) {
     let received = 0
 
-    nc.subscribe('help', (msg, reply) => {
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
+    nc.subscribe('help', (_, m) => {
+      nc.publish(m.replyTo, 'I can help!')
+      nc.publish(m.replyTo, 'I can help!')
+      nc.publish(m.replyTo, 'I can help!')
+      nc.publish(m.replyTo, 'I can help!')
+      nc.publish(m.replyTo, 'I can help!')
+      nc.publish(m.replyTo, 'I can help!')
     })
 
     nc.request('help', () => {

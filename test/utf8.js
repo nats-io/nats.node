@@ -45,9 +45,9 @@ describe('UTF8', function () {
     data.length.should.equal(9)
     Buffer.byteLength(data).should.equal(12)
 
-    nc.subscribe('utf8', function (msg) {
-      should.exists(msg)
-      msg.should.equal(data)
+    nc.subscribe('utf8', function (_, m) {
+      should.exists(m)
+      m.msg.should.equal(data)
       nc.close()
       done()
     })
@@ -64,15 +64,15 @@ describe('UTF8', function () {
     const utf8Data = '\u00bd + \u00bc = \u00be'
     const plainData = 'Hello World'
 
-    nc.subscribe('utf8', function (msg) {
+    nc.subscribe('utf8', function (_, m) {
       // Should be all 12 bytes..
-      msg.length.should.equal(12)
+      m.msg.length.should.equal(12)
       // Should not be a proper utf8 string.
-      msg.should.not.equal(utf8Data)
+      m.msg.should.not.equal(utf8Data)
     })
 
-    nc.subscribe('plain', function (msg) {
-      msg.should.equal(plainData)
+    nc.subscribe('plain', function (_, m) {
+      m.msg.should.equal(plainData)
       nc.close()
       done()
     })
