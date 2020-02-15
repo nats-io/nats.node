@@ -40,9 +40,9 @@ nc.on('connect', () => {
   if (queue) {
     opts.queue = queue
   }
-  nc.subscribe(subject, opts, (msg) => {
-    console.log('Received "' + msg + '"')
-  })
+  nc.subscribe(subject, (_, m) => {
+    console.log('Received "' + m.msg + '"')
+  }, opts)
   if (queue) {
     console.log('Queue [' + queue + '] listening on [' + subject + ']')
   } else {

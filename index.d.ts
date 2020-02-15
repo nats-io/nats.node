@@ -107,7 +107,7 @@ export interface RequestOptions {
 }
 
 export interface MessageHandler {
-	(err?: NatsError, m?: Message)
+	(err?: NatsError, m?: Message): void;
 }
 
 export interface Message {

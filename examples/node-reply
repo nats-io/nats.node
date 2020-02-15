@@ -42,7 +42,7 @@ nc.on('connect', () => {
   }
 
   let count = 0
-  nc.subscribe(subject, opts, (msg, reply) => {
+  nc.subscribe(subject, (msg, reply) => {
     if (reply) {
       // give the response or echo back
       const d = response || msg
@@ -51,7 +51,7 @@ nc.on('connect', () => {
       return
     }
     console.log('Dropping message "' + msg + '" - no reply subject set')
-  })
+  }, opts)
   if (queue) {
     console.log('Queue reply [' + queue + '] listening on [' + subject + ']')
   } else {

@@ -30,10 +30,10 @@ nc.on('connect', function () {
     console.log(err)
   })
 
-  nc.subscribe('greeting', function (msg, reply) {
+  nc.subscribe('greeting', (_, m) => {
     // msg is a parsed JSON object object
-    if (msg.name && msg.reply) {
-      nc.publish(reply, { greeting: 'hello ' + msg.name })
+    if (m.msg.name && m.msg.reply) {
+      nc.publish(m.replyTo, { greeting: 'hello ' + m.msg.name })
     }
   })
 
@@ -41,7 +41,7 @@ nc.on('connect', function () {
   // you should verify it prior to accessing it. While JSON is safe because
   // it doesn't export functions, it is still possible for a client to
   // cause issues to a downstream consumer that is not written carefully
-  nc.subscribe('unsafe', function (msg) {
+  nc.subscribe('unsafe', (_, m) => {
     // for example a client could inject a bogus `toString` property
     // which could cause your client to crash should you try to
     // concatenation with the `+` like this:
@@ -49,15 +49,15 @@ nc.on('connect', function () {
     // `TypeError: Cannot convert object to primitive value`
     // Note that simple `console.log(msg)` is fine.
 
-    if (Object.hasOwnProperty.call(msg, 'toString')) {
-      console.log('tricky - trying to crash me:', msg.toString)
+    if (Object.hasOwnProperty.call(m.msg, 'toString')) {
+      console.log('tricky - trying to crash me:', m.toString)
       return
     }
 
     // of course this is no different than using a value that is
     // expected in one format (say a number), but the client provides
     // a string:
-    if (isNaN(msg.amount) === false) {
+    if (isNaN(m.msg.amount) === false) {
       // do something with the number
     }
     // ...

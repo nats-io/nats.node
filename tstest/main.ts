@@ -43,12 +43,12 @@ import {
 } from '..';
 
 const dnc = connect();
-const nc = connect("localhost:4222");
+const nc = connect('localhost:4222');
 const pnc = connect(4222);
 const opnc = connect({
     url: "localhost:4222",
 });
-const mnc = connect("localhost", {
+const mnc = connect('localhost', {
     maxReconnectAttempts: -1
 });
 
@@ -68,8 +68,11 @@ opnc.close();
 console.log(`generated a inbox ${nc.createInbox()}`);
 
 // sub min
-let sid = nc.subscribe('foo', (payload: string, replyTo: string, subject: string) => {
-    console.log(`sub1 handler: payload: ${payload} replyTo: ${replyTo} subject: ${subject}`);
+let sid = nc.subscribe('foo', (err, m) => {
+    if (!m) {
+        return
+    }
+    console.log(`sub1 handler: payload: ${m.msg} replyTo: ${m.replyTo} subject: ${m.subject}`);
 });
 
 // subscribe expecting 5 messages
@@ -79,14 +82,20 @@ nc.subscribe('foo', () => {
 
 console.log(`nc has ${nc.numSubscriptions()} subscriptions`);
 
-nc.subscribe('foo', (payload: string, replyTo: string, subject: string) => {
-    console.log(`sub2 handler: payload: ${payload} replyTo: ${replyTo} subject: ${subject}`);
-}, {queue: 'one'});
+nc.subscribe('foo', (_, m) => {
+    if(!m) {
+        return;
+    }
+    console.log(`sub2 handler: payload: ${m.msg} replyTo: ${m.replyTo} subject: ${m.subject}`);
+}, { queue: 'one' });
 
-nc.subscribe('bar', (payload: string, replyTo: string, subject: string) => {
-    console.log(`bar request handler: payload: ${payload} replyTo: ${replyTo} subject: ${subject}`);
-    if(replyTo) {
-        nc.publish(replyTo, payload);
+nc.subscribe('bar', (_, m) => {
+    if(!m) {
+        return;
+    }
+    console.log(`bar request handler: payload: ${m.msg} replyTo: ${m.replyTo} subject: ${m.subject}`);
+    if(m.replyTo) {
+        nc.publish(m.replyTo, m.msg);
     }
 });
 
@@ -102,20 +111,29 @@ nc.publish('foo', 'payload');
 nc.publish('foo', 'payload', 'here');
 
 // request min
-let rid = nc.request('bar', (payload:string) => {
-    console.log(`request not expecting payload: ${payload}` );
+let rid = nc.request('bar', (_, m) => {
+    if(!m) {
+        return;
+    }
+    console.log(`request not expecting payload: ${m.msg}`);
 });
 console.log(rid);
 
 // request payload
-rid = nc.request('bar', (payload:string) => {
-    console.log(`request expecting payload: ${payload}`, );
+rid = nc.request('bar', (_, m) => {
+    if(!m) {
+        return;
+    }
+    console.log(`request expecting payload: ${m.msg}`);
 }, 'payload');
 console.log(rid);
 
 // request all
-rid = nc.request('bar', (payload:string) => {
-    console.log(`request expecting payload: ${payload}`, );
+rid = nc.request('bar', (_, m) => {
+    if(!m) {
+        return;
+    }
+    console.log(`request expecting payload: ${m.msg}`);
 }, 'payload', {max: 5, timeout: 1000});
 console.log(rid);
 
