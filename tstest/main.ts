@@ -71,16 +71,17 @@ console.log(`generated a inbox ${nc.createInbox()}`);
 let sid = nc.subscribe('foo', (payload: string, replyTo: string, subject: string) => {
     console.log(`sub1 handler: payload: ${payload} replyTo: ${replyTo} subject: ${subject}`);
 });
-console.log(sid);
-nc.timeout(sid, 1000, 1, (subID) => {
-   console.log(`${subID} did not receive any messages`);
-});
+
+// subscribe expecting 5 messages
+nc.subscribe('foo', () => {
+}, {timeout: 1000, expected: 5});
+
 
 console.log(`nc has ${nc.numSubscriptions()} subscriptions`);
 
-nc.subscribe('foo', {queue: 'one'}, (payload: string, replyTo: string, subject: string) => {
+nc.subscribe('foo', (payload: string, replyTo: string, subject: string) => {
     console.log(`sub2 handler: payload: ${payload} replyTo: ${replyTo} subject: ${subject}`);
-});
+}, {queue: 'one'});
 
 nc.subscribe('bar', (payload: string, replyTo: string, subject: string) => {
     console.log(`bar request handler: payload: ${payload} replyTo: ${replyTo} subject: ${subject}`);
@@ -90,8 +91,8 @@ nc.subscribe('bar', (payload: string, replyTo: string, subject: string) => {
 });
 
 // sub all
-sid = nc.subscribe('foo', {max: 1}, () => {
-});
+sid = nc.subscribe('foo', () => {
+}, {max: 1});
 console.log(sid);
 
 
@@ -107,35 +108,17 @@ let rid = nc.request('bar', (payload:string) => {
 console.log(rid);
 
 // request payload
-rid = nc.request('bar', 'payload', (payload:string) => {
+rid = nc.request('bar', (payload:string) => {
     console.log(`request expecting payload: ${payload}`, );
-});
+}, 'payload');
 console.log(rid);
 
 // request all
-rid = nc.request('bar', 'payload', {max: 5}, (payload:string) => {
+rid = nc.request('bar', (payload:string) => {
     console.log(`request expecting payload: ${payload}`, );
-});
+}, 'payload', {max: 5, timeout: 1000});
 console.log(rid);
 
-
-// requestOne min
-let roid = nc.requestOne('bar', 100, (payload:string) => {
-    console.log(`requestOne not expecting payload: ${payload}`);
-});
-console.log(roid);
-
-// requestOne payload
-roid = nc.requestOne('bar', 'payload', 100, (payload:string) => {
-    console.log(`requestOne expecting payload: ${payload}`);
-});
-console.log(roid);
-
-// requestOne all
-roid = nc.requestOne('bar', 'payload', {max: 10}, 100, (payload:string) => {
-    console.log(`requestOne expecting payload: ${payload}`);
-});
-console.log(roid);
 
 
 const codes = [

@@ -110,25 +110,25 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       const startTime = new Date()
-      const sid = nc.subscribe('foo', () => {})
-      nc.timeout(sid, 50, 1, () => {
-        const elapsed = new Date() - startTime
-        should.exists(elapsed)
-        elapsed.should.be.within(45, 75)
-        nc.close()
-        done()
-      })
+      nc.subscribe('foo', (err) => {
+        if (err) {
+          const elapsed = new Date() - startTime
+          should.exists(elapsed)
+          elapsed.should.be.within(45, 75)
+          nc.close()
+          done()
+        }
+      }, { timeout: 50, expected: 1 })
     })
   })
 
   it('should not timeout if exepected has been received', done => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
-      const sid = nc.subscribe('foo', () => {})
-      nc.timeout(sid, 50, 1, () => {
-        done(new Error('Timeout improperly called'))
-      })
-      nc.publish('foo')
+      nc.subscribe('foo', (m) => {
+        m.should.be.equal('foo')
+      }, { timeout: 50, expected: 1 })
+      nc.publish('foo', 'foo')
       nc.flush(() => {
         nc.close()
         done()
@@ -140,15 +140,15 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       let count = 0
-      const sid = nc.subscribe('bar', () => {
+      const sid = nc.subscribe('bar', (m) => {
+        if (m === 'timeout') {
+          done('got a timeout')
+        }
         count++
         if (count === 1) {
           nc.unsubscribe(sid)
         }
-      })
-      nc.timeout(sid, 1000, 2, () => {
-        done(new Error('Timeout improperly called'))
-      })
+      }, { timeout: 1000, expected: 2 })
       nc.publish('bar', '')
       nc.flush()
       setTimeout(() => {
@@ -163,18 +163,21 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       let count = 0
-      const sid = nc.subscribe('bar', () => {
-        count++
-      })
-      nc.timeout(sid, 250, 2, () => {
-        process.nextTick(() => {
-          nc.publish('bar', '')
-          nc.flush()
-        })
-      })
+      let err
+      nc.subscribe('bar', (e) => {
+        if (typeof err !== 'string') {
+          err = e
+        } else {
+          count++
+        }
+      }, { timeout: 250, expected: 2 })
       setTimeout(() => {
+        nc.publish('bar', '')
+        nc.flush()
         nc.close()
-        should(count).equal(0)
+        count.should.be.equal(0)
+        should.exist(err)
+        err.code.should.be.equal('timeout')
         done()
       }, 1000)
     })
@@ -211,23 +214,6 @@ describe('Timeout and max received events for subscriptions', () => {
         nc.close()
         done()
       }, null, { max: 2, timeout: 1000 })
-    })
-  })
-
-  it('should override request autoset timeouts', done => {
-    const nc = NATS.connect(PORT)
-    let calledOnRequestHandler = false
-    nc.on('connect', () => {
-      const sid = nc.request('foo', () => {
-        calledOnRequestHandler = true
-      }, null, { max: 2, timeout: 1000 })
-
-      nc.timeout(sid, 1500, 2, v => {
-        calledOnRequestHandler.should.be.false()
-        v.should.be.equal(sid)
-        nc.close()
-        done()
-      })
     })
   })
 })

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 The NATS Authors
+ * Copyright 2013-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -97,6 +97,8 @@ export interface ClientOpts {
 export interface SubscriptionOptions {
 	queue?: string,
 	max?: number
+	timeout?: number
+	expected?: number
 }
 
 export interface RequestOptions {
@@ -160,18 +162,13 @@ declare class Client extends events.EventEmitter {
 	drain(callback?:Function):void;
 
 	/**
-	 * Set a timeout on a subscription.
-	 */
-	timeout(sid: number, timeout: number, expected: number, callback: (sid: number) => void):void;
-
-	/**
 	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
 	 * This should be treated as a subscription. You can optionally indicate how many
 	 * messages you only want to receive and how long to wait for the messages using
 	 * opt_options = {max:N, timeout:N}. Otherwise you will need to unsubscribe to stop
 	 * the message stream manually by calling unsubscribe() on the subscription id returned.
 	 */
-	request(subject: string, callback: Function, data?: any, options?: RequestOptions)
+	request(subject: string, callback: Function, data?: any, options?: RequestOptions): number;
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.

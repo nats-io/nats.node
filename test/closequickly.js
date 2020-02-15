@@ -104,12 +104,11 @@ describe('Close functionality', () => {
 
     let subID = 0
     nc.on('connect', () => {
-      subID = nc.subscribe('foo', () => {
-        // nothing
-      })
-      nc.timeout(subID, 1000, 1, () => {
-        throw new Error("shouldn't have timed out")
-      })
+      subID = nc.subscribe('foo', (err) => {
+        if (err && err.code === 'timeout') {
+          throw new Error("shouldn't have timed out")
+        }
+      }, { timeout: 1000, expected: 1 })
       nc.flush(() => {
         server.kill()
       })

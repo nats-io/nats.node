@@ -649,11 +649,8 @@ describe('Basics', () => {
   it('drain cleared timeout', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
-      const sid = nc1.subscribe(NATS.createInbox(), () => {})
+      const sid = nc1.subscribe(NATS.createInbox(), () => {}, { timeout: 250, expected: 1000 })
       const sub = nc1.subs[sid]
-      nc1.timeout(sid, 250, 1000, () => {
-        done('timeout fired')
-      })
       nc1.drainSubscription(sid, () => {
         should(sub.timeout).is.null()
         nc1.close()
