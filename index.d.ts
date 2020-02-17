@@ -73,6 +73,7 @@ export interface ClientOpts {
 	name?: string,
 	nkey?: string,
 	noEcho?: boolean
+	noMuxRequests?: boolean,
 	noRandomize?: boolean,
 	nonceSigner?: Function,
 	pass?: string,
