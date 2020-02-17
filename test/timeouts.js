@@ -24,6 +24,7 @@ const after = require('mocha').after
 const before = require('mocha').before
 const describe = require('mocha').describe
 const it = require('mocha').it
+const TIMEOUT_ERR = require('../').TIMEOUT_ERR
 
 const PORT = 1428
 
@@ -177,7 +178,7 @@ describe('Timeout and max received events for subscriptions', () => {
         nc.close()
         count.should.be.equal(0)
         should.exist(err)
-        err.code.should.be.equal('timeout')
+        err.code.should.be.equal(TIMEOUT_ERR)
         done()
       }, 1000)
     })

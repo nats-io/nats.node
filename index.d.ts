@@ -49,6 +49,8 @@ export const SIGCB_NOTFUNC: string;
 export const SIGNATURE_REQUIRED: string;
 export const STALE_CONNECTION_ERR: string;
 export const SUB_DRAINING: string;
+export const TIMEOUT_ERR: string;
+
 
 /**
  * Create a properly formatted inbox subject.
@@ -110,6 +112,15 @@ export interface MessageHandler {
 	(err?: NatsError, m?: Message): void;
 }
 
+export interface DrainSubHandler {
+	(err?: NatsError, sid?: number): void;
+}
+
+export interface DrainHandler {
+	(err?: NatsError): void;
+}
+
+
 export interface Message {
 	data?: any,
 	subject: string,
@@ -157,7 +168,7 @@ declare class Client extends events.EventEmitter {
 	 * @param sid
 	 * @param callback
 	 */
-	drainSubscription(sid: number, callback?:Function):void;
+	drainSubscription(sid: number, callback?:DrainSubHandler):void;
 
 	/**
 	 * Drains all subscriptions. If an opt_callback is provided, the callback
@@ -170,7 +181,7 @@ declare class Client extends events.EventEmitter {
 	 * A drained connection is closed when the opt_callback is called without arguments.
 	 * @param callback
 	 */
-	drain(callback?:Function):void;
+	drain(callback?:DrainHandler):void;
 
 	/**
 	 * Publish a message with an implicit inbox listener as the reply. Message is optional.

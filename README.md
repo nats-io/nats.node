@@ -21,12 +21,13 @@ npm install nats
 
 ```javascript
 const NATS = require('nats')
+
 const nc = NATS.connect()
 
-// Simple Publisher
+// Simple publisher
 nc.publish('foo', 'Hello World!')
 
-// Simple Subscriber
+// Simple Subscriber - error is set if there was some error
 nc.subscribe('foo', function (err, msg) {
   if (err) {
     console.error(err)
@@ -36,46 +37,50 @@ nc.subscribe('foo', function (err, msg) {
 })
 
 // Unsubscribing
-const sid = nc.subscribe('foo', function (err, msg) {})
+const sid = nc.subscribe('foo', function (err, m) {})
 nc.unsubscribe(sid)
 
-// Subscription/Request callbacks are given multiple arguments:
-// - msg is the payload for the message
-// - reply is an optional reply subject set by the sender (could be undefined)
-// - subject is the subject the message was sent (which may be more specific
-//   than the subscription subject - see "Wildcard Subscriptions".
-// - finally the subscription id is the local id for the subscription
-//   this is the same value returned by the subscribe call.
-nc.subscribe('foo', (err, m) => {
-  if (reply) {
-    nc.publish(reply, 'got ' + msg + ' on ' + subject + ' in subscription id ' + sid)
+
+// Subscription/Request are given two arguments:
+// - an error (undefined if no error)
+// - a message object
+//   - the message has 4 properties:
+//   - data - the message payload (can be undefined)
+//   - subject - subject where the message was sent
+//   - reply - the reply subject if this is a request (can be undefined)
+//   - sid - the subscription id associated with the handler (same value as the return of subscribe())
+nc.subscribe('foo', (_, m) => {
+  if (m.reply) {
+    nc.publish(m.reply, 'got ' + m.data + ' on ' + m.subject + ' in subscription id ' + m.sid)
     return
   }
-  console.log('Received a message: ' + msg + " it wasn't a request.")
+  console.log('Received a message: ' + m.data + " it wasn't a request.")
 })
 
 // Request, creates a subscription to handle any replies to the request
 // subject, and publishes the request with an optional payload. This usage
 // allows you to collect responses from multiple services
-nc.request('request', (msg) => {
-  console.log('Got a response in msg stream: ' + msg)
+nc.request('request', (_, m) => {
+  console.log('Got a response in msg stream: ' + m.data)
 })
 
 // Request with a max option will unsubscribe after
 // the first max messages are received. You can also specify the number
 // of milliseconds you are willing to wait for the response - when a timeout
 // is specified, you can receive an error
-nc.request('help', (msg) => {
-  if (msg instanceof NATS.NatsError && msg.code === NATS.REQ_TIMEOUT) {
+nc.request('help', (err, m) => {
+  if (err && err.code === NATS.REQ_TIMEOUT) {
     console.log('request timed out')
+  } else if (err) {
+    console.error('request got error', err)
   } else {
-    console.log('Got a response for help: ' + msg)
+    console.log('Got a response for help: ' + m.data)
   }
 }, null, { max: 1, timeout: 1000 })
 
 // Replies
-nc.subscribe('help', function (request, replyTo) {
-  nc.publish(replyTo, 'I can help!')
+nc.subscribe('help', function (_, m) {
+  nc.publish(m.reply, 'I can help!')
 })
 
 // Close connection
@@ -94,10 +99,10 @@ nc.on('connect', () => {
     console.log(err)
   })
 
-  nc.subscribe('greeting', (msg, reply) => {
+  nc.subscribe('greeting', (_, m) => {
     // msg is a parsed JSON object object
-    if (msg.name && msg.reply) {
-      nc.publish(reply, { greeting: 'hello ' + msg.name })
+    if (m.data && m.data.name && m.reply) {
+      nc.publish(m.reply, { greeting: 'hello ' + m.data.name })
     }
   })
 
@@ -105,22 +110,22 @@ nc.on('connect', () => {
   // you should verify it prior to accessing it. While JSON is safe because
   // it doesn't export functions, it is still possible for a client to
   // cause issues to a downstream consumer that is not written carefully
-  nc.subscribe('unsafe', function (msg) {
+  nc.subscribe('unsafe', (_, m) => {
     // for example a client could inject a bogus `toString` property
     // which could cause your client to crash should you try to
     // concatenation with the `+` like this:
     // console.log("received", msg + "here");
     // `TypeError: Cannot convert object to primitive value`
     // Note that simple `console.log(msg)` is fine.
-    if (Object.hasOwnProperty.call(msg, 'toString')) {
-      console.log('tricky - trying to crash me:', msg.toString)
+    if (Object.hasOwnProperty.call(m, 'toString')) {
+      console.log('tricky - trying to crash me:', m.toString)
       return
     }
 
     // of course this is no different than using a value that is
     // expected in one format (say a number), but the client provides
     // a string:
-    if (isNaN(msg.amount) === false) {
+    if (isNaN(m.data.amount) === false) {
       // do something with the number
     }
     // ...
@@ -138,33 +143,35 @@ nc.on('connect', () => {
 ## Wildcard Subscriptions
 
 ```javascript
-  // "*" matches any token, at any level of the subject.
-  nc.subscribe('foo.*.baz', (msg, reply, subject) => {
-    console.log('Msg received on [' + subject + '] : ' + msg)
-  })
+const nc = NATS.connect({ json: true })
+// "*" matches any token, at any level of the subject.
+nc.subscribe('foo.*.baz', (_, m) => {
+  console.log('Msg received on [' + m.subject + '] : ' + m.data)
+})
 
-  nc.subscribe('foo.bar.*', (msg, reply, subject) => {
-    console.log('Msg received on [' + subject + '] : ' + msg)
-  })
+nc.subscribe('foo.bar.*', (_, m) => {
+  console.log('Msg received on [' + m.subject + '] : ' + m.data)
+})
 
-  // ">" matches any length of the tail of a subject, and can only be
-  // the last token E.g. 'foo.>' will match 'foo.bar', 'foo.bar.baz',
-  // 'foo.foo.bar.bax.22'
-  nc.subscribe('foo.>', (msg, reply, subject) => {
-    console.log('Msg received on [' + subject + '] : ' + msg)
-  })
+// ">" matches any length of the tail of a subject, and can only be
+// the last token E.g. 'foo.>' will match 'foo.bar', 'foo.bar.baz',
+// 'foo.foo.bar.bax.22'
+nc.subscribe('foo.>', (_, m) => {
+  console.log('Msg received on [' + m.subject + '] : ' + m.data)
+})
 ```
 
 ## Queue Groups
 
 ```javascript
-  // All subscriptions with the same queue name will form a queue group.
-  // Each message will be delivered to only one subscriber per queue group,
-  // queuing semantics. You can have as many queue groups as you wish.
-  // Normal subscribers will continue to work as expected.
-  nc.subscribe('foo', function () {
-    received += 1
-  }, { queue: 'job.workers' })
+// All subscriptions with the same queue name will form a queue group.
+// Each message will be delivered to only one subscriber per queue group,
+// queuing semantics. You can have as many queue groups as you wish.
+// Normal subscribers will continue to work as expected.
+let received = 0
+nc.subscribe('foo', () => {
+  received++
+}, { queue: 'job.workers' })
 ```
 ## Clustered Usage
 
@@ -206,10 +213,12 @@ let c1 = 0
 const sid1 = nc.subscribe('foo', () => {
   c1++
   if (c1 === 1) {
-    nc.drainSubscription(sid1, () => {
-      // subscription drained - possible arguments are an error or
-      // the sid (number) and subject identifying the drained
-      // subscription
+    nc.drainSubscription(sid1, (err, sid) => {
+      if (err) {
+        console.error(err)
+        return
+      }
+      console.log('subscription', sid, 'drained')
     })
   }
 }, { queue: 'q1' })
@@ -225,10 +234,12 @@ let c2 = 0
 nc.subscribe('foo', () => {
   c2++
   if (c2 === 1) {
-    nc.drain(() => {
-      // connection drained - possible arguments is an error
-      // connection is closed by the time this function is
-      // called.
+    nc.drain((err) => {
+      if (err) {
+        console.error('error draining', err)
+        return
+      }
+      console.log('connection drained')
     })
   }
 }, { queue: 'q1' })
@@ -327,11 +338,6 @@ nc = NATS.connect({
 ## Advanced Usage
 
 ```javascript
-// Publish with callback, callback fires when server has processed the message
-nc.publish('foo', 'You done?', () => {
-  console.log('msg processed!')
-})
-
 // Flush connection to server, callback fires when all messages have
 // been processed.
 nc.flush(() => {
@@ -344,59 +350,47 @@ nc.flush(() => {
 // spends more than yieldTime milliseconds processing.
 nc = NATS.connect({ port: 4222, yieldTime: 10 })
 
-// Timeouts for subscriptions
-let sid = NATS.subscribe('foo', () => {
+// Timeout a subscription unless a certain number of messages have been received
+// When a subscription times out, it automatically cancels. You can specify more
+// messages in the `expected` option. However that count of messages must be
+// received before the timeout specified. If `expected` is not specified, it
+// defaults to '1'.
+NATS.subscribe('foo', (err) => {
+  if (err && err.code === TIMEOUT_ERR) {
+    // didn't get the message
+  }
   // do something
-})
+}, {timeout: 1000, expected: 1})
 
-// Timeout unless a certain number of messages have been received
-// the callback for the timeout. The callback for the timeout
-// provides one argument, the subscription id (sid) for the
-// subscription. This allows a generic callback to identify
-// where the timeout triggered.
-nc.timeout(sid, 1000, 1, () => {
-  // do something
-})
 
 // Auto-unsubscribe after max messages received
-sid = nc.subscribe('foo', () => {}, { max: 100 })
-nc.unsubscribe(sid, 100)
+nc.subscribe('foo', () => {}, { max: 100 })
 
-// Multiple connections
-const nc1 = NATS.connect()
-const nc2 = NATS.connect()
-
-nc1.subscribe('foo', () => {
-  // do something
-})
-nc1.flush()
-nc2.flush()
-nc2.publish('foo')
 
 // Encodings
 
 // By default messages received will be decoded using UTF8. To change that,
 // set the encoding option on the connection.
 
-nc = NATS.connect({ encoding: 'ascii' })
+NATS.connect({ encoding: 'ascii' })
 
 // PreserveBuffers
 
 // To prevent payload conversion from a Buffer to a string, set the
 // preserveBuffers option to true. Message payload return will be a Buffer.
 
-nc = NATS.connect({ preserveBuffers: true })
+NATS.connect({ preserveBuffers: true })
 
 // Reconnect Attempts and Time between reconnects
 
-// By default a NATS connection will try to reconnect to a server 10 times
-// waiting 2 seconds between reconnect attempts. If the maximum number of
-// retries is reached, the client will close the connection.
+// By default a NATS connection will try to reconnect to all servers 10 times
+// waiting 2 seconds between the previous reconnect to the server. If the 
+// maximum number of retries is reached, the client will close the connection.
 // To change the default behaviour specify the max number of connection
 // attempts in `maxReconnectAttempts` (set to -1 to retry forever), and the
 // time in milliseconds between reconnects in `reconnectTimeWait`.
 
-nc = NATS.connect({ maxReconnectAttempts: -1, reconnectTimeWait: 250 })
+NATS.connect({ maxReconnectAttempts: -1, reconnectTimeWait: 250 })
 ```
 
 # Events
