@@ -79,29 +79,6 @@ describe('Errors', () => {
     done()
   })
 
-  it.skip('should pass errors on publish with callbacks', done => {
-    const nc = NATS.connect(PORT)
-    const expectedErrors = 4
-    let received = 0
-
-    const cb = err => {
-      should.exist(err)
-      if (++received === expectedErrors) {
-        done()
-      }
-    }
-
-    // No subject
-    nc.publish(cb)
-    // bad args
-    nc.publish('foo', () => {}, 'bar', cb)
-    nc.publish('foo', 'bar', () => {}, cb)
-
-    // closed will still throw since we remove event listeners.
-    nc.close()
-    nc.publish('foo', cb)
-  })
-
   it('should throw errors on subscribe', done => {
     const nc = NATS.connect(PORT)
     nc.close();

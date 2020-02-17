@@ -659,20 +659,37 @@ describe('Basics', () => {
     })
   })
 
-  it.skip('json requests', done => {
+  it('empty json', done => {
+    const nc = NATS.connect({ port: PORT, json: true })
+
+    nc.subscribe('q', (_, m) => {
+      nc.publish(m.reply, m.data)
+    })
+
+    nc.request('q', (_, m) => {
+      m.data.should.be.an.Object()
+      m.data.should.be.empty()
+    }, {})
+
+    nc.flush(() => {
+      done()
+    })
+  })
+
+  it('json requests', done => {
     const nc = NATS.connect({ port: PORT, json: true })
     nc.on('connect', () => {
       let c = 0
       const subj = NATS.createInbox()
-      nc.subscribe(subj, (m, reply) => {
-        nc.publish(reply, m)
+      nc.subscribe(subj, (_, m) => {
+        nc.publish(m.reply, m.data)
       })
 
       let str = 0
       let obj = 0
       let num = 0
-      const h = m => {
-        switch (typeof m) {
+      const h = (_, m) => {
+        switch (typeof m.data) {
           case 'number':
             num++
             break
@@ -684,34 +701,20 @@ describe('Basics', () => {
             break
         }
         c++
-        if (c === 11) {
-          str.should.be.equal(4)
-          obj.should.be.equal(4)
-          num.should.be.equal(3)
+        if (c === 3) {
+          str.should.be.equal(1)
+          obj.should.be.equal(1)
+          num.should.be.equal(1)
           nc.close()
           done()
         }
       }
 
       nc.flush(() => {
-        // simplest signature - empty resolves to ''
-        nc.requestOne(subj, h, 1000)
-
         // subj, payload, timeout, handler
-        nc.requestOne(subj, 'a', 1000, h)
-        nc.requestOne(subj, {}, 1000, h)
-        nc.requestOne(subj, 10, 1000, h)
-
-        nc.requestOne(subj, 'a', 1000, h)
-        nc.requestOne(subj, {}, 1000, h)
-        nc.requestOne(subj, 10, 1000, h)
-
-        // this one is misleading, the option is really a payload
-        nc.requestOne(subj, { queue: 'bar' }, 1000, h)
-
-        nc.requestOne(subj, 'a', { queue: 'worker' }, 1000, h)
-        nc.requestOne(subj, {}, { queue: 'worker' }, 1000, h)
-        nc.requestOne(subj, 10, { queue: 'worker' }, 1000, h)
+        nc.request(subj, h, 'a', { timeout: 1000 })
+        nc.request(subj, h, {}, { timeout: 1000 })
+        nc.request(subj, h, 10, { timeout: 1000 })
       })
     })
   })

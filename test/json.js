@@ -123,6 +123,7 @@ describe('JSON payloads', () => {
       body: 'world'
     },
     'empty array': [],
+    'empty object': {},
     array: [1, -2.3, 'foo', false],
     true: true,
     false: false,
@@ -136,9 +137,6 @@ describe('JSON payloads', () => {
   for (const name of Object.getOwnPropertyNames(testInputs)) {
     it(`should pub/sub with ${name}`, testPubSub(testInputs[name]))
     it(`should req/rep with ${name}`, testReqRep(testInputs[name]))
-    it(`should req/rep with ${name} oldrr`, testReqRep(
-      testInputs[name], undefined, true
-    ))
   }
 
   // undefined must be serialized as null
