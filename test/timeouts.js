@@ -126,7 +126,7 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       nc.subscribe('foo', (_, m) => {
-        m.msg.should.be.equal('foo')
+        m.data.should.be.equal('foo')
       }, { timeout: 50, expected: 1 })
       nc.publish('foo', 'foo')
       nc.flush(() => {

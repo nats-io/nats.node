@@ -93,7 +93,7 @@ describe('Basics', () => {
     const data = 'Hello World'
     nc.subscribe('foo', (_, msg) => {
       should.exist(msg)
-      msg.msg.should.equal(data)
+      data.should.equal(msg.data)
       nc.close()
       done()
     })
@@ -106,7 +106,7 @@ describe('Basics', () => {
     const inbox = nc.createInbox()
     nc.subscribe('foo', (_, m) => {
       should.exist(m)
-      m.msg.should.equal(data)
+      m.data.should.equal(data)
       should.exist(m.replyTo)
       m.replyTo.should.equal(inbox)
       nc.close()
@@ -122,7 +122,7 @@ describe('Basics', () => {
 
     nc.subscribe('foo', (_, m) => {
       should.exist(m)
-      m.msg.should.equal(initMsg)
+      m.data.should.equal(initMsg)
       should.exist(m.replyTo)
       m.replyTo.should.match(/_INBOX\.*/)
       nc.publish(m.replyTo, replyMsg)
@@ -130,7 +130,7 @@ describe('Basics', () => {
 
     nc.request('foo', (_, m) => {
       should.exist(m)
-      m.msg.should.equal(replyMsg)
+      m.data.should.equal(replyMsg)
       nc.close()
       done()
     }, initMsg)
@@ -298,7 +298,7 @@ describe('Basics', () => {
       key: true
     }
     nc.subscribe('foo1', (_, m) => {
-      m.msg.should.have.property('key').and.be.a.Boolean()
+      m.data.should.have.property('key').and.be.a.Boolean()
       nc.close()
       done()
     })
@@ -315,8 +315,8 @@ describe('Basics', () => {
       key: 'CEDILA-Ç'
     }
     nc.subscribe('foo2', (_, m) => {
-      m.msg.should.have.property('key')
-      m.msg.key.should.equal('CEDILA-Ç')
+      m.data.should.have.property('key')
+      m.data.key.should.equal('CEDILA-Ç')
       nc.close()
       done()
     })

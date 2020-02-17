@@ -47,7 +47,7 @@ describe('Buffer', () => {
     const validBuffer = Buffer.from('foo-bar')
 
     nc.subscribe('validBuffer', (_, m) => {
-      should(validBuffer.equals(m.msg)).equal(true)
+      should(validBuffer.equals(m.data)).equal(true)
       nc.close()
       done()
     })
@@ -66,7 +66,7 @@ describe('Buffer', () => {
     const validBuffer = Buffer.from(jsonString)
 
     nc.subscribe('validBuffer', (_, m) => {
-      m.msg.should.eql({
+      m.data.should.eql({
         'foo-bar': true
       })
       nc.close()

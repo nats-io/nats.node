@@ -32,8 +32,8 @@ nc.on('connect', function () {
 
   nc.subscribe('greeting', (_, m) => {
     // msg is a parsed JSON object object
-    if (m.msg.name && m.msg.reply) {
-      nc.publish(m.replyTo, { greeting: 'hello ' + m.msg.name })
+    if (m.data.name && m.data.reply) {
+      nc.publish(m.replyTo, { greeting: 'hello ' + m.data.name })
     }
   })
 
@@ -49,7 +49,7 @@ nc.on('connect', function () {
     // `TypeError: Cannot convert object to primitive value`
     // Note that simple `console.log(msg)` is fine.
 
-    if (Object.hasOwnProperty.call(m.msg, 'toString')) {
+    if (Object.hasOwnProperty.call(m.data, 'toString')) {
       console.log('tricky - trying to crash me:', m.toString)
       return
     }
@@ -57,7 +57,7 @@ nc.on('connect', function () {
     // of course this is no different than using a value that is
     // expected in one format (say a number), but the client provides
     // a string:
-    if (isNaN(m.msg.amount) === false) {
+    if (isNaN(m.data.amount) === false) {
       // do something with the number
     }
     // ...

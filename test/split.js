@@ -47,8 +47,8 @@ describe('Split Messages', () => {
 
     nc.subscribe('foo', (_, m) => {
       should.exists(m)
-      m.msg.should.equal(data)
-      m.msg.length.should.equal(data.length)
+      m.data.should.equal(data)
+      m.data.length.should.equal(data.length)
       received += 1
       if (received === expected) {
         nc.close()
@@ -70,8 +70,8 @@ describe('Split Messages', () => {
     const expected = 10000
 
     nc.subscribe('foo', (_, m) => {
-      m.msg.should.equal(data)
-      m.msg.length.should.equal(data.length)
+      m.data.should.equal(data)
+      m.data.length.should.equal(data.length)
       received += 1
       if (received === expected) {
         nc.close()

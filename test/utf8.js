@@ -47,7 +47,7 @@ describe('UTF8', function () {
 
     nc.subscribe('utf8', function (_, m) {
       should.exists(m)
-      m.msg.should.equal(data)
+      m.data.should.equal(data)
       nc.close()
       done()
     })
@@ -66,13 +66,13 @@ describe('UTF8', function () {
 
     nc.subscribe('utf8', function (_, m) {
       // Should be all 12 bytes..
-      m.msg.length.should.equal(12)
+      m.data.length.should.equal(12)
       // Should not be a proper utf8 string.
-      m.msg.should.not.equal(utf8Data)
+      m.data.should.not.equal(utf8Data)
     })
 
     nc.subscribe('plain', function (_, m) {
-      m.msg.should.equal(plainData)
+      m.data.should.equal(plainData)
       nc.close()
       done()
     })

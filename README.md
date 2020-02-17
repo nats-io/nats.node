@@ -27,12 +27,16 @@ const nc = NATS.connect()
 nc.publish('foo', 'Hello World!')
 
 // Simple Subscriber
-nc.subscribe('foo', function (msg) {
+nc.subscribe('foo', function (err, msg) {
+  if (err) {
+    console.error(err)
+    return
+  }
   console.log('Received a message: ' + msg)
 })
 
 // Unsubscribing
-const sid = nc.subscribe('foo', function (msg) {})
+const sid = nc.subscribe('foo', function (err, msg) {})
 nc.unsubscribe(sid)
 
 // Subscription/Request callbacks are given multiple arguments:
@@ -42,7 +46,7 @@ nc.unsubscribe(sid)
 //   than the subscription subject - see "Wildcard Subscriptions".
 // - finally the subscription id is the local id for the subscription
 //   this is the same value returned by the subscribe call.
-nc.subscribe('foo', (msg, reply, subject, sid) => {
+nc.subscribe('foo', (err, m) => {
   if (reply) {
     nc.publish(reply, 'got ' + msg + ' on ' + subject + ' in subscription id ' + sid)
     return

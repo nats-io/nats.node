@@ -72,7 +72,7 @@ describe('Callbacks', () => {
           done('Error making request', err)
           return
         }
-        m.msg.should.be.equal('data')
+        m.data.should.be.equal('data')
         m.replyTo.should.be.equal('foo')
         nc.close()
         done()

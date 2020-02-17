@@ -111,7 +111,7 @@ export interface MessageHandler {
 }
 
 export interface Message {
-	msg?: any,
+	data?: any,
 	subject: string,
 	replyTo?: string,
 	sid: number

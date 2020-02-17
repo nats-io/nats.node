@@ -50,10 +50,10 @@ describe('JSON payloads', () => {
       })
 
       nc.subscribe('pubsub', (_, m) => {
-        if (m.msg instanceof Object) {
-          m.msg.should.deepEqual(expected)
+        if (m.data instanceof Object) {
+          m.data.should.deepEqual(expected)
         } else {
-          should.strictEqual(m.msg, expected)
+          should.strictEqual(m.data, expected)
         }
         nc.unsubscribe(m.sid)
         nc.close()
@@ -77,14 +77,14 @@ describe('JSON payloads', () => {
       })
 
       nc.subscribe('reqrep', (_, m) => {
-        nc.publish(m.replyTo, m.msg)
+        nc.publish(m.replyTo, m.data)
       }, { max: 1 })
 
       nc.request('reqrep', (_, m) => {
-        if (m.msg instanceof Object) {
-          m.msg.should.deepEqual(expected)
+        if (m.data instanceof Object) {
+          m.data.should.deepEqual(expected)
         } else {
-          should.strictEqual(m.msg, expected)
+          should.strictEqual(m.data, expected)
         }
         nc.close()
 

@@ -109,7 +109,7 @@ describe('Basic Connectivity', () => {
     })
     let recvMsg = ''
     ua.subscribe('topic1', (_, msg) => {
-      recvMsg = msg.msg
+      recvMsg = msg.data
     })
     setTimeout(() => {
       ub.publish('topic1', 'hello')
@@ -134,7 +134,7 @@ describe('Basic Connectivity', () => {
     })
     let recvMsg
     ua.subscribe('topic1', (_, m) => {
-      recvMsg = m.msg
+      recvMsg = m.data
     })
     setTimeout(() => {
       ub.publish('topic1', 'hello')
