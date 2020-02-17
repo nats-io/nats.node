@@ -72,7 +72,7 @@ let sid = nc.subscribe('foo', (err, m) => {
     if (!m) {
         return
     }
-    console.log(`sub1 handler: payload: ${m.msg} replyTo: ${m.replyTo} subject: ${m.subject}`);
+    console.log(`sub1 handler: payload: ${m.data} replyTo: ${m.reply} subject: ${m.subject}`);
 });
 
 // subscribe expecting 5 messages
@@ -86,16 +86,16 @@ nc.subscribe('foo', (_, m) => {
     if(!m) {
         return;
     }
-    console.log(`sub2 handler: payload: ${m.msg} replyTo: ${m.replyTo} subject: ${m.subject}`);
+    console.log(`sub2 handler: data: ${m.data} reply: ${m.reply} subject: ${m.subject}`);
 }, { queue: 'one' });
 
 nc.subscribe('bar', (_, m) => {
     if(!m) {
         return;
     }
-    console.log(`bar request handler: payload: ${m.msg} replyTo: ${m.replyTo} subject: ${m.subject}`);
-    if(m.replyTo) {
-        nc.publish(m.replyTo, m.msg);
+    console.log(`bar request handler: data: ${m.data} reply: ${m.reply} subject: ${m.subject}`);
+    if(m.reply) {
+        nc.publish(m.reply, m.data);
     }
 });
 
@@ -115,7 +115,7 @@ let rid = nc.request('bar', (_, m) => {
     if(!m) {
         return;
     }
-    console.log(`request not expecting payload: ${m.msg}`);
+    console.log(`request not expecting data: ${m.data}`);
 });
 console.log(rid);
 
@@ -124,7 +124,7 @@ rid = nc.request('bar', (_, m) => {
     if(!m) {
         return;
     }
-    console.log(`request expecting payload: ${m.msg}`);
+    console.log(`request expecting data: ${m.data}`);
 }, 'payload');
 console.log(rid);
 
@@ -133,7 +133,7 @@ rid = nc.request('bar', (_, m) => {
     if(!m) {
         return;
     }
-    console.log(`request expecting payload: ${m.msg}`);
+    console.log(`request expecting data: ${m.data}`);
 }, 'payload', {max: 5, timeout: 1000});
 console.log(rid);
 

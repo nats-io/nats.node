@@ -61,7 +61,7 @@ describe('Callbacks', () => {
     const nc = NATS.connect(PORT)
     nc.flush(() => {
       nc.subscribe('rr', (_, m) => {
-        nc.publish(m.replyTo, 'data', 'foo')
+        nc.publish(m.reply, 'data', 'foo')
       })
     })
 
@@ -73,7 +73,7 @@ describe('Callbacks', () => {
           return
         }
         m.data.should.be.equal('data')
-        m.replyTo.should.be.equal('foo')
+        m.reply.should.be.equal('foo')
         nc.close()
         done()
       }, '', { timeout: 5000 })

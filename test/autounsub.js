@@ -179,7 +179,7 @@ describe('Max responses and Auto-unsub', () => {
           nc.close()
           done(err)
         }
-        nc.publish(msg.replyTo, 'I can help!')
+        nc.publish(msg.reply, 'I can help!')
       })
     }
 
@@ -198,7 +198,7 @@ describe('Max responses and Auto-unsub', () => {
     let received = 0
 
     nc.subscribe('help', (_, msg) => {
-      nc.publish(msg.replyTo, 'I can help!')
+      nc.publish(msg.reply, 'I can help!')
     })
 
     /* jshint loopfunc: true */
@@ -228,12 +228,12 @@ describe('Max responses and Auto-unsub', () => {
     let received = 0
 
     nc.subscribe('help', (_, m) => {
-      nc.publish(m.replyTo, 'I can help!')
-      nc.publish(m.replyTo, 'I can help!')
-      nc.publish(m.replyTo, 'I can help!')
-      nc.publish(m.replyTo, 'I can help!')
-      nc.publish(m.replyTo, 'I can help!')
-      nc.publish(m.replyTo, 'I can help!')
+      nc.publish(m.reply, 'I can help!')
+      nc.publish(m.reply, 'I can help!')
+      nc.publish(m.reply, 'I can help!')
+      nc.publish(m.reply, 'I can help!')
+      nc.publish(m.reply, 'I can help!')
+      nc.publish(m.reply, 'I can help!')
     })
 
     nc.request('help', () => {

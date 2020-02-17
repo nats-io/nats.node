@@ -113,7 +113,7 @@ export interface MessageHandler {
 export interface Message {
 	data?: any,
 	subject: string,
-	replyTo?: string,
+	reply?: string,
 	sid: number
 }
 

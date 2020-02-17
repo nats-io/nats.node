@@ -47,8 +47,8 @@ nats.subscribe('close', (_, m) => {
   fs.appendFile('/tmp/existing_client.log', 'got close\n', err => {
     console.error(err)
   })
-  if (m.replyTo) {
-    nats.publish(m.replyTo, 'closing')
+  if (m.reply) {
+    nats.publish(m.reply, 'closing')
   }
   nats.flush(() => {
     nats.close()

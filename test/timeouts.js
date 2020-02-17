@@ -199,7 +199,7 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       nc.subscribe('foo', (_, m) => {
-        nc.publish(m.replyTo)
+        nc.publish(m.reply)
       })
 
       let responses = 0

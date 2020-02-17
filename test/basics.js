@@ -107,8 +107,8 @@ describe('Basics', () => {
     nc.subscribe('foo', (_, m) => {
       should.exist(m)
       m.data.should.equal(data)
-      should.exist(m.replyTo)
-      m.replyTo.should.equal(inbox)
+      should.exist(m.reply)
+      m.reply.should.equal(inbox)
       nc.close()
       done()
     })
@@ -123,9 +123,9 @@ describe('Basics', () => {
     nc.subscribe('foo', (_, m) => {
       should.exist(m)
       m.data.should.equal(initMsg)
-      should.exist(m.replyTo)
-      m.replyTo.should.match(/_INBOX\.*/)
-      nc.publish(m.replyTo, replyMsg)
+      should.exist(m.reply)
+      m.reply.should.match(/_INBOX\.*/)
+      nc.publish(m.reply, replyMsg)
     })
 
     nc.request('foo', (_, m) => {
@@ -145,11 +145,11 @@ describe('Basics', () => {
 
     // Add two subscribers. We will only receive a reply from one.
     nc.subscribe('foo', (_, msg) => {
-      nc.publish(msg.replyTo, replyMsg)
+      nc.publish(msg.reply, replyMsg)
     })
 
     nc.subscribe('foo', (_, msg) => {
-      nc.publish(msg.replyTo, replyMsg)
+      nc.publish(msg.reply, replyMsg)
     })
 
     const sub = nc.request('foo', _ => {

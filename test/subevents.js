@@ -122,7 +122,7 @@ describe('Subscription Events', () => {
     const subj = 'request.autounsub.event'
 
     nc.subscribe(subj, (_, m) => {
-      nc.publish(m.replyTo, 'OK')
+      nc.publish(m.reply, 'OK')
     })
     nc.request(subj, () => {}, null, { max: 1 })
 
