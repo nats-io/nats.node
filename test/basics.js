@@ -17,6 +17,10 @@
 'use strict'
 
 const NATS = require('../')
+const TIMEOUT_ERR = require('../').TIMEOUT_ERR
+const BAD_SUBJECT = require('../').BAD_SUBJECT
+const BAD_OPTIONS = require('../').BAD_OPTIONS
+const CALLBACK_REQUIRED = require('../').CALLBACK_REQUIRED
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const after = require('mocha').after
@@ -797,8 +801,80 @@ describe('Basics', () => {
     })
   })
 
+  it('subs require subject', (done) => {
+    const nc = NATS.connect(PORT)
+    try {
+      nc.subscribe('', () => {})
+      done(new Error('should have not subscribed'))
+    } catch (err) {
+      err.code.should.be.equal(BAD_SUBJECT)
+      nc.close()
+      done()
+    }
+  })
+
+  it('reqs require subject', (done) => {
+    const nc = NATS.connect(PORT)
+    try {
+      nc.request('', () => {})
+      done(new Error('should have not requested'))
+    } catch (err) {
+      err.code.should.be.equal(BAD_SUBJECT)
+      nc.close()
+      done()
+    }
+  })
+
+  it('subs require callback', (done) => {
+    const nc = NATS.connect(PORT)
+    try {
+      nc.subscribe('q')
+      done(new Error('should have not subscribed'))
+    } catch (err) {
+      err.code.should.be.equal(CALLBACK_REQUIRED)
+      nc.close()
+      done()
+    }
+  })
+
+  it('reqs require callback', (done) => {
+    const nc = NATS.connect(PORT)
+    try {
+      nc.request('q')
+      done(new Error('should have not requested'))
+    } catch (err) {
+      err.code.should.be.equal(CALLBACK_REQUIRED)
+      nc.close()
+      done()
+    }
+  })
+
+  it('subs require valid opts', (done) => {
+    const nc = NATS.connect(PORT)
+    try {
+      nc.subscribe('q', () => {}, 'string')
+      done(new Error('should have not requested'))
+    } catch (err) {
+      err.code.should.be.equal(BAD_OPTIONS)
+      nc.close()
+      done()
+    }
+  })
+
+  it('reqs require valid opts', (done) => {
+    const nc = NATS.connect(PORT)
+    try {
+      nc.request('q', () => {}, '', 'string')
+      done(new Error('should have not requested'))
+    } catch (err) {
+      err.code.should.be.equal(BAD_OPTIONS)
+      nc.close()
+      done()
+    }
+  })
+
   it('sub ids should start at 1', (done) => {
-    const nc = NATS.connect({ port: PORT, json: true, useOldRequestStyle: true })
+    const nc = NATS.connect({ port: PORT, json: true })
     nc.on('connect', () => {
       const ssid = nc.subscribe(nc.createInbox(), () => {})
       ssid.should.be.equal(1)
@@ -806,4 +882,58 @@ describe('Basics', () => {
       done()
     })
   })
+
+  function rr (noMuxRequests, input, opts, delay) {
+    return (done) => {
+      const opts = { noMuxRequests: noMuxRequests, port: PORT }
+      const nc = NATS.connect(opts)
+      nc.on('connect', () => {
+        const sub = nc.createInbox()
+        nc.subscribe(sub, (_, m) => {
+          setTimeout(() => {
+            if (m.reply) {
+              nc.publish(m.reply, input)
+              const tokens = m.reply.split('.')
+              if (noMuxRequests) {
+                tokens.length.should.be.equal(2, m.reply)
+              } else {
+                tokens.length.should.be.equal(3, m.reply)
+              }
+            }
+          }, delay)
+        })
+
+        const sid = nc.request(sub, (err, m) => {
+          if (delay && opts.timeout && delay > opts.timeout) {
+            should.exist(err)
+            err.code.should.be.equal(TIMEOUT_ERR)
+          } else {
+            should.not.exist(err)
+            should.exist(m)
+            m.data.should.equal(input)
+          }
+          if (noMuxRequests) {
+            nc.numSubscriptions().should.be.equal(1)
+          } else {
+            nc.numSubscriptions().should.be.equal(2)
+          }
+
+          nc.close()
+          done()
+        }, '', opts)
+        if (noMuxRequests) {
+          sid.should.be.greaterThan(0)
+        } else {
+          sid.should.be.lessThan(0)
+        }
+      })
+    }
+  }
+
+  it('should rr with muxsub', rr(false, 'A', {}, 0))
+  it('should rr without muxsub', rr(true, 'B', {}, 0))
+  it('should rr with muxsub with delay', rr(false, 'C', { timeout: 1000 }, 500))
+  it('should rr without muxsub with delay', rr(true, 'D', { timeout: 1000 }, 500))
+  it('should rr with muxsub can timeout', rr(false, 'E', { timeout: 100 }, 250))
+  it('should rr without muxsub can timeout', rr(true, 'F', { timeout: 100 }, 250))
 })

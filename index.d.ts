@@ -29,6 +29,7 @@ export const BAD_MSG: string;
 export const BAD_OPTIONS: string;
 export const BAD_REPLY: string;
 export const BAD_SUBJECT: string;
+export const CALLBACK_REQUIRED: string;
 export const CLIENT_CERT_REQ: string;
 export const CONN_CLOSED: string;
 export const CONN_DRAINING: string;
