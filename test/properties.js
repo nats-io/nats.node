@@ -111,7 +111,7 @@ describe('Connection Properties', () => {
       NATS.connect('localhost:4222', 'some string')
     } catch (err) {
       err.should.be.instanceof(NATS.NatsError)
-      err.should.have.property('code', NATS.BAD_OPTIONS)
+      err.should.have.property('code', NATS.ErrorCode.BAD_OPTIONS)
     }
   })
 
@@ -140,7 +140,7 @@ describe('Connection Properties', () => {
       nc.on('error', (err) => {
         // nc.close()
         err.should.be.instanceof(NATS.NatsError)
-        err.should.have.property('code', NATS.NO_ECHO_NOT_SUPPORTED)
+        err.should.have.property('code', NATS.ErrorCode.NO_ECHO_NOT_SUPPORTED)
         client.end(() => {
           srv.close(done)
         })
@@ -153,7 +153,7 @@ describe('Connection Properties', () => {
       NATS.connect({ timeout: '500' })
     } catch (err) {
       err.should.be.instanceof(NATS.NatsError)
-      err.should.have.property('code', NATS.BAD_OPTIONS)
+      err.should.have.property('code', NATS.ErrorCode.BAD_OPTIONS)
       err.should.have.property('message', 'timeout should be a number')
     }
   })

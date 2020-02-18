@@ -22,36 +22,37 @@ export const version: string;
 /**
  * Error codes
  */
-export const BAD_AUTHENTICATION: string;
-export const BAD_CREDS: string;
-export const BAD_JSON: string;
-export const BAD_MSG: string;
-export const BAD_OPTIONS: string;
-export const BAD_REPLY: string;
-export const BAD_SUBJECT: string;
-export const CALLBACK_REQUIRED: string;
-export const CLIENT_CERT_REQ: string;
-export const CONN_CLOSED: string;
-export const CONN_DRAINING: string;
-export const CONN_ERR: string;
-export const CONN_TIMEOUT: string;
-export const INVALID_ENCODING: string;
-export const NATS_PROTOCOL_ERR: string;
-export const NKEY_OR_JWT_REQ: string;
-export const NON_SECURE_CONN_REQ: string;
-export const NO_ECHO_NOT_SUPPORTED: string;
-export const NO_SEED_IN_CREDS: string;
-export const NO_USER_JWT_IN_CREDS: string;
-export const OPENSSL_ERR: string;
-export const PERMISSIONS_ERR: string;
-export const REQ_TIMEOUT: string;
-export const SECURE_CONN_REQ: string;
-export const SIGCB_NOTFUNC: string;
-export const SIGNATURE_REQUIRED: string;
-export const STALE_CONNECTION_ERR: string;
-export const SUB_DRAINING: string;
-export const TIMEOUT_ERR: string;
-
+export const enum ErrorCode {
+	BAD_AUTHENTICATION = 'BAD_AUTHENTICATION',
+	BAD_CREDS = 'BAD_CREDENTIALS',
+	BAD_JSON = 'BAD_JSON',
+	BAD_MSG = 'BAD_MSG',
+	BAD_OPTIONS = 'BAD_OPTIONS',
+	BAD_REPLY = 'BAD_REPLY',
+	BAD_SUBJECT = 'BAD_SUBJECT',
+	CALLBACK_REQUIRED = 'CALLBACK_REQ',
+	CLIENT_CERT_REQ = 'CLIENT_CERT_REQ',
+	CONN_CLOSED = 'CONN_CLOSED',
+	CONN_DRAINING = 'CONN_DRAINING',
+	CONN_ERR = 'CONN_ERR',
+	CONN_TIMEOUT = 'CONN_TIMEOUT',
+	INVALID_ENCODING = 'INVALID_ENCODING',
+	NATS_PROTOCOL_ERR = 'NATS_PROTOCOL_ERR',
+	NKEY_OR_JWT_REQ = 'NKEY_OR_JWT_REQ',
+	NON_SECURE_CONN_REQ = 'NON_SECURE_CONN_REQ',
+	NO_ECHO_NOT_SUPPORTED = 'NO_ECHO_NOT_SUPPORTED',
+	NO_SEED_IN_CREDS = 'NO_SEED_IN_CREDS',
+	NO_USER_JWT_IN_CREDS = 'NO_USER_JWT_IN_CREDS',
+	OPENSSL_ERR = 'OPENSSL_ERR',
+	PERMISSIONS_ERR = 'permissions violation',
+	REQ_TIMEOUT = 'REQ_TIMEOUT',
+	SECURE_CONN_REQ = 'SECURE_CONN_REQ',
+	SIGCB_NOTFUNC = 'SIG_NOT_FUNC',
+	SIGNATURE_REQUIRED = 'SIG_REQ',
+	STALE_CONNECTION_ERR = 'stale connection',
+	SUB_DRAINING = 'SUB_DRAINING',
+	TIMEOUT_ERR = 'TIMEOUT'
+}
 
 /**
  * Create a properly formatted inbox subject.

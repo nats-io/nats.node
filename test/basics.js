@@ -17,10 +17,7 @@
 'use strict'
 
 const NATS = require('../')
-const TIMEOUT_ERR = require('../').TIMEOUT_ERR
-const BAD_SUBJECT = require('../').BAD_SUBJECT
-const BAD_OPTIONS = require('../').BAD_OPTIONS
-const CALLBACK_REQUIRED = require('../').CALLBACK_REQUIRED
+const ErrorCode = require('../').ErrorCode
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const after = require('mocha').after
@@ -547,7 +544,7 @@ describe('Basics', () => {
       try {
         nc1.publish(subj)
       } catch (err) {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
           done(err)
@@ -565,7 +562,7 @@ describe('Basics', () => {
       try {
         nc1.request(subj)
       } catch (err) {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
           done(err)
@@ -583,7 +580,7 @@ describe('Basics', () => {
       try {
         nc1.request(subj, () => {})
       } catch (err) {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
           done(err)
@@ -597,7 +594,7 @@ describe('Basics', () => {
     nc1.on('connect', () => {
       nc1.close()
       nc1.drain((err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
           done(err)
@@ -611,7 +608,7 @@ describe('Basics', () => {
     nc1.on('connect', () => {
       nc1.close()
       nc1.drainSubscription(100, (err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
           done(err)
@@ -627,7 +624,7 @@ describe('Basics', () => {
       try {
         nc1.subscribe(NATS.createInbox(), () => {})
       } catch (err) {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
           done(err)
@@ -641,7 +638,7 @@ describe('Basics', () => {
     nc1.on('connect', () => {
       nc1.drain()
       nc1.drain((err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
           done(err)
@@ -728,7 +725,7 @@ describe('Basics', () => {
     nc.on('error', (err) => {
       nc.close()
       err.should.be.instanceof(NATS.NatsError)
-      err.should.have.property('code', NATS.NON_SECURE_CONN_REQ)
+      err.should.have.property('code', ErrorCode.NON_SECURE_CONN_REQ)
       done()
     })
   })
@@ -807,7 +804,7 @@ describe('Basics', () => {
       nc.subscribe('', () => {})
       done(new Error('should have not subscribed'))
     } catch (err) {
-      err.code.should.be.equal(BAD_SUBJECT)
+      err.code.should.be.equal(NATS.ErrorCode.BAD_SUBJECT)
       nc.close()
       done()
     }
@@ -819,7 +816,7 @@ describe('Basics', () => {
       nc.request('', () => {})
       done(new Error('should have not requested'))
     } catch (err) {
-      err.code.should.be.equal(BAD_SUBJECT)
+      err.code.should.be.equal(NATS.ErrorCode.BAD_SUBJECT)
       nc.close()
       done()
     }
@@ -831,7 +828,7 @@ describe('Basics', () => {
       nc.subscribe('q')
       done(new Error('should have not subscribed'))
     } catch (err) {
-      err.code.should.be.equal(CALLBACK_REQUIRED)
+      err.code.should.be.equal(NATS.ErrorCode.CALLBACK_REQUIRED)
       nc.close()
       done()
     }
@@ -843,7 +840,7 @@ describe('Basics', () => {
       nc.request('q')
       done(new Error('should have not requested'))
     } catch (err) {
-      err.code.should.be.equal(CALLBACK_REQUIRED)
+      err.code.should.be.equal(NATS.ErrorCode.CALLBACK_REQUIRED)
       nc.close()
       done()
     }
@@ -855,7 +852,7 @@ describe('Basics', () => {
       nc.subscribe('q', () => {}, 'string')
       done(new Error('should have not requested'))
     } catch (err) {
-      err.code.should.be.equal(BAD_OPTIONS)
+      err.code.should.be.equal(NATS.ErrorCode.BAD_OPTIONS)
       nc.close()
       done()
     }
@@ -867,7 +864,7 @@ describe('Basics', () => {
       nc.request('q', () => {}, '', 'string')
       done(new Error('should have not requested'))
     } catch (err) {
-      err.code.should.be.equal(BAD_OPTIONS)
+      err.code.should.be.equal(NATS.ErrorCode.BAD_OPTIONS)
       nc.close()
       done()
     }
@@ -906,7 +903,7 @@ describe('Basics', () => {
         const sid = nc.request(sub, (err, m) => {
           if (delay && opts.timeout && delay > opts.timeout) {
             should.exist(err)
-            err.code.should.be.equal(TIMEOUT_ERR)
+            err.code.should.be.equal(NATS.ErrorCode.TIMEOUT_ERR)
           } else {
             should.not.exist(err)
             should.exist(m)

@@ -24,7 +24,6 @@ const after = require('mocha').after
 const before = require('mocha').before
 const describe = require('mocha').describe
 const it = require('mocha').it
-const TIMEOUT_ERR = require('../').TIMEOUT_ERR
 
 const PORT = 1428
 
@@ -53,7 +52,7 @@ describe('Timeout and max received events for subscriptions', () => {
       nc.on('error', (err) => {
         err.should.be.instanceof(NATS.NatsError)
         err.chainedError.should.be.instanceof(NATS.NatsError)
-        err.chainedError.should.have.property('code', NATS.CONN_TIMEOUT)
+        err.chainedError.should.have.property('code', NATS.ErrorCode.CONN_TIMEOUT)
         srv.close(done)
       })
     })
@@ -65,7 +64,7 @@ describe('Timeout and max received events for subscriptions', () => {
     nc.on('error', (err) => {
       err.should.be.instanceof(NATS.NatsError)
       err.chainedError.should.be.instanceof(NATS.NatsError)
-      err.chainedError.should.have.property('code', NATS.CONN_TIMEOUT)
+      err.chainedError.should.have.property('code', NATS.ErrorCode.CONN_TIMEOUT)
       done()
     })
 
@@ -178,7 +177,7 @@ describe('Timeout and max received events for subscriptions', () => {
         nc.close()
         count.should.be.equal(0)
         should.exist(err)
-        err.code.should.be.equal(TIMEOUT_ERR)
+        err.code.should.be.equal(NATS.ErrorCode.TIMEOUT_ERR)
         done()
       }, 1000)
     })
@@ -189,7 +188,7 @@ describe('Timeout and max received events for subscriptions', () => {
     nc.on('connect', () => {
       nc.request('foo', (err) => {
         err.should.be.instanceof(NATS.NatsError)
-        err.should.have.property('code', NATS.REQ_TIMEOUT)
+        err.should.have.property('code', NATS.ErrorCode.REQ_TIMEOUT)
         nc.close()
         done()
       }, null, { max: 1, timeout: 1000 })
@@ -208,7 +207,7 @@ describe('Timeout and max received events for subscriptions', () => {
         if (err) {
           responses.should.be.equal(1)
           err.should.be.instanceof(NATS.NatsError)
-          err.should.have.property('code', NATS.REQ_TIMEOUT)
+          err.should.have.property('code', NATS.ErrorCode.REQ_TIMEOUT)
           nc.close()
           done()
         }
