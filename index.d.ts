@@ -111,24 +111,37 @@ export interface RequestOptions {
 	timeout?: number
 }
 
-export interface MessageHandler {
-	(err?: NatsError, m?: Message): void;
+/** First argument will be an error if an error occurred (such as a timeout) or null.
+ * Message argument is the received message.
+ */
+export interface MsgCallback {
+	(err: NatsError | null, msg: Msg): void;
 }
 
 export interface DrainSubHandler {
-	(err?: NatsError, sid?: number): void;
+	(err: NatsError | null, sid: number): void;
 }
 
-export interface DrainHandler {
+export interface ErrHandler {
+	(err: NatsError|null): void;
+}
+
+export interface FlushCallback {
 	(err?: NatsError): void;
 }
 
 
-export interface Message {
-	data?: any,
-	subject: string,
-	reply?: string,
-	sid: number
+export interface Msg {
+	/** subject used to publish the message */
+	subject: string;
+	/** optional reply subject where replies may be sent. */
+	reply?: string;
+	/** optional payload for the message, */
+	data?: any;
+	/** Internal subscription id */
+	sid: number;
+	/** Number of bytes in the payload */
+	size: number;
 }
 
 declare class Client extends events.EventEmitter {
@@ -146,18 +159,18 @@ declare class Client extends events.EventEmitter {
 	 * Flush outbound queue to server and call optional callback when server has processed
 	 * all data.
 	 */
-	flush(callback?: Function):void;
+	flush(callback?: FlushCallback):void;
 
 	/**
 	 * Publish a message to the given subject, with optional reply and callback.
 	 */
-	publish(subject: string, msg?: any, reply?: string): void;
+	publish(subject: string, data?: any, reply?: string): void;
 
 	/**
 	 * Subscribe to a given subject, with optional options and callback. opts can be
 	 * omitted, even with a callback. A subscription id is returned.
 	 */
-	subscribe(subject: string, callback: MessageHandler, opts?: SubscriptionOptions): number;
+	subscribe(subject: string, callback: MsgCallback, opts?: SubscriptionOptions): number;
 
 	/**
 	 * Unsubscribe to a given subscription id, with optional max number of messages before unsubscribing.
@@ -184,7 +197,7 @@ declare class Client extends events.EventEmitter {
 	 * A drained connection is closed when the opt_callback is called without arguments.
 	 * @param callback
 	 */
-	drain(callback?:DrainHandler):void;
+	drain(callback?: ErrHandler):void;
 
 	/**
 	 * Publish a message with an implicit inbox listener as the reply. Message is optional.
@@ -193,7 +206,7 @@ declare class Client extends events.EventEmitter {
 	 * opt_options = {max:N, timeout:N}. Otherwise you will need to unsubscribe to stop
 	 * the message stream manually by calling unsubscribe() on the subscription id returned.
 	 */
-	request(subject: string, callback: MessageHandler, data?: any, options?: RequestOptions): number;
+	request(subject: string, callback: MsgCallback, data?: any, options?: RequestOptions): number;
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.
