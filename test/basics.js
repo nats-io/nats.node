@@ -113,7 +113,7 @@ describe('Basics', () => {
       nc.close()
       done()
     })
-    nc.publish('foo', data, inbox)
+    nc.publishRequest('foo', inbox, data)
   })
 
   it('should do request-reply', done => {

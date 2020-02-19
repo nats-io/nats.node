@@ -118,16 +118,12 @@ export interface MsgCallback {
 	(err: NatsError | null, msg: Msg): void;
 }
 
-export interface DrainSubHandler {
+export interface DrainSubCallback {
 	(err: NatsError | null, sid: number): void;
 }
 
-export interface ErrHandler {
-	(err: NatsError|null): void;
-}
-
-export interface FlushCallback {
-	(err?: NatsError): void;
+export interface Callback {
+	(err: NatsError | null): void;
 }
 
 
@@ -159,12 +155,13 @@ declare class Client extends events.EventEmitter {
 	 * Flush outbound queue to server and call optional callback when server has processed
 	 * all data.
 	 */
-	flush(callback?: FlushCallback):void;
+	flush(callback?: Callback):void;
 
 	/**
 	 * Publish a message to the given subject, with optional reply and callback.
 	 */
-	publish(subject: string, data?: any, reply?: string): void;
+	publish(subject: string, data?: any, callback?: Callback): void;
+	publishRequest(subject: string, reply: string, data?: any, callback?: Callback): void;
 
 	/**
 	 * Subscribe to a given subject, with optional options and callback. opts can be
@@ -184,7 +181,7 @@ declare class Client extends events.EventEmitter {
 	 * @param sid
 	 * @param callback
 	 */
-	drainSubscription(sid: number, callback?:DrainSubHandler):void;
+	drainSubscription(sid: number, callback?:DrainSubCallback):void;
 
 	/**
 	 * Drains all subscriptions. If an opt_callback is provided, the callback
@@ -197,7 +194,7 @@ declare class Client extends events.EventEmitter {
 	 * A drained connection is closed when the opt_callback is called without arguments.
 	 * @param callback
 	 */
-	drain(callback?: ErrHandler):void;
+	drain(callback?: Callback):void;
 
 	/**
 	 * Publish a message with an implicit inbox listener as the reply. Message is optional.

@@ -60,7 +60,7 @@ describe('Errors', () => {
       nc.publish('foo', () => {}, 'bar')
     }).should.throw(Error);
     (() => {
-      nc.publish('foo', 'bar', () => {}, 'bar')
+      nc.publish('foo', 'bar', 'err')
     }).should.throw(Error)
     // closed
     nc.close();

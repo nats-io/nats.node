@@ -305,7 +305,7 @@ describe('Reconnect functionality', () => {
       nsc.stopServer(server, () => {})
     })
     nc.on('disconnect', () => {
-      nc.publish('foo', 'bar', 'reply')
+      nc.publishRequest('foo', 'reply', 'bar')
       nc.flush(() => {
         // fails to get here, but should not crash
       })

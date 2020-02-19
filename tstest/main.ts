@@ -82,7 +82,10 @@ console.log(sid);
 
 nc.publish('foo');
 nc.publish('foo', 'payload');
-nc.publish('foo', 'payload', 'here');
+nc.publish('foo', 'payload', () => {});
+nc.publishRequest('foo', 'reply', 'payload', () => {});
+nc.publishRequest('foo', 'reply');
+nc.publishRequest('foo', 'reply', 'payload');
 
 // request min
 let rid = nc.request('bar', (_, m) => {

@@ -61,7 +61,7 @@ describe('Callbacks', () => {
     const nc = NATS.connect(PORT)
     nc.flush(() => {
       nc.subscribe('rr', (_, m) => {
-        nc.publish(m.reply, 'data', 'foo')
+        nc.publishRequest(m.reply, 'foo', 'data')
       })
     })
 
