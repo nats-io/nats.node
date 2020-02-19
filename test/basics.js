@@ -553,43 +553,23 @@ describe('Basics', () => {
     })
   })
 
-  it('request after drain fails toss', done => {
+  it('request after drain errors callback', done => {
     const subj = NATS.createInbox()
     const nc1 = NATS.connect(PORT)
 
     nc1.flush(() => {
       nc1.drain()
-      try {
-        nc1.request(subj)
-      } catch (err) {
+      nc1.request(subj, (err) => {
         if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
           done(err)
         }
-      }
+      })
     })
   })
 
-  it('request after drain fails callback', done => {
-    const subj = NATS.createInbox()
-    const nc1 = NATS.connect(PORT)
-
-    nc1.flush(() => {
-      nc1.drain()
-      try {
-        nc1.request(subj, () => {})
-      } catch (err) {
-        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      }
-    })
-  })
-
-  it('reject drain after close', done => {
+  it('reject drain after close calls callback', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       nc1.close()
@@ -600,6 +580,22 @@ describe('Basics', () => {
           done(err)
         }
       })
+    })
+  })
+
+  it('reject drain after close without callback tosses', done => {
+    const nc1 = NATS.connect(PORT)
+    nc1.on('connect', () => {
+      nc1.close()
+      try {
+        nc1.drain()
+      } catch (err) {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
+          done()
+        } else {
+          done(err)
+        }
+      }
     })
   })
 
@@ -621,15 +617,13 @@ describe('Basics', () => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       nc1.drain()
-      try {
-        nc1.subscribe(NATS.createInbox(), () => {})
-      } catch (err) {
+      nc1.subscribe(NATS.createInbox(), (err) => {
         if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
           done(err)
         }
-      }
+      })
     })
   })
 
@@ -800,26 +794,20 @@ describe('Basics', () => {
 
   it('subs require subject', (done) => {
     const nc = NATS.connect(PORT)
-    try {
-      nc.subscribe('', () => {})
-      done(new Error('should have not subscribed'))
-    } catch (err) {
+    nc.subscribe('', (err) => {
       err.code.should.be.equal(NATS.ErrorCode.BAD_SUBJECT)
       nc.close()
       done()
-    }
+    })
   })
 
   it('reqs require subject', (done) => {
     const nc = NATS.connect(PORT)
-    try {
-      nc.request('', () => {})
-      done(new Error('should have not requested'))
-    } catch (err) {
+    nc.request('', (err) => {
       err.code.should.be.equal(NATS.ErrorCode.BAD_SUBJECT)
       nc.close()
       done()
-    }
+    })
   })
 
   it('subs require callback', (done) => {
@@ -828,7 +816,7 @@ describe('Basics', () => {
       nc.subscribe('q')
       done(new Error('should have not subscribed'))
     } catch (err) {
-      err.code.should.be.equal(NATS.ErrorCode.CALLBACK_REQUIRED)
+      err.code.should.be.equal(NATS.ErrorCode.API_ERROR)
       nc.close()
       done()
     }
@@ -840,7 +828,7 @@ describe('Basics', () => {
       nc.request('q')
       done(new Error('should have not requested'))
     } catch (err) {
-      err.code.should.be.equal(NATS.ErrorCode.CALLBACK_REQUIRED)
+      err.code.should.be.equal(NATS.ErrorCode.API_ERROR)
       nc.close()
       done()
     }
@@ -848,26 +836,20 @@ describe('Basics', () => {
 
   it('subs require valid opts', (done) => {
     const nc = NATS.connect(PORT)
-    try {
-      nc.subscribe('q', () => {}, 'string')
-      done(new Error('should have not requested'))
-    } catch (err) {
+    nc.subscribe('q', (err) => {
       err.code.should.be.equal(NATS.ErrorCode.BAD_OPTIONS)
       nc.close()
       done()
-    }
+    }, 'string')
   })
 
   it('reqs require valid opts', (done) => {
     const nc = NATS.connect(PORT)
-    try {
-      nc.request('q', () => {}, '', 'string')
-      done(new Error('should have not requested'))
-    } catch (err) {
+    nc.request('q', (err) => {
       err.code.should.be.equal(NATS.ErrorCode.BAD_OPTIONS)
       nc.close()
       done()
-    }
+    }, '', 'string')
   })
 
   it('sub ids should start at 1', (done) => {
@@ -878,6 +860,17 @@ describe('Basics', () => {
       nc.close()
       done()
     })
+  })
+
+  it('msg has size', (done) => {
+    const nc = NATS.connect(PORT)
+    const subj = nc.createInbox()
+    nc.subscribe(subj, (_, m) => {
+      m.size.should.be.equal(5)
+      nc.close()
+      done()
+    })
+    nc.publish(subj, 'hello')
   })
 
   function rr (noMuxRequests, input, opts, delay) {

@@ -23,6 +23,7 @@ export const version: string;
  * Error codes
  */
 export const enum ErrorCode {
+	API_ERROR = 'API_ERROR',
 	BAD_AUTHENTICATION = 'BAD_AUTHENTICATION',
 	BAD_CREDS = 'BAD_CREDENTIALS',
 	BAD_JSON = 'BAD_JSON',
@@ -30,7 +31,6 @@ export const enum ErrorCode {
 	BAD_OPTIONS = 'BAD_OPTIONS',
 	BAD_REPLY = 'BAD_REPLY',
 	BAD_SUBJECT = 'BAD_SUBJECT',
-	CALLBACK_REQUIRED = 'CALLBACK_REQ',
 	CLIENT_CERT_REQ = 'CLIENT_CERT_REQ',
 	CONN_CLOSED = 'CONN_CLOSED',
 	CONN_DRAINING = 'CONN_DRAINING',
@@ -64,10 +64,10 @@ export function createInbox(): string;
  * Argument can be a url or a port, or a ClientOpts with a 'url'
  * and additional options
  */
-export function connect(url?: string|number, opts?: ClientOpts): Client;
-export function connect(opts: ClientOpts): Client;
+export function connect(url?: string|number, opts?: ConnectionOptions): Client;
+export function connect(opts: ConnectionOptions): Client;
 
-export interface ClientOpts {
+export interface ConnectionOptions {
 	encoding?: BufferEncoding,
 	json?: boolean,
 	maxPingOut?: number,
