@@ -18,8 +18,6 @@
     - `publish(subject: string, data?: any, callback?: Callback): void`
     - `publishRequest(subject: string, reply: string, data?: any, callback?: Callback): void`
     
-- *Callback* argument does not trigger a `flush`, and is simply used to any publish error. If a flush is desired after the publish operation, schedule it by calling `flush()`.
-
 - To publish requests that reply to your own subscription handlers, use `publishRequest()`.
 
 ## Changes to `subscribe`

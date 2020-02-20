@@ -36,10 +36,14 @@ if (!subject) {
 // Connect to NATS server.
 const nc = nats.connect(url, nats.creds(creds))
 
-nc.request(subject, msg, {
+nc.request(subject, (err, m) => {
+  if (err) {
+    console.error(err)
+    process.exit()
+  }
+  console.log('Received: ' + m.data)
+}, msg, {
   max: max
-}, (msg) => {
-  console.log('Received: ' + msg)
 })
 
 nc.on('unsubscribe', () => {

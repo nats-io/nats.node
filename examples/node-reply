@@ -42,15 +42,19 @@ nc.on('connect', () => {
   }
 
   let count = 0
-  nc.subscribe(subject, (msg, reply) => {
-    if (reply) {
+  nc.subscribe(subject, (err, m) => {
+    if (err) {
+      console.error(err)
+      process.exit()
+    }
+    if (m.reply) {
       // give the response or echo back
-      const d = response || msg
-      nc.publish(reply, d)
+      const d = response || m.data
+      nc.publish(m.reply, d)
       console.log('Sent [' + count++ + '] reply "' + d + '"')
       return
     }
-    console.log('Dropping message "' + msg + '" - no reply subject set')
+    console.log('Dropping message "' + m.data + '" - no reply subject set')
   }, opts)
   if (queue) {
     console.log('Queue reply [' + queue + '] listening on [' + subject + ']')
