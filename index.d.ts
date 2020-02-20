@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import events = require('events');
-import tls = require('tls');
+import * as events from 'events';
+import * as tls from 'tls';
 
 
 export const version: string;
@@ -158,9 +158,14 @@ declare class Client extends events.EventEmitter {
 	flush(callback?: Callback):void;
 
 	/**
-	 * Publish a message to the given subject, with optional reply and callback.
+	 * Publish a message to the given subject, with optional data and callback.
 	 */
 	publish(subject: string, data?: any, callback?: Callback): void;
+
+	/**
+	 * Publish a request message with optional data and callback. Typically, requests
+	 * should be made using the `request` API.
+	 */
 	publishRequest(subject: string, reply: string, data?: any, callback?: Callback): void;
 
 	/**

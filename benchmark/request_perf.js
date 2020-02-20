@@ -32,8 +32,8 @@ console.log('Request Performance Test')
 nc1.on('connect', function () {
   const start = new Date()
 
-  nc1.subscribe('request.test', function (msg, reply) {
-    nc1.publish(reply, 'ok')
+  nc1.subscribe('request.test', function (_, m) {
+    nc1.publish(m.reply, 'ok')
   })
 
   // Need to flush here since using separate connections.

@@ -553,6 +553,56 @@ describe('Basics', () => {
     })
   })
 
+  it('publish a request after drain fails', done => {
+    const subj = NATS.createInbox()
+    const nc1 = NATS.connect(PORT)
+
+    nc1.flush(() => {
+      nc1.drain()
+      try {
+        nc1.publishRequest(subj, nc1.createInbox())
+      } catch (err) {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
+          done()
+        } else {
+          done(err)
+        }
+      }
+    })
+  })
+
+  it('publish a request after drain fails routes through callback', done => {
+    const subj = NATS.createInbox()
+    const nc1 = NATS.connect(PORT)
+
+    nc1.flush(() => {
+      nc1.drain()
+      nc1.publishRequest(subj, nc1.createInbox(), '', (err) => {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
+          done()
+        } else {
+          done(err)
+        }
+      })
+    })
+  })
+
+  it('publish after drain fails routes through callback', done => {
+    const subj = NATS.createInbox()
+    const nc1 = NATS.connect(PORT)
+
+    nc1.flush(() => {
+      nc1.drain()
+      nc1.publish(subj, '', (err) => {
+        if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
+          done()
+        } else {
+          done(err)
+        }
+      })
+    })
+  })
+
   it('request after drain errors callback', done => {
     const subj = NATS.createInbox()
     const nc1 = NATS.connect(PORT)
