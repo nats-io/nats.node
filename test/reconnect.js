@@ -274,10 +274,10 @@ describe('Reconnect functionality', () => {
 
     // Send lots of data to ourselves
     nc.on('connect', () => {
-      const sid = nc.subscribe('foo', () => {
+      const sub = nc.subscribe('foo', () => {
         // Kill server on first message, inbound should still be full.
         nsc.stopServer(server, () => {
-          nc.unsubscribe(sid)
+          sub.unsubscribe()
           server = nsc.startServer(PORT)
         })
       })
