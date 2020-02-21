@@ -78,8 +78,8 @@ describe('Subscription Events', () => {
       nc.close()
       done()
     })
-    var sid = nc.subscribe(subj, () => {})
-    nc.unsubscribe(sid)
+    const sub = nc.subscribe(subj, () => {})
+    sub.unsubscribe()
   })
 
   it('should generate unsubscribe events on auto-unsub', done => {
@@ -105,8 +105,8 @@ describe('Subscription Events', () => {
     nc.on('unsubscribe', () => {
       eventsReceived++
     })
-    const sid = nc.subscribe(subj, () => {})
-    nc.unsubscribe(sid, want)
+    const sub = nc.subscribe(subj, () => {})
+    sub.unsubscribe(want)
     for (let i = 0; i < want; i++) {
       nc.publish(subj)
     }
@@ -122,7 +122,7 @@ describe('Subscription Events', () => {
     const subj = 'request.autounsub.event'
 
     nc.subscribe(subj, (_, m) => {
-      nc.publish(m.reply, 'OK')
+      m.respond('OK')
     })
     nc.request(subj, () => {}, null, { max: 1 })
 

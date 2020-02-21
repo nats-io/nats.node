@@ -57,11 +57,11 @@ describe('Callbacks', () => {
     })
   })
 
-  it('request callbacks have message and reply', done => {
+  it('request callbacks have message', done => {
     const nc = NATS.connect(PORT)
     nc.flush(() => {
       nc.subscribe('rr', (_, m) => {
-        nc.publishRequest(m.reply, 'foo', 'data')
+        m.respond('data')
       })
     })
 
@@ -73,7 +73,6 @@ describe('Callbacks', () => {
           return
         }
         m.data.should.be.equal('data')
-        m.reply.should.be.equal('foo')
         nc.close()
         done()
       }, '', { timeout: 5000 })

@@ -33,7 +33,7 @@ nc1.on('connect', function () {
   const start = new Date()
 
   nc1.subscribe('request.test', function (_, m) {
-    nc1.publish(m.reply, 'ok')
+    m.respond('ok')
   })
 
   // Need to flush here since using separate connections.

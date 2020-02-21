@@ -54,9 +54,9 @@ describe('Basics', () => {
   it('should do count subscriptions', done => {
     const nc = NATS.connect(PORT)
     nc.numSubscriptions().should.be.equal(0)
-    const sid = nc.subscribe('foo', () => {})
+    const sub = nc.subscribe('foo', () => {})
     nc.numSubscriptions().should.be.equal(1)
-    nc.unsubscribe(sid)
+    sub.unsubscribe()
     nc.numSubscriptions().should.be.equal(0)
     nc.close()
     done()
@@ -126,7 +126,7 @@ describe('Basics', () => {
       m.data.should.equal(initMsg)
       should.exist(m.reply)
       m.reply.should.match(/_INBOX\.*/)
-      nc.publish(m.reply, replyMsg)
+      m.respond(replyMsg)
     })
 
     nc.request('foo', (_, m) => {
@@ -145,15 +145,15 @@ describe('Basics', () => {
     let received = 0
 
     // Add two subscribers. We will only receive a reply from one.
-    nc.subscribe('foo', (_, msg) => {
-      nc.publish(msg.reply, replyMsg)
+    nc.subscribe('foo', (_, m) => {
+      m.respond(replyMsg)
     })
 
-    nc.subscribe('foo', (_, msg) => {
-      nc.publish(msg.reply, replyMsg)
+    nc.subscribe('foo', (_, m) => {
+      m.respond(replyMsg)
     })
 
-    const sub = nc.request('foo', _ => {
+    const req = nc.request('foo', _ => {
       nc.flush(() => {
         received.should.equal(expected)
         nc.close()
@@ -161,7 +161,7 @@ describe('Basics', () => {
       })
 
       received += 1
-      nc.unsubscribe(sub)
+      nc.unsubscribe(req)
     }, initMsg)
   })
 
@@ -264,8 +264,8 @@ describe('Basics', () => {
     let received = 0
     const expected = 1
 
-    const sid = nc.subscribe('foo', () => {
-      nc.unsubscribe(sid)
+    const sub = nc.subscribe('foo', () => {
+      sub.unsubscribe()
       received += 1
     })
 
@@ -281,8 +281,8 @@ describe('Basics', () => {
 
   it('should pass sid properly to a message callback if requested', (done) => {
     const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo', (_, m) => {
-      sid.should.equal(m.sid)
+    const sub = nc.subscribe('foo', (_, m) => {
+      sub.sid.should.equal(m.sid)
       nc.close()
       done()
     })
@@ -499,12 +499,11 @@ describe('Basics', () => {
     nc1.on('error', err => {
       done(err)
     })
-    let sid1 = 0
     nc1.on('connect', () => {
-      sid1 = nc1.subscribe(subj, () => {
+      const sub = nc1.subscribe(subj, () => {
         c1++
         if (c1 === 1) {
-          nc1.drainSubscription(sid1, () => {
+          sub.drain(() => {
             finish()
           })
         }
@@ -694,10 +693,10 @@ describe('Basics', () => {
   it('drain cleared timeout', done => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
-      const sid = nc1.subscribe(NATS.createInbox(), () => {}, { timeout: 250, expected: 1000 })
-      const sub = nc1.subs[sid]
-      nc1.drainSubscription(sid, () => {
-        should(sub.timeout).is.null()
+      const sub = nc1.subscribe(NATS.createInbox(), () => {}, { timeout: 250, expected: 1000 })
+      const isub = nc1.subs[sub.sid]
+      sub.drain(() => {
+        should(isub.timeout).is.null()
         nc1.close()
         done()
       })
@@ -708,7 +707,7 @@ describe('Basics', () => {
     const nc = NATS.connect({ port: PORT, json: true })
 
     nc.subscribe('q', (_, m) => {
-      nc.publish(m.reply, m.data)
+      m.respond(m.data)
     })
 
     nc.request('q', (_, m) => {
@@ -727,7 +726,7 @@ describe('Basics', () => {
       let c = 0
       const subj = NATS.createInbox()
       nc.subscribe(subj, (_, m) => {
-        nc.publish(m.reply, m.data)
+        m.respond(m.data)
       })
 
       let str = 0
@@ -905,18 +904,18 @@ describe('Basics', () => {
   it('sub ids should start at 1', (done) => {
     const nc = NATS.connect({ port: PORT, json: true })
     nc.on('connect', () => {
-      const ssid = nc.subscribe(nc.createInbox(), () => {})
-      ssid.should.be.equal(1)
+      const sub = nc.subscribe(nc.createInbox(), () => {})
+      sub.sid.should.be.equal(1)
       nc.close()
       done()
     })
   })
 
-  it('msg has size', (done) => {
+  it('msg has a sid', (done) => {
     const nc = NATS.connect(PORT)
     const subj = nc.createInbox()
     nc.subscribe(subj, (_, m) => {
-      m.size.should.be.equal(5)
+      should.exist(m.sid)
       nc.close()
       done()
     })
@@ -931,19 +930,17 @@ describe('Basics', () => {
         const sub = nc.createInbox()
         nc.subscribe(sub, (_, m) => {
           setTimeout(() => {
-            if (m.reply) {
-              nc.publish(m.reply, input)
-              const tokens = m.reply.split('.')
-              if (noMuxRequests) {
-                tokens.length.should.be.equal(2, m.reply)
-              } else {
-                tokens.length.should.be.equal(3, m.reply)
-              }
+            m.respond(input)
+            const tokens = m.reply.split('.')
+            if (noMuxRequests) {
+              tokens.length.should.be.equal(2, m.reply)
+            } else {
+              tokens.length.should.be.equal(3, m.reply)
             }
           }, delay)
         })
 
-        const sid = nc.request(sub, (err, m) => {
+        const req = nc.request(sub, (err, m) => {
           if (delay && opts.timeout && delay > opts.timeout) {
             should.exist(err)
             err.code.should.be.equal(NATS.ErrorCode.TIMEOUT_ERR)
@@ -962,9 +959,9 @@ describe('Basics', () => {
           done()
         }, '', opts)
         if (noMuxRequests) {
-          sid.should.be.greaterThan(0)
+          req.sid.should.be.greaterThan(0)
         } else {
-          sid.should.be.lessThan(0)
+          req.sid.should.be.lessThan(0)
         }
       })
     }

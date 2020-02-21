@@ -32,8 +32,8 @@ nc.on('connect', function () {
 
   nc.subscribe('greeting', (_, m) => {
     // msg is a parsed JSON object object
-    if (m.data.name && m.data.reply) {
-      nc.publish(m.replyTo, { greeting: 'hello ' + m.data.name })
+    if (m.data.name) {
+      m.respond({ greeting: 'hello ' + m.data.name })
     }
   })
 

@@ -102,9 +102,9 @@ describe('Close functionality', () => {
       maxReconnectAttempts: 1
     })
 
-    let subID = 0
+    let sub
     nc.on('connect', () => {
-      subID = nc.subscribe('foo', (err) => {
+      sub = nc.subscribe('foo', (err) => {
         if (err && err.code === 'timeout') {
           throw new Error("shouldn't have timed out")
         }
@@ -115,7 +115,7 @@ describe('Close functionality', () => {
     })
 
     nc.on('close', () => {
-      const conf = nc.subs[subID]
+      const conf = nc.subs[sub.sid]
       should.exist(conf)
       should.not.exist(conf.timeout)
       done()

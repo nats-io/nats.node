@@ -111,8 +111,30 @@ export interface RequestOptions {
 	timeout?: number
 }
 
-/** First argument will be an error if an error occurred (such as a timeout) or null.
- * Message argument is the received message.
+/**
+ * @hidden
+ */
+export interface Base {
+	sid: number
+	subject: string;
+	callback: MsgCallback;
+	received: number;
+	timeout?: NodeJS.Timeout;
+	max?: number | undefined;
+	draining?: boolean;
+}
+
+export interface Sub extends Base {
+	queue?: string | null;
+}
+
+export interface Req extends Base {
+	token: string;
+}
+
+/** [[Client.subscribe]] callbacks. First argument will be an error if an error occurred (such as a timeout) or null.
+ * Message argument is the received message (which should be treated as debug information when an error is provided).
+ *
  */
 export interface MsgCallback {
 	(err: NatsError | null, msg: Msg): void;
@@ -136,8 +158,11 @@ export interface Msg {
 	data?: any;
 	/** Internal subscription id */
 	sid: number;
-	/** Number of bytes in the payload */
-	size: number;
+	/**
+	 * Publishes a reply. Note this method can throw if the connection is closed.
+	 * @param data
+	 */
+	respond(data?: any): void;
 }
 
 declare class Client extends events.EventEmitter {
@@ -172,21 +197,7 @@ declare class Client extends events.EventEmitter {
 	 * Subscribe to a given subject, with optional options and callback. opts can be
 	 * omitted, even with a callback. A subscription id is returned.
 	 */
-	subscribe(subject: string, callback: MsgCallback, opts?: SubscriptionOptions): number;
-
-	/**
-	 * Unsubscribe to a given subscription id, with optional max number of messages before unsubscribing.
-	 */
-	unsubscribe(sid: number, max?: number):void;
-
-	/**
-	 * Draining a subscription is similar to unsubscribe but inbound pending messages are
-	 * not discarded. When the last in-flight message is processed, the subscription handler
-	 * is removed.
-	 * @param sid
-	 * @param callback
-	 */
-	drainSubscription(sid: number, callback?:DrainSubCallback):void;
+	subscribe(subject: string, callback: MsgCallback, opts?: SubscriptionOptions): Subscription | undefined;
 
 	/**
 	 * Drains all subscriptions. If an opt_callback is provided, the callback
@@ -208,12 +219,37 @@ declare class Client extends events.EventEmitter {
 	 * opt_options = {max:N, timeout:N}. Otherwise you will need to unsubscribe to stop
 	 * the message stream manually by calling unsubscribe() on the subscription id returned.
 	 */
-	request(subject: string, callback: MsgCallback, data?: any, options?: RequestOptions): number;
+	request(subject: string, callback: MsgCallback, data?: any, options?: RequestOptions): Request | undefined;
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.
 	 */
 	numSubscriptions(): number;
+}
+
+export interface Subscription {
+	sid: number;
+	/**
+	 * Unsubscribe with optional max number of messages before unsubscribing.
+	 */
+	unsubscribe(max?: number): void;
+
+	/**
+	 * Draining a subscription is similar to unsubscribe but inbound pending messages are
+	 * not discarded. When the last in-flight message is processed, the subscription handler
+	 * is removed.
+	 * @param sid
+	 * @param callback
+	 */
+	drain(callback?: Callback): void;
+}
+
+export interface Request {
+	sid: number;
+	/**
+	 * Unsubscribe with optional max number of messages before unsubscribing.
+	 */
+	unsubscribe(max?: number): void;
 }
 
 declare class NatsError implements Error {

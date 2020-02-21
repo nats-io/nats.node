@@ -61,10 +61,10 @@ describe('Max responses and Auto-unsub', () => {
   it('should unsub if max messages already received', done => {
     const nc = NATS.connect(PORT)
     let gotOne = false
-    const sid = nc.subscribe('foo', () => {
+    const sub = nc.subscribe('foo', () => {
       if (!gotOne) {
         gotOne = true
-        nc.unsubscribe(sid, 1)
+        sub.unsubscribe(1)
       }
     })
     for (let i = 0; i < 2; i++) {
@@ -83,13 +83,13 @@ describe('Max responses and Auto-unsub', () => {
     const SEND = 20
     let received = 0
 
-    const sid = nc.subscribe('foo', () => {
+    const sub = nc.subscribe('foo', () => {
       received += 1
     })
     for (let i = 0; i < SEND; i++) {
       nc.publish('foo')
     }
-    nc.unsubscribe(sid, WANT)
+    sub.unsubscribe(WANT)
 
     nc.flush(() => {
       should.exists(received)
@@ -104,7 +104,7 @@ describe('Max responses and Auto-unsub', () => {
     const SEND = 20
     let received = 0
 
-    const sid = nc.subscribe('foo', () => {
+    const sub = nc.subscribe('foo', () => {
       received += 1
     }, { max: 1 })
     for (let i = 0; i < SEND; i++) {
@@ -112,7 +112,7 @@ describe('Max responses and Auto-unsub', () => {
     }
 
     nc.flush(() => {
-      nc.unsubscribe(sid)
+      sub.unsubscribe()
       should.exists(received)
       received.should.equal(1)
       nc.close()
@@ -125,11 +125,11 @@ describe('Max responses and Auto-unsub', () => {
     const SEND = 20
     let received = 0
 
-    const sid = nc.subscribe('foo', () => {
+    const sub = nc.subscribe('foo', () => {
       received += 1
-      nc.unsubscribe(sid, 1)
+      nc.unsubscribe(1)
     })
-    nc.unsubscribe(sid, SEND)
+    sub.unsubscribe(SEND)
 
     for (let i = 0; i < SEND; i++) {
       nc.publish('foo')
@@ -149,11 +149,11 @@ describe('Max responses and Auto-unsub', () => {
     const SEND = 20
     let received = 0
 
-    const sid = nc.subscribe('foo', () => {
+    const sub = nc.subscribe('foo', () => {
       received += 1
     })
-    nc.unsubscribe(sid, 1)
-    nc.unsubscribe(sid, WANT)
+    sub.unsubscribe(1)
+    sub.unsubscribe(WANT)
 
     for (let i = 0; i < SEND; i++) {
       nc.publish('foo')
@@ -174,12 +174,12 @@ describe('Max responses and Auto-unsub', () => {
 
     // Create 5 helpers
     for (let i = 0; i < 5; i++) {
-      nc.subscribe('help', (err, msg) => {
+      nc.subscribe('help', (err, m) => {
         if (err) {
           nc.close()
           done(err)
         }
-        nc.publish(msg.reply, 'I can help!')
+        m.respond('I can help!')
       })
     }
 
@@ -197,8 +197,8 @@ describe('Max responses and Auto-unsub', () => {
   function requestSubscriptions (nc, done) {
     let received = 0
 
-    nc.subscribe('help', (_, msg) => {
-      nc.publish(msg.reply, 'I can help!')
+    nc.subscribe('help', (_, m) => {
+      m.respond('I can help!')
     })
 
     /* jshint loopfunc: true */
@@ -228,12 +228,12 @@ describe('Max responses and Auto-unsub', () => {
     let received = 0
 
     nc.subscribe('help', (_, m) => {
-      nc.publish(m.reply, 'I can help!')
-      nc.publish(m.reply, 'I can help!')
-      nc.publish(m.reply, 'I can help!')
-      nc.publish(m.reply, 'I can help!')
-      nc.publish(m.reply, 'I can help!')
-      nc.publish(m.reply, 'I can help!')
+      m.respond('I can help!')
+      m.respond('I can help!')
+      m.respond('I can help!')
+      m.respond('I can help!')
+      m.respond('I can help!')
+      m.respond('I can help!')
     })
 
     nc.request('help', () => {

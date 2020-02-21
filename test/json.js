@@ -77,7 +77,7 @@ describe('JSON payloads', () => {
       })
 
       nc.subscribe('reqrep', (_, m) => {
-        nc.publish(m.reply, m.data)
+        m.respond(m.data)
       }, { max: 1 })
 
       nc.request('reqrep', (_, m) => {

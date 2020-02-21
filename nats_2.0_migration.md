@@ -40,6 +40,19 @@ nc.subscribe(subj, (err, m) => {
 
 - The more extensive change is in the message callback provided to both subscriptions and requests. See [MessageCallbacks](#message-callbacks) 
 
+- Old subscription API returned a number, the new  API returns a subscription object. The subscription object provides a `unsubscribe()` and `drain()`:
+```
+const sub = nc.subscribe(subj, (err, m) => {
+  // do something with the message
+})
+// unsubscribe after 10 messages
+sub.unsubscribe(10)
+
+// drain the subscription
+sub.drain(() => {
+})
+```
+
 ## Changes to `request`
 - The previous request signature was: `request(subject: string, msg: any, options: RequestOptions, callback: Function): number;`
 - The new signatures is: `request(subject: string, callback: MsgCallback, data?: any, options?: RequestOptions): number`
@@ -59,6 +72,8 @@ nc.request(subj, (err, m) => {
 ```
 
 - The more extensive change is in the message callback provided to both subscriptions and requests. See [MessageCallbacks](#message-callbacks) 
+
+- `request()` now returns an object
 
    
 ## Message Callbacks
@@ -84,8 +99,19 @@ If no error, the message argument follows the interface:
     reply?: string;
     data?: any;
     sid: number;
-    size: number; // number of bytes in a payload before any decoding
 }
+```
+
+- Message allows to respond to requests:
+```
+nc.subscribe(subj, (err, m) => {
+    if(err) {
+        console.error(err)
+        return
+    }
+    // echo back to the client - note this can throw if the connection is closed
+    m.respond(m.data)
+}, {queue: 'queue})
 ```
 
     

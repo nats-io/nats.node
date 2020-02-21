@@ -1,4 +1,6 @@
 - [ ] try to bind async server errors to matching callbacks
 - [ ] normalize names with nats.ts so that the exports are the same
-- [ ] subscription objects
+- [X] subscription objects
 - [ ] move to ava.js
+- [X] m.respond() - to reply to requests
+- [ ] Request object needs `cancel()`
