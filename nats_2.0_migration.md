@@ -75,6 +75,8 @@ nc.request(subj, (err, m) => {
 
 - `request()` now returns an object
 
+- Requests can be cancelled before they timeout by invoking `cancel()` on the request.
+
    
 ## Message Callbacks
 

@@ -195,6 +195,21 @@ describe('Timeout and max received events for subscriptions', () => {
     })
   })
 
+  it('should be able to cancel a request', done => {
+    const nc = NATS.connect(PORT)
+    let called = false
+    nc.on('connect', () => {
+      const req = nc.request('foo', (_) => {
+        called = true
+      }, null, { max: 1, timeout: 250 })
+      req.cancel()
+      setTimeout(() => {
+        called.should.be.false()
+        done()
+      }, 300)
+    })
+  })
+
   it('should perform simple timeouts on requests without specified number of messages', done => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
