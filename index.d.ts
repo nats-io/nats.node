@@ -249,7 +249,7 @@ export interface Request {
 	/**
 	 * Unsubscribe with optional max number of messages before unsubscribing.
 	 */
-	unsubscribe(max?: number): void;
+	cancel(): void;
 }
 
 declare class NatsError implements Error {

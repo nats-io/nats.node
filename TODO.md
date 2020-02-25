@@ -3,4 +3,4 @@
 - [X] subscription objects
 - [ ] move to ava.js
 - [X] m.respond() - to reply to requests
-- [ ] Request object needs `cancel()`
+- [X] Request object needs `cancel()`

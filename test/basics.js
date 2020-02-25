@@ -922,6 +922,39 @@ describe('Basics', () => {
     nc.publish(subj, 'hello')
   })
 
+  it('requests can be cancelled', (done) => {
+    const nc = NATS.connect(PORT)
+    const subj = nc.createInbox()
+    const req = nc.request(subj, () => {
+      nc.close()
+      done(new Error('should have not gotten a response'))
+    }, '', { timeout: 100 })
+    req.cancel()
+    setTimeout(() => {
+      done()
+    }, 150)
+  })
+
+  it('error passes to callback', (done) => {
+    const pc = NATS.connect(PORT)
+    const nc = NATS.connect({ port: PORT, json: true })
+    const subj = nc.createInbox()
+    nc.subscribe(subj, (err, m) => {
+      should.exist(err)
+      should.exist(m)
+      nc.close()
+      pc.close()
+      done()
+    })
+
+    pc.flush(() => {
+      nc.flush()
+      // this is some bad json, so the error should be captured
+      // eslint-disable-next-line no-useless-escape
+      pc.publish(subj, '{"p": "bad \"json\""')
+    })
+  })
+
   function rr (noMuxRequests, input, opts, delay) {
     return (done) => {
       const opts = { noMuxRequests: noMuxRequests, port: PORT }
