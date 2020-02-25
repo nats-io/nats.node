@@ -15,6 +15,9 @@ A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://n
 
 ```bash
 npm install nats
+
+# to install current dev version:
+npm install nats@next
 ```
 
 ## Basic Usage

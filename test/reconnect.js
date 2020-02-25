@@ -23,6 +23,7 @@ const afterEach = require('mocha').afterEach
 const beforeEach = require('mocha').beforeEach
 const describe = require('mocha').describe
 const it = require('mocha').it
+const net = require('net')
 
 describe('Reconnect functionality', () => {
   const PORT = 1426
@@ -394,6 +395,88 @@ describe('Reconnect functionality', () => {
       const s = server
       server = null
       nsc.stopServer(s)
+    })
+  })
+
+  it('should preserve buffer between reconnect attempts', (done) => {
+    let socket = null
+    let msgs = 0
+    const srv = net.createServer((c) => {
+      socket = c
+      c.write('INFO ' + JSON.stringify({
+        server_id: 'TEST',
+        version: '0.0.0',
+        host: '127.0.0.1',
+        port: srv.address.port,
+        auth_required: false
+      }) + '\r\n')
+      c.on('data', (d) => {
+        const r = d.toString()
+        const lines = r.split('\r\n')
+        lines.forEach((line) => {
+          if (line === '\r\n') {
+            return
+          }
+          if (/^CONNECT\s+/.test(line)) {
+          } else if (/^PING/.test(line)) {
+            c.write('PONG\r\n')
+          } else if (/^SUB\s+/i.test(line)) {
+          } else if (/^PUB\s+/i.test(line)) {
+            msgs++
+          } else if (/^UNSUB\s+/i.test(line)) {
+          } else if (/^MSG\s+/i.test(line)) {
+          } else if (/^INFO\s+/i.test(line)) {
+          }
+        })
+      })
+      c.on('error', () => {
+        // we are messing with the server so this will raise connection reset
+      })
+    })
+    let called = false
+    let flushErr = false
+    srv.listen(0, () => {
+      const p = srv.address().port
+      const nc = NATS.connect('nats://localhost:' + p, {
+        reconnect: true,
+        reconnectTimeWait: 250
+      })
+      nc.on('connect', () => {
+        nc.pongs.push((err) => {
+          if (err) {
+            flushErr = true
+          }
+        })
+        process.nextTick(() => {
+          // this is going to fake an outstanding ping
+          socket.destroy()
+        })
+      })
+      nc.on('disconnect', () => {
+        flushErr.should.be.true()
+        nc.pending.length.should.be.equal(0)
+        nc.pongs.length.should.be.equal(0)
+        nc.publish('foo')
+        nc.flush(() => {
+          called = true
+        })
+      })
+      nc.on('reconnecting', () => {
+        should.exist(nc.pending)
+        should.exist(nc.pongs)
+        nc.pongs.length.should.be.equal(1)
+      })
+      nc.on('reconnect', () => {
+        nc.flush()
+        setTimeout(() => {
+          msgs.should.be.equal(1)
+          called.should.be.true()
+          nc.close()
+          srv.close(() => {
+            done()
+          }, 500)
+        })
+      })
     })
   })
 })
