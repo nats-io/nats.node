@@ -111,37 +111,12 @@ export interface RequestOptions {
 	timeout?: number
 }
 
-/**
- * @hidden
- */
-export interface Base {
-	sid: number
-	subject: string;
-	callback: MsgCallback;
-	received: number;
-	timeout?: NodeJS.Timeout;
-	max?: number | undefined;
-	draining?: boolean;
-}
-
-export interface Sub extends Base {
-	queue?: string | null;
-}
-
-export interface Req extends Base {
-	token: string;
-}
-
 /** [[Client.subscribe]] callbacks. First argument will be an error if an error occurred (such as a timeout) or null.
  * Message argument is the received message (which should be treated as debug information when an error is provided).
  *
  */
 export interface MsgCallback {
 	(err: NatsError | null, msg: Msg): void;
-}
-
-export interface DrainSubCallback {
-	(err: NatsError | null, sid: number): void;
 }
 
 export interface Callback {

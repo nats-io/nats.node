@@ -31,7 +31,7 @@ const nc = NATS.connect()
 nc.publish('foo', 'Hello World!')
 
 // Simple Subscriber - error is set if there was some error
-nc.subscribe('foo', function (err, msg) {
+nc.subscribe('foo', (err, msg) => {
   if (err) {
     console.error(err)
     return
@@ -40,8 +40,8 @@ nc.subscribe('foo', function (err, msg) {
 })
 
 // Unsubscribing
-const sid = nc.subscribe('foo', function (err, m) {})
-nc.unsubscribe(sid)
+const sub = nc.subscribe('foo', (err, m) => {})
+sub.unsubscribe()
 
 
 // Subscription/Request are given two arguments:
@@ -82,7 +82,7 @@ nc.request('help', (err, m) => {
 }, null, { max: 1, timeout: 1000 })
 
 // Replies
-nc.subscribe('help', function (_, m) {
+nc.subscribe('help', (_, m) => {
   nc.publish(m.reply, 'I can help!')
 })
 
@@ -213,15 +213,15 @@ nc = NATS.connect({ noRandomize: true, servers: servers })
 // messages from being lost.
 
 let c1 = 0
-const sid1 = nc.subscribe('foo', () => {
+const sub = nc.subscribe('foo', () => {
   c1++
   if (c1 === 1) {
-    nc.drainSubscription(sid1, (err, sid) => {
+    sub.drain((err) => {
       if (err) {
         console.error(err)
         return
       }
-      console.log('subscription', sid, 'drained')
+      console.log(`subscription ${sub.sid} drained`)
     })
   }
 }, { queue: 'q1' })
@@ -343,7 +343,11 @@ nc = NATS.connect({
 ```javascript
 // Flush connection to server, callback fires when all messages have
 // been processed.
-nc.flush(() => {
+nc.flush((err) => {
+  if (err) {
+    console.error('error flushing', err)
+    return
+  }
   console.log('round trip to the server done')
 })
 
@@ -368,6 +372,10 @@ NATS.subscribe('foo', (err) => {
 
 // Auto-unsubscribe after max messages received
 nc.subscribe('foo', () => {}, { max: 100 })
+// or
+const sub = nc.subscribe('foo', () => {})
+sub.unsubscribe(100)
+
 
 
 // Encodings
@@ -430,12 +438,12 @@ nc.on('reconnect', (nc) => {
 
 // emitted when the connection is closed - once a connection is closed
 // the client has to create a new connection.
-nc.on('close', function () {
+nc.on('close', () => {
   console.log('close')
 })
 
 // emitted whenever the client unsubscribes
-nc.on('unsubscribe', function (sid, subject) {
+nc.on('unsubscribe', (sid, subject) => {
   console.log('unsubscribed subscription', sid, 'for subject', subject)
 })
 
@@ -443,7 +451,7 @@ nc.on('unsubscribe', function (sid, subject) {
 // a publish/subscription for the current user. This sort of error
 // means that the client cannot subscribe and/or publish/request
 // on the specific subject
-nc.on('permission_error', function (err) {
+nc.on('permission_error', (err) => {
   console.error('got a permissions error', err.message)
 })
 ```
