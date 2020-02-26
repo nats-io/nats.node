@@ -213,10 +213,63 @@ export interface Subscription {
 	 * Draining a subscription is similar to unsubscribe but inbound pending messages are
 	 * not discarded. When the last in-flight message is processed, the subscription handler
 	 * is removed.
-	 * @param sid
 	 * @param callback
 	 */
 	drain(callback?: Callback): void;
+
+	/**
+	 * Returns true if the subscription has an associated timeout
+	 * @return boolean
+	 */
+	hasTimeout(): boolean;
+
+	/**
+	 * Cancels any timeout associated with the subscription. Returns true if a
+	 * timeout was cancelled.
+	 * @return boolean
+	 */
+	cancelTimeout(): boolean;
+
+   /**
+	* Sets a timeout on a subscription. The timeout will fire by calling
+	* the subscription's callback with an error argument if the expected
+	* number of messages (specified via max) has not been received by the
+	* subscription before the timer expires. If max is not specified,
+	* the subscription times out if no messages are received within the timeout
+	* specified.
+	*
+	* Returns `true` if the subscription was found and the timeout was registered.
+	*
+	* @param millis
+	* @param max
+	* @return boolean
+	*/
+	setTimeout(millis: number, max?: number): boolean;
+
+	/**
+	 * Returns the number of messages received by the subscription.
+	 * If the subscription doesn't exist it returns -1.
+	 * @return number
+	 */
+	getReceived(): number;
+
+	/**
+	 * Returns the number of messages expected by the subscription.
+	 * If `0`, the subscription was not found or was auto-cancelled.
+	 * If `-1`, the subscription didn't specify a count for expected messages.
+	 */
+	getMax(): number;
+
+	/**
+	 * @return true if the subscription is not found.
+	 */
+	isCancelled(): boolean;
+
+	/**
+	 * @return true if the subscription is draining.
+	 * @see [[drain]]
+	 */
+	isDraining(): boolean;
 }
 
 export interface Request {
