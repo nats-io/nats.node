@@ -41,10 +41,11 @@ describe('Subscription Events', () => {
   it('should generate subscribe events', done => {
     const nc = NATS.connect(PORT)
     const subj = 'sub.event'
-    nc.on('subscribe', (sid, subject) => {
-      should.exist(sid)
-      should.exist(subject)
-      subject.should.equal(subj)
+    nc.on('subscribe', (sub) => {
+      should.exist(sub)
+      should.exist(sub.sid)
+      should.exist(sub.subject)
+      sub.subject.should.equal(subj)
       nc.close()
       done()
     })
@@ -55,13 +56,12 @@ describe('Subscription Events', () => {
     const nc = NATS.connect(PORT)
     const subj = 'sub.event'
     const queuegroup = 'bar'
-    nc.on('subscribe', (sid, subject, opts) => {
-      should.exist(sid)
-      should.exist(subject)
-      subject.should.equal(subj)
-      should.exist(opts)
-      should.exist(opts.queue)
-      opts.queue.should.equal(queuegroup)
+    nc.on('subscribe', (sub) => {
+      should.exist(sub)
+      should.exist(sub.subject)
+      sub.subject.should.equal(subj)
+      should.exist(sub.queue)
+      sub.queue.should.equal(queuegroup)
       nc.close()
       done()
     })

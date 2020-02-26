@@ -111,6 +111,16 @@ export interface RequestOptions {
 	timeout?: number
 }
 
+/** Argument provided to `subscribe` and `unsubscribe` event handlers. */
+export interface SubEvent {
+	/** subscription subject */
+	subject: string;
+	/** subscription id */
+	sid: number;
+	/** subscription queue name if a queue subscription */
+	queue?: string;
+}
+
 /** [[Client.subscribe]] callbacks. First argument will be an error if an error occurred (such as a timeout) or null.
  * Message argument is the received message (which should be treated as debug information when an error is provided).
  *
