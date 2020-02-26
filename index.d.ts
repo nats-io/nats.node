@@ -172,7 +172,7 @@ declare class Client extends events.EventEmitter {
 	 * Subscribe to a given subject, with optional options and callback. opts can be
 	 * omitted, even with a callback. A subscription id is returned.
 	 */
-	subscribe(subject: string, callback: MsgCallback, opts?: SubscriptionOptions): Subscription | undefined;
+	subscribe(subject: string, callback: MsgCallback, opts?: SubscriptionOptions): Sub | undefined;
 
 	/**
 	 * Drains all subscriptions. If an opt_callback is provided, the callback
@@ -194,7 +194,7 @@ declare class Client extends events.EventEmitter {
 	 * opt_options = {max:N, timeout:N}. Otherwise you will need to unsubscribe to stop
 	 * the message stream manually by calling unsubscribe() on the subscription id returned.
 	 */
-	request(subject: string, callback: MsgCallback, data?: any, options?: RequestOptions): Request | undefined;
+	request(subject: string, callback: MsgCallback, data?: any, options?: RequestOptions): Req | undefined;
 
 	/**
 	 * Report number of outstanding subscriptions on this connection.
@@ -202,7 +202,7 @@ declare class Client extends events.EventEmitter {
 	numSubscriptions(): number;
 }
 
-export interface Subscription {
+export interface Sub {
 	sid: number;
 	/**
 	 * Unsubscribe with optional max number of messages before unsubscribing.
@@ -272,7 +272,7 @@ export interface Subscription {
 	isDraining(): boolean;
 }
 
-export interface Request {
+export interface Req {
 	sid: number;
 	/**
 	 * Unsubscribe with optional max number of messages before unsubscribing.
