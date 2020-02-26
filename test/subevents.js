@@ -71,10 +71,10 @@ describe('Subscription Events', () => {
   it('should generate unsubscribe events', done => {
     const nc = NATS.connect(PORT)
     const subj = 'sub.event'
-    nc.on('unsubscribe', (sid, subject) => {
-      should.exist(sid)
-      should.exist(subject)
-      subject.should.equal(subj)
+    nc.on('unsubscribe', (sub) => {
+      should.exist(sub.sid)
+      should.exist(sub.subject)
+      sub.subject.should.equal(subj)
       nc.close()
       done()
     })
@@ -85,10 +85,10 @@ describe('Subscription Events', () => {
   it('should generate unsubscribe events on auto-unsub', done => {
     const nc = NATS.connect(PORT)
     const subj = 'autounsub.event'
-    nc.on('unsubscribe', (sid, subject) => {
-      should.exist(sid)
-      should.exist(subject)
-      subject.should.equal(subj)
+    nc.on('unsubscribe', (sub) => {
+      should.exist(sub.sid)
+      should.exist(sub.subject)
+      sub.subject.should.equal(subj)
       nc.close()
       done()
     })
@@ -126,9 +126,9 @@ describe('Subscription Events', () => {
     })
     nc.request(subj, () => {}, null, { max: 1 })
 
-    nc.on('unsubscribe', (sid, subject) => {
-      should.exist(sid)
-      should.exist(subject)
+    nc.on('unsubscribe', (sub) => {
+      should.exist(sub.sid)
+      should.exist(sub.subject)
       nc.close()
       done()
     })
