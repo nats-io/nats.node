@@ -140,13 +140,13 @@ describe('Timeout and max received events for subscriptions', () => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       let count = 0
-      const sid = nc.subscribe('bar', (m) => {
-        if (m === 'timeout') {
-          done('got a timeout')
+      const sub = nc.subscribe('bar', (err, m) => {
+        if (err) {
+          done(err)
         }
         count++
         if (count === 1) {
-          nc.unsubscribe(sid)
+          sub.unsubscribe()
         }
       }, { timeout: 1000, expected: 2 })
       nc.publish('bar', '')

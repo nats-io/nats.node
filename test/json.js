@@ -49,13 +49,13 @@ describe('JSON payloads', () => {
         port: PORT
       })
 
-      nc.subscribe('pubsub', (_, m) => {
+      const sub = nc.subscribe('pubsub', (_, m) => {
         if (m.data instanceof Object) {
           m.data.should.deepEqual(expected)
         } else {
           should.strictEqual(m.data, expected)
         }
-        nc.unsubscribe(m.sid)
+        sub.unsubscribe()
         nc.close()
 
         done()

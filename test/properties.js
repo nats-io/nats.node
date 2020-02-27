@@ -21,7 +21,10 @@ const NATS = require('../')
 const describe = require('mocha').describe
 const it = require('mocha').it
 const net = require('net')
-const should = require('should')
+const after = require('mocha').after
+const before = require('mocha').before
+const nsc = require('./support/nats_server_control')
+require('should')
 
 describe('Base Properties', () => {
   it('should have a version property', () => {
@@ -43,26 +46,39 @@ describe('Base Properties', () => {
 })
 
 describe('Connection Properties', () => {
-  let nc = NATS.connect()
-  should.exist(nc)
+  const PORT = 34583
+  let server
+
+  // Start up our own nats-server
+  before(done => {
+    server = nsc.startServer(PORT, done)
+  })
+
+  // Shutdown our server
+  after(done => {
+    nsc.stopServer(server, done)
+  })
 
   it('should have a publish function', () => {
+    const nc = NATS.connect(PORT)
     nc.publish.should.be.a.Function()
+    nc.close()
   })
 
   it('should have a subscribe function', () => {
+    const nc = NATS.connect(PORT)
     nc.subscribe.should.be.a.Function()
-  })
-
-  it('should have an unsubscribe function', () => {
-    nc.unsubscribe.should.be.a.Function()
+    nc.close()
   })
 
   it('should have a request function', () => {
+    const nc = NATS.connect(PORT)
     nc.request.should.be.a.Function()
+    nc.close()
   })
 
   it('should have an options hash with proper fields', () => {
+    const nc = NATS.connect(PORT)
     nc.should.have.property('options')
     nc.options.should.have.property('url')
     nc.options.should.have.property('verbose')
@@ -71,17 +87,18 @@ describe('Connection Properties', () => {
     nc.options.should.have.property('maxReconnectAttempts')
     nc.options.should.have.property('reconnectTimeWait')
     nc.options.noEcho.should.be.false()
+    nc.close()
   })
 
   it('should have an parsed url', () => {
+    const nc = NATS.connect(PORT)
     nc.should.have.property('url')
     nc.url.should.be.an.Object()
     nc.url.should.have.property('protocol')
     nc.url.should.have.property('host')
     nc.url.should.have.property('port')
+    nc.close()
   })
-
-  nc.close()
 
   it('should allow options to be overridden', () => {
     const options = {
@@ -94,7 +111,7 @@ describe('Connection Properties', () => {
       useOldRequestStyle: true
     }
 
-    nc = NATS.connect(options)
+    const nc = NATS.connect(options)
     nc.on('error', () => {}) // Eat error
 
     nc.options.url.should.equal('nats://localhost:22421')

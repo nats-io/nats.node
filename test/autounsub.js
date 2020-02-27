@@ -127,7 +127,7 @@ describe('Max responses and Auto-unsub', () => {
 
     const sub = nc.subscribe('foo', () => {
       received += 1
-      nc.unsubscribe(1)
+      sub.unsubscribe(1)
     })
     sub.unsubscribe(SEND)
 
@@ -212,7 +212,7 @@ describe('Max responses and Auto-unsub', () => {
       setTimeout(() => {
         received.should.equal(5)
         const expectedSubs = (nc.options.useOldRequestStyle ? 1 : 2)
-        Object.keys(nc.subs).length.should.equal(expectedSubs)
+        expectedSubs.should.be.equal(nc.subs.length)
         nc.close()
         done()
       }, 100)

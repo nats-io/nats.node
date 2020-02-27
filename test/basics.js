@@ -42,9 +42,9 @@ describe('Basics', () => {
 
   it('should do basic subscribe and unsubscribe', done => {
     const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo', () => {})
-    should.exist(sid)
-    nc.unsubscribe(sid)
+    const sub = nc.subscribe('foo', () => {})
+    should.exist(sub)
+    sub.unsubscribe()
     nc.flush(() => {
       nc.close()
       done()
@@ -161,7 +161,7 @@ describe('Basics', () => {
       })
 
       received += 1
-      nc.unsubscribe(req)
+      req.cancel()
     }, initMsg)
   })
 
@@ -253,9 +253,9 @@ describe('Basics', () => {
 
   it('should handle an unsubscribe after close of connection', (done) => {
     const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo', () => {})
+    const sub = nc.subscribe('foo', () => {})
     nc.close()
-    nc.unsubscribe(sid)
+    sub.unsubscribe()
     done()
   })
 
@@ -491,47 +491,39 @@ describe('Basics', () => {
 
   it('subscription drain', done => {
     const subj = NATS.createInbox()
-
-    const nc1 = NATS.connect(PORT)
-    let c1 = 0
-    let c2 = 0
-
-    nc1.on('error', err => {
+    const nc = NATS.connect(PORT)
+    nc.on('error', err => {
       done(err)
     })
-    nc1.on('connect', () => {
-      const sub = nc1.subscribe(subj, () => {
-        c1++
-        if (c1 === 1) {
-          sub.drain(() => {
-            finish()
-          })
+    nc.on('connect', () => {
+      const s1 = nc.subscribe(subj, () => {
+        if (s1.received === 1) {
+          s1.drain()
         }
       }, { queue: 'q1' })
 
-      nc1.subscribe(subj, () => {
-        c2++
+      const s2 = nc.subscribe(subj, () => {
       }, { queue: 'q1' })
-    })
 
-    nc1.flush(() => {
-      start()
-    })
+      nc.flush(() => {
+        start()
+      })
 
-    function start () {
-      for (let i = 0; i < 10000; i++) {
-        nc1.publish(subj)
+      function start () {
+        for (let i = 0; i < 10000; i++) {
+          nc.publish(subj)
+        }
+        s2.drain(finish)
       }
-      nc1.flush(finish)
-    }
 
-    function finish () {
-      should(c1 + c2).be.equal(10000, `c1: ${c1}  c2: ${c2}`)
-      should(c1 >= 1).be.true('c1 got more than one message')
-      should(c2 >= 1).be.true('c2 got more than one message')
-      done()
-      nc1.close()
-    }
+      function finish () {
+        should(s1.received + s2.received).be.equal(10000, `s1: ${s1.received}  s2: ${s2.received}`)
+        should(s1.received >= 1).be.true('c1 got more than one message')
+        should(s2.received >= 1).be.true('c2 got more than one message')
+        done()
+        nc.close()
+      }
+    })
   })
 
   it('publish after drain fails', done => {
@@ -649,10 +641,11 @@ describe('Basics', () => {
   })
 
   it('reject drain subscription after close', done => {
-    const nc1 = NATS.connect(PORT)
-    nc1.on('connect', () => {
-      nc1.close()
-      nc1.drainSubscription(100, (err) => {
+    const nc = NATS.connect(PORT)
+    nc.on('connect', () => {
+      const sub = nc.subscribe(nc.createInbox(), () => {})
+      nc.close()
+      sub.drain((err) => {
         if (err.code === ErrorCode.CONN_CLOSED || err.code === ErrorCode.CONN_DRAINING) {
           done()
         } else {
@@ -694,9 +687,8 @@ describe('Basics', () => {
     const nc1 = NATS.connect(PORT)
     nc1.on('connect', () => {
       const sub = nc1.subscribe(NATS.createInbox(), () => {}, { timeout: 250, expected: 1000 })
-      const isub = nc1.subs[sub.sid]
       sub.drain(() => {
-        should(isub.timeout).is.null()
+        should(sub.timeout).is.null()
         nc1.close()
         done()
       })

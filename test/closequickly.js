@@ -115,7 +115,7 @@ describe('Close functionality', () => {
     })
 
     nc.on('close', () => {
-      const conf = nc.subs[sub.sid]
+      const conf = nc.subs.get(sub.sid)
       should.exist(conf)
       should.not.exist(conf.timeout)
       done()
