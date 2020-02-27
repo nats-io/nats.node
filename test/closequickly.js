@@ -139,13 +139,7 @@ describe('Close functionality', () => {
     })
 
     nc.on('close', () => {
-      let foundOne = false
-      for (const p in nc.respmux.requestMap) {
-        if (Object.hasOwnProperty.call(this.respmux.requestMap, p)) {
-          foundOne = true
-        }
-      }
-      foundOne.should.be.false()
+      nc.reqs.length.should.be.equal(0)
       done()
     })
   })
