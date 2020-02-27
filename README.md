@@ -40,7 +40,13 @@ nc.subscribe('foo', (err, msg) => {
 })
 
 // Unsubscribing
-const sub = nc.subscribe('foo', (err, m) => {})
+const sub = nc.subscribe('foo', (err, m) => {
+  if(!err) {
+    console.log(m)
+  } else {
+    console.error(err)
+  }
+})
 sub.unsubscribe()
 
 
@@ -448,10 +454,11 @@ nc.on('unsubscribe', (sid, subject) => {
 })
 
 // emitted whenever the server returns a permission error for
-// a publish/subscription for the current user. This sort of error
-// means that the client cannot subscribe and/or publish/request
-// on the specific subject
-nc.on('permission_error', (err) => {
+// a publish for the current user. This sort of error
+// means that the client cannot publish/request
+// on the specific subject. Note that subscription permission
+// errors are delivered to the subscription's handler
+nc.on(pubError, (err) => {
   console.error('got a permissions error', err.message)
 })
 ```

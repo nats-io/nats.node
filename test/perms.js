@@ -28,6 +28,7 @@ const after = require('mocha').after
 const before = require('mocha').before
 const describe = require('mocha').describe
 const it = require('mocha').it
+const should = require('should')
 
 describe('Auth Basics', () => {
   const PORT = 6758
@@ -71,7 +72,7 @@ describe('Auth Basics', () => {
     })
 
     let perms = 0
-    nc.on('permission_error', () => {
+    nc.on('pubError', () => {
       perms++
       if (perms === 2) {
         nc.close()
@@ -79,9 +80,12 @@ describe('Auth Basics', () => {
       }
     })
     nc.flush(() => {
-      nc.subscribe('foo', () => {
+      nc.subscribe('foo', (err, m) => {
         nc.close()
-        done("Shouldn't be able to publish foo")
+        should.not.exist(m)
+        should.exist(err)
+        err.code.should.be.equal(NATS.ErrorCode.PERMISSIONS_ERR)
+        done()
       })
       nc.publish('foo', 'foo')
     })
@@ -95,7 +99,7 @@ describe('Auth Basics', () => {
     })
 
     const errs = []
-    nc.on('permission_error', err => {
+    nc.on('pubError', err => {
       errs.push(err)
     })
 
@@ -107,7 +111,9 @@ describe('Auth Basics', () => {
     nc.publish('bar')
     nc.publish('foo')
     nc.publish('bar')
-    nc.subscribe('foo', () => {})
+    nc.subscribe('foo', (err) => {
+      errs.push(err)
+    })
     nc.publish('bar')
     nc.flush(() => {
       nc.close()
