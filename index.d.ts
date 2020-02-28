@@ -280,6 +280,11 @@ export interface Sub {
 	 * @see [[drain]]
 	 */
 	isDraining(): boolean;
+
+	/**
+	 * @return the id of the subscription
+	 */
+	getID(): number
 }
 
 export interface Req {
