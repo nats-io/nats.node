@@ -430,18 +430,31 @@ describe('Basics', () => {
     const subj = NATS.createInbox()
     const nc1 = NATS.connect(PORT)
     let drainCB = false
-    let s1
+    let s1, s2
     nc1.on('connect', () => {
+      let first = true
+      function finish () {
+        if (first) {
+          first = false
+          return
+        }
+        should(drainCB).be.true()
+        should(s1.received + s2.received).be.equal(10000, `c1: ${s1.received}  c2: ${s2.received}`)
+        should(s1.received >= 1).be.true('c1 got more than one message')
+        should(s2.received >= 1).be.true('c2 got more than one message')
+        done()
+      }
+
       s1 = nc1.subscribe(subj, () => {
         if (s1.received === 1) {
           nc1.drain(() => {
             drainCB = true
+            finish()
           })
         }
       }, { queue: 'q1' })
 
       const nc2 = NATS.connect(PORT)
-      let s2
       nc2.on('connect', () => {
         s2 = nc2.subscribe(subj, () => {}, { queue: 'q1' })
         nc1.flush(() => {
@@ -455,13 +468,6 @@ describe('Basics', () => {
             nc2.publish(subj)
           }
           nc2.drain(finish)
-        }
-        function finish () {
-          should(drainCB).be.true()
-          should(s1.received + s2.received).be.equal(10000, `c1: ${s1.received}  c2: ${s2.received}`)
-          should(s1.received >= 1).be.true('c1 got more than one message')
-          should(s2.received >= 1).be.true('c2 got more than one message')
-          done()
         }
       })
     })
