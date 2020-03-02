@@ -4,3 +4,4 @@
 - [ ] move to ava.js
 - [X] m.respond() - to reply to requests
 - [X] Request object needs `cancel()`
+- [ ] Implement payload (string, json, binary)

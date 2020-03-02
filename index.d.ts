@@ -213,7 +213,6 @@ declare class Client extends events.EventEmitter {
 }
 
 export interface Sub {
-	sid: number;
 	/**
 	 * Unsubscribe with optional max number of messages before unsubscribing.
 	 */

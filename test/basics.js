@@ -428,65 +428,43 @@ describe('Basics', () => {
 
   it('connection drain', done => {
     const subj = NATS.createInbox()
-
     const nc1 = NATS.connect(PORT)
-    let c1 = 0
-    nc1.on('error', err => {
-      done(err)
-    })
     let drainCB = false
+    let s1
     nc1.on('connect', () => {
-      nc1.subscribe(subj, () => {
-        c1++
-        if (c1 === 1) {
+      s1 = nc1.subscribe(subj, () => {
+        if (s1.received === 1) {
           nc1.drain(() => {
             drainCB = true
-            finish()
           })
         }
       }, { queue: 'q1' })
-    })
-    nc1.flush(() => {
-      start()
-    })
 
-    const nc2 = NATS.connect(PORT)
-    let c2 = 0
-    nc2.on('error', err => {
-      done(err)
-    })
-    nc2.on('connect', () => {
-      nc2.subscribe(subj, () => {
-        c2++
-      }, { queue: 'q1' })
-    })
-    nc2.flush(() => {
-      start()
-    })
+      const nc2 = NATS.connect(PORT)
+      let s2
+      nc2.on('connect', () => {
+        s2 = nc2.subscribe(subj, () => {}, { queue: 'q1' })
+        nc1.flush(() => {
+          nc2.flush(() => {
+            setTimeout(start)
+          })
+        })
 
-    let startCount = 0
-    function start () {
-      startCount++
-      if (startCount === 2) {
-        for (let i = 0; i < 10000; i++) {
-          nc2.publish(subj)
+        function start () {
+          for (let i = 0; i < 10000; i++) {
+            nc2.publish(subj)
+          }
+          nc2.drain(finish)
         }
-        nc2.flush(finish)
-      }
-    }
-
-    let finishCount = 0
-    function finish () {
-      finishCount++
-      if (finishCount === 2) {
-        should(drainCB).be.true()
-        should(c1 + c2).be.equal(10000, `c1: ${c1}  c2: ${c2}`)
-        should(c1 >= 1).be.true('c1 got more than one message')
-        should(c2 >= 1).be.true('c2 got more than one message')
-        done()
-        nc2.close()
-      }
-    }
+        function finish () {
+          should(drainCB).be.true()
+          should(s1.received + s2.received).be.equal(10000, `c1: ${s1.received}  c2: ${s2.received}`)
+          should(s1.received >= 1).be.true('c1 got more than one message')
+          should(s2.received >= 1).be.true('c2 got more than one message')
+          done()
+        }
+      })
+    })
   })
 
   it('subscription drain', done => {
