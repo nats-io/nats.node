@@ -155,8 +155,8 @@ describe('Basic Connectivity', () => {
     let contains = 0
 
     nc.on('connect', client => {
-      client.addServer(servers[1])
-      client.servers.forEach(_server => {
+      client.servers.add(servers[1])
+      client.servers.getAll().forEach(_server => {
         if (servers.indexOf(_server.url.href) !== -1) {
           contains++
         }

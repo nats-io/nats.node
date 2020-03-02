@@ -63,7 +63,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
             // give some time for the server to send infos
             setTimeout(() => {
               // we should know of 3 servers - the one we connected and the 2 we added
-              should(nc.servers.length).be.equal(3)
+              nc.servers.length().should.be.equal(3)
               nc.close()
               done()
             }, 1000)
@@ -96,7 +96,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
       })
       nc.on('connect', () => {
         const found = []
-        nc.servers.forEach(s => {
+        nc.servers.getAll().forEach(s => {
           found.push(s.url.href)
         })
 
@@ -130,7 +130,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
         })
         nc.on('connect', () => {
           const have = []
-          nc.servers.forEach(s => {
+          nc.servers.getAll().forEach(s => {
             have.push(parseInt(s.url.port))
           })
 
@@ -182,7 +182,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
       })
 
       nc.on('connect', c => {
-        c.servers.should.have.length(10)
+        c.servers.length().should.be.equal(10)
         setTimeout(() => {
           c.close()
         }, 0)
@@ -205,7 +205,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
 
       function countImplicit (c) {
         let count = 0
-        c.servers.forEach(s => {
+        c.servers.getAll().forEach(s => {
           if (s.implicit) {
             count++
           }
@@ -215,7 +215,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
 
       nc.on('servers', () => {
         if (countImplicit(nc) === 1) {
-          const found = nc.servers.find(s => s.url.href === 'nats://127.0.0.1:' + (port + 3))
+          const found = nc.servers.getAll().find(s => s.url.href === 'nats://127.0.0.1:' + (port + 3))
           if (found) {
             nc.close()
             done()
@@ -228,7 +228,7 @@ describe('Dynamic Cluster - Connect URLs', function () {
           nc.close()
           done()
         }
-        nc.servers.should.have.length(3)
+        nc.servers.length().should.be.equal(3)
         countImplicit(nc).should.be.equal(1)
 
         // remove the implicit one

@@ -423,7 +423,7 @@ nc.on('error', (err) => {
 
 // connect callback provides a reference to the connection as an argument
 nc.on('connect', (nc) => {
-  console.log(`connect to ${nc.currentServer.url.host}`)
+  console.log(`connect to ${nc.servers.getCurrent().url.host}`)
 })
 
 // emitted whenever the client disconnects from a server
@@ -439,7 +439,7 @@ nc.on('reconnecting', () => {
 // emitted whenever the client reconnects
 // reconnect callback provides a reference to the connection as an argument
 nc.on('reconnect', (nc) => {
-  console.log(`reconnect to ${nc.currentServer.url.host}`)
+  console.log(`reconnect to ${nc.servers.getCurrent().url.host}`)
 })
 
 // emitted when the connection is closed - once a connection is closed

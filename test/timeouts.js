@@ -83,7 +83,7 @@ describe('Timeout and max received events for subscriptions', () => {
         servers: ['nats://localhost:' + PORT]
       })
       nc.on('connect', () => {
-        nc.currentServer.url.host.should.be.equal('localhost:' + PORT)
+        nc.servers.getCurrent().url.host.should.be.equal('localhost:' + PORT)
         nc.close()
         srv.close(done)
       })

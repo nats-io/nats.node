@@ -65,7 +65,7 @@ describe('Basics', () => {
   it('url is sanitized', done => {
     const nc = NATS.connect('localhost:' + PORT)
     nc.on('connect', () => {
-      nc.currentServer.toString().should.equal('nats://localhost:' + PORT)
+      nc.servers.getCurrent().toString().should.equal('nats://localhost:' + PORT)
       nc.close()
       done()
     })

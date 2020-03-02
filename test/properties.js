@@ -92,11 +92,12 @@ describe('Connection Properties', () => {
 
   it('should have an parsed url', () => {
     const nc = NATS.connect(PORT)
-    nc.should.have.property('url')
-    nc.url.should.be.an.Object()
-    nc.url.should.have.property('protocol')
-    nc.url.should.have.property('host')
-    nc.url.should.have.property('port')
+    const srv = nc.servers.getCurrent()
+    srv.should.have.property('url')
+    srv.url.should.be.an.Object()
+    srv.url.should.have.property('protocol')
+    srv.url.should.have.property('host')
+    srv.url.should.have.property('port')
     nc.close()
   })
 

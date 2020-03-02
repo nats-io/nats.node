@@ -61,8 +61,6 @@ describe('Cluster', () => {
     nc.should.have.property('options')
     nc.options.should.have.property('servers')
     nc.should.have.property('servers')
-    nc.servers.should.be.a.Array()
-    nc.should.have.property('url')
     nc.flush(() => {
       nc.close()
       done()
@@ -77,7 +75,7 @@ describe('Cluster', () => {
         servers: [s1Url, s2Url]
       })
       conns.push(nc)
-      const nurl = url.format(nc.url)
+      const nurl = url.format(nc.servers.getCurrent().url)
       if (nurl === s1Url) {
         s1Count++
       }
@@ -125,7 +123,7 @@ describe('Cluster', () => {
         servers: [s1Url, s2Url]
       })
       conns.push(nc)
-      const nurl = url.format(nc.url)
+      const nurl = url.format(nc.servers.getCurrent().url)
       if (nurl === s1Url) {
         s1Count++
       }
@@ -146,7 +144,7 @@ describe('Cluster', () => {
         servers: [s1Url, s2Url]
       })
       conns.push(nc)
-      const nurl = url.format(nc.url)
+      const nurl = url.format(nc.servers.getCurrent().url)
       if (nurl === s1Url) {
         s1Count++
       }
@@ -180,8 +178,8 @@ describe('Cluster', () => {
     })
     nc.on('reconnecting', () => {
       const elapsed = new Date() - startTime
-      if (nc.currentServer.lastConnect !== 0) {
-        elapsed.should.be.within(nc.currentServer.lastConnect - Date.now(), 2 * WAIT)
+      if (nc.servers.getCurrent().lastConnect !== 0) {
+        elapsed.should.be.within(nc.servers.getCurrent().lastConnect - Date.now(), 2 * WAIT)
       }
       startTime = new Date()
       numAttempts += 1
