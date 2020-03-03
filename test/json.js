@@ -17,6 +17,7 @@
 'use strict'
 
 const NATS = require('../')
+const Payload = require('../').Payload
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const after = require('mocha').after
@@ -45,7 +46,7 @@ describe('JSON payloads', () => {
 
     return (done) => {
       const nc = NATS.connect({
-        json: true,
+        payload: Payload.JSON,
         port: PORT
       })
 
@@ -72,7 +73,7 @@ describe('JSON payloads', () => {
 
     return (done) => {
       const nc = NATS.connect({
-        json: true,
+        payload: Payload.JSON,
         port: PORT
       })
 
@@ -96,7 +97,7 @@ describe('JSON payloads', () => {
   function testFail (input) {
     return (done) => {
       const nc = NATS.connect({
-        json: true,
+        payload: Payload.JSON,
         port: PORT
       })
 

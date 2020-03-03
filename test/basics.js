@@ -17,7 +17,7 @@
 'use strict'
 
 const NATS = require('../')
-const ErrorCode = require('../').ErrorCode
+const { ErrorCode, Payload } = require('../')
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const after = require('mocha').after
@@ -292,7 +292,7 @@ describe('Basics', () => {
   it('should parse json messages', (done) => {
     const config = {
       port: PORT,
-      json: true
+      payload: Payload.JSON
     }
     const nc = NATS.connect(config)
     const jsonMsg = {
@@ -309,7 +309,7 @@ describe('Basics', () => {
   it('should parse UTF8 json messages', (done) => {
     const config = {
       port: PORT,
-      json: true
+      payload: Payload.JSON
     }
     const nc = NATS.connect(config)
     const utf8msg = {
@@ -382,14 +382,14 @@ describe('Basics', () => {
     })
 
     nc1.flush(() => {
-      var subj = NATS.createInbox()
+      const subj = NATS.createInbox()
 
-      var count = 0
+      let count = 0
       nc1.subscribe(subj, () => {
         count++
       })
 
-      var nc2 = NATS.connect({
+      const nc2 = NATS.connect({
         port: PORT,
         name: 'default client'
       })
@@ -680,7 +680,7 @@ describe('Basics', () => {
   })
 
   it('empty json', done => {
-    const nc = NATS.connect({ port: PORT, json: true })
+    const nc = NATS.connect({ port: PORT, payload: Payload.JSON })
 
     nc.subscribe('q', (_, m) => {
       m.respond(m.data)
@@ -697,7 +697,7 @@ describe('Basics', () => {
   })
 
   it('json requests', done => {
-    const nc = NATS.connect({ port: PORT, json: true })
+    const nc = NATS.connect({ port: PORT, payload: Payload.JSON })
     nc.on('connect', () => {
       let c = 0
       const subj = NATS.createInbox()
@@ -878,7 +878,7 @@ describe('Basics', () => {
   })
 
   it('sub ids should start at 1', (done) => {
-    const nc = NATS.connect({ port: PORT, json: true })
+    const nc = NATS.connect({ port: PORT, payload: Payload.JSON })
     nc.on('connect', () => {
       const sub = nc.subscribe(nc.createInbox(), () => {})
       sub.sid.should.be.equal(1)
@@ -911,9 +911,25 @@ describe('Basics', () => {
     }, 150)
   })
 
+  it('rejects unknown properties', (done) => {
+    const options = {
+      port: PORT,
+      useOldRequestStyle: true
+    }
+    try {
+      const nc = NATS.connect(options)
+      nc.close()
+      done(new Error('should have failed useOldRequestStyle'))
+    } catch (err) {
+      err.code.should.be.equal(ErrorCode.BAD_OPTIONS)
+      err.message.should.match(/'useOldRequestStyle'/)
+      done()
+    }
+  })
+
   it('error passes to callback', (done) => {
     const pc = NATS.connect(PORT)
-    const nc = NATS.connect({ port: PORT, json: true })
+    const nc = NATS.connect({ port: PORT, payload: Payload.JSON })
     const subj = nc.createInbox()
     nc.subscribe(subj, (err, m) => {
       should.exist(err)

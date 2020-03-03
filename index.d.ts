@@ -97,6 +97,21 @@ export interface ConnectionOptions {
 	verbose?: boolean,
 	waitOnFirstConnect?: boolean,
 	yieldTime?: number
+	payload?: Payload
+}
+
+/**
+ * Payload specifies the type of [[Msg.data]] that will be sent and received by the client.
+ * The payload affects all client subscribers and publishers. If using mixed types, either
+ * create multiple connections, or select [[Payload.BINARY]] and perform your own decoding.
+ */
+export enum Payload {
+	/** Specifies a string payload. This is default [[ConnectionOptions.payload]] setting */
+	String = 'string',
+	/** Specifies payloads are JSON. */
+	JSON = 'json',
+	/** Specifies payloads are binary (Buffer) */
+	Binary = 'binary'
 }
 
 export interface SubscriptionOptions {

@@ -17,6 +17,7 @@
 'use strict'
 
 const NATS = require('../')
+const Payload = require('..').Payload
 const nsc = require('./support/nats_server_control')
 const crypto = require('crypto')
 const should = require('should')
@@ -60,7 +61,7 @@ describe('Binary', () => {
 
     nc.subscribe('invalid2octet', (_, m) => {
       m.data.length.should.equal(2)
-      if (nc.options.preserveBuffers) {
+      if (nc.options.payload === Payload.Binary) {
         should.ok(invalid2octet.equals(m.data))
       } else {
         m.data.should.equal(invalid2octet.toString('binary'))
@@ -70,7 +71,7 @@ describe('Binary', () => {
 
     nc.subscribe('invalidsequenceidentifier', (_, m) => {
       m.data.length.should.equal(2)
-      if (nc.options.preserveBuffers) {
+      if (nc.options.payload === Payload.Binary) {
         should.ok(invalidsequenceidentifier.equals(m.data))
       } else {
         m.data.should.equal(invalidsequenceidentifier.toString('binary'))
@@ -80,7 +81,7 @@ describe('Binary', () => {
 
     nc.subscribe('invalid3octet', (_, m) => {
       m.data.length.should.equal(3)
-      if (nc.options.preserveBuffers) {
+      if (nc.options.payload === Payload.Binary) {
         should.ok(invalid3octet.equals(m.data))
       } else {
         m.data.should.equal(invalid3octet.toString('binary'))
@@ -90,7 +91,7 @@ describe('Binary', () => {
 
     nc.subscribe('invalid4octet', (_, m) => {
       m.data.length.should.equal(4)
-      if (nc.options.preserveBuffers) {
+      if (nc.options.payload === Payload.Binary) {
         should.ok(invalid4octet.equals(m.data))
       } else {
         m.data.should.equal(invalid4octet.toString('binary'))
@@ -100,7 +101,7 @@ describe('Binary', () => {
 
     nc.subscribe('embeddednull', (_, m) => {
       m.data.length.should.equal(11)
-      if (nc.options.preserveBuffers) {
+      if (nc.options.payload === Payload.Binary) {
         should.ok(embeddednull.equals(m.data))
       } else {
         m.data.should.equal(embeddednull.toString('binary'))
@@ -110,7 +111,7 @@ describe('Binary', () => {
 
     nc.subscribe('bigbuffer', (_, m) => {
       m.data.length.should.equal(bigBuffer.length)
-      if (nc.options.preserveBuffers) {
+      if (nc.options.payload === Payload.Binary) {
         should.ok(bigBuffer.equals(m.data))
       } else {
         m.data.should.equal(bigBuffer.toString('binary'))
@@ -129,7 +130,7 @@ describe('Binary', () => {
   it('should allow sending and receiving binary data', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
-      encoding: 'binary'
+      payload: Payload.Binary
     })
     binaryDataTests(done, nc)
   })
@@ -137,7 +138,7 @@ describe('Binary', () => {
   it('should allow sending binary buffers', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
-      preserveBuffers: true
+      payload: Payload.Binary
     })
     binaryDataTests(done, nc)
   })
@@ -145,7 +146,7 @@ describe('Binary', () => {
   it('should not append control characters on chunk processing', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
-      preserveBuffers: true
+      payload: Payload.Binary
     })
     const buffer = crypto.randomBytes(1024)
 

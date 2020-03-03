@@ -17,6 +17,7 @@
 'use strict'
 
 const NATS = require('../')
+const Payload = require('../').Payload
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const after = require('mocha').after
@@ -41,7 +42,7 @@ describe('Buffer', () => {
   it('should allow sending and receiving raw buffers', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
-      preserveBuffers: true
+      payload: Payload.Binary
     })
 
     const validBuffer = Buffer.from('foo-bar')
@@ -58,8 +59,7 @@ describe('Buffer', () => {
   it('should allow parsing raw buffers to json', done => {
     const nc = NATS.connect({
       url: 'nats://localhost:' + PORT,
-      preserveBuffers: true,
-      json: true
+      payload: Payload.JSON
     })
 
     const jsonString = '{ "foo-bar": true }'

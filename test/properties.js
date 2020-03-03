@@ -108,8 +108,7 @@ describe('Connection Properties', () => {
       pedantic: true,
       reconnect: false,
       maxReconnectAttempts: 22,
-      reconnectTimeWait: 11,
-      useOldRequestStyle: true
+      reconnectTimeWait: 11
     }
 
     const nc = NATS.connect(options)
