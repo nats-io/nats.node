@@ -213,9 +213,12 @@ describe('Dynamic Cluster - Connect URLs', function () {
         return count
       }
 
-      nc.on('servers', () => {
+      nc.on('serversChanged', (se) => {
         if (countImplicit(nc) === 1) {
-          const found = nc.servers.getAll().find(s => s.url.href === 'nats://127.0.0.1:' + (port + 3))
+          const ns = 'nats://127.0.0.1:' + (port + 3)
+          se.added.length.should.be.equal(1)
+          const all = nc.servers.getAll()
+          const found = all.find(s => s.url.href === ns)
           if (found) {
             nc.close()
             done()
