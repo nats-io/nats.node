@@ -71,14 +71,16 @@ describe('Reconnect functionality', () => {
         startTime = new Date()
       })
     })
-    // first time it tries immediately, second time it waits
-    nc.once('reconnecting', () => {
-      nc.on('reconnecting', () => {
+
+    let first = true
+    nc.on('reconnecting', () => {
+      if (first) {
+        first = false
         const elapsed = new Date() - startTime
         elapsed.should.be.within(WAIT, WAIT * 2)
         nc.close()
         done()
-      })
+      }
     })
     nc.on('disconnect', () => {
       const elapsed = new Date() - startTime

@@ -58,7 +58,8 @@ describe('Ping Timer', () => {
       port: PORT,
       pingInterval: 200,
       maxPingOut: 5,
-      maxReconnectAttempts: 1
+      maxReconnectAttempts: 1,
+      reconnectTimeWait: 100
     })
 
     let pingTimerFired = false
@@ -78,7 +79,8 @@ describe('Ping Timer', () => {
       port: PORT,
       pingInterval: 200,
       maxPingOut: 5,
-      maxReconnectAttempts: 1
+      maxReconnectAttempts: 1,
+      reconnectTimeWait: 100
     })
 
     let maxOut = 0
