@@ -911,7 +911,7 @@ describe('Basics', () => {
     }, 150)
   })
 
-  it('rejects unknown properties', (done) => {
+  it('reject unknown properties', (done) => {
     const options = {
       port: PORT,
       useOldRequestStyle: true
