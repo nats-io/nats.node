@@ -471,6 +471,7 @@ The following is the list of connection options and default values.
 
 | Option                 | Default                   | Description
 |--------                |---------                  |------------
+| `credsFile`            | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials).
 | `encoding`             | `"utf8"`                  | Encoding specified by the client to encode/decode data
 | `json`                 | `false`                   | If true, message payloads are converted to/from JSON
 | `maxPingOut`           | `2`                       | Max number of pings the client will allow unanswered before raising a stale connection error
@@ -478,6 +479,7 @@ The following is the list of connection options and default values.
 | `name`                 |                           | Optional client name
 | `nkey`                 | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials)
 | `noEcho`               | `false`                   | Subscriptions receive messages published by the client. Requires server support (1.2.0). If set to true, and the server does not support the feature, an error with code `NO_ECHO_NOT_SUPPORTED` is emitted, and the connection is aborted. Note that it is possible for this error to be emitted on reconnect when the server reconnects to a server that does not support the feature.
+| `noMuxRequests`        | `false`                   | If set to `true` calls to `request()`  will create an inbox subscription per call.
 | `noRandomize`          | `false`                   | If set, the order of user-specified servers is randomized.
 | `nonceSigner`          | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). A function that takes a `Buffer` and returns a nkey signed signature.
 | `pass`                 |                           | Sets the password for a connection
@@ -489,13 +491,11 @@ The following is the list of connection options and default values.
 | `servers`              |                           | Array of connection `url`s
 | `timeout`              | node default - no timeout | Number of milliseconds the client will wait for a connection to be established. If it fails it will emit a `connection_timeout` event with a NatsError that provides the hostport of the server where the connection was attempted.
 | `tls`                  | `false`                   | This property can be a boolean or an Object. If true the client requires a TLS connection. If false a non-tls connection is required.  The value can also be an object specifying TLS certificate data. The properties `ca`, `key`, `cert` should contain the certificate file data. `ca` should be provided for self-signed certificates. `key` and `cert` are required for client provided certificates. `rejectUnauthorized` if `true` validates server's credentials
-| `token`                |                           | Sets a authorization token for a connection
 | `tokenHandler`         |                           | A function returning a `token` used for authentication.
+| `token`                |                           | Sets a authorization token for a connection
 | `url`                  | `"nats://localhost:4222"` | Connection url
-| `useOldRequestStyle`   | `false`                   | If set to `true` calls to `request()` and `requestOne()` will create an inbox subscription per call.
-| `user`                 |                           | Sets the username for a connection
-| `userCreds`            | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). Set with `NATS.creds()`.
 | `userJWT`              | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). The property can be a JWT or a function that returns a JWT.
+| `user`                 |                           | Sets the username for a connection
 | `verbose`              | `false`                   | Turns on `+OK` protocol acknowledgements
 | `waitOnFirstConnect`   | `false`                   | If `true` the server will fall back to a reconnect mode if it fails its first connection attempt.
 | `yieldTime`            |                           | If set, processing will yield at least the specified number of milliseconds to IO callbacks before processing inbound messages
