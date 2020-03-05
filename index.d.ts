@@ -69,7 +69,6 @@ export function connect(opts: ConnectionOptions): Client;
 
 export interface ConnectionOptions {
 	encoding?: BufferEncoding,
-	json?: boolean,
 	maxPingOut?: number,
 	maxReconnectAttempts?: number,
 	name?: string,
@@ -79,6 +78,7 @@ export interface ConnectionOptions {
 	noRandomize?: boolean,
 	nonceSigner?: Function,
 	pass?: string,
+	payload?: Payload
 	pedantic?: boolean,
 	pingInterval?: number,
 	preserveBuffers?: boolean,
@@ -97,7 +97,6 @@ export interface ConnectionOptions {
 	verbose?: boolean,
 	waitOnFirstConnect?: boolean,
 	yieldTime?: number
-	payload?: Payload
 }
 
 /**
