@@ -309,7 +309,7 @@ const nkeys = require('ts-nkeys')
 
 // Simple connect using credentials file. This loads JWT and signing key
 // each time that NATS connects.
-let nc = NATS.connect('connect.ngs.global', NATS.creds('./myid.creds'))
+let nc = NATS.connect('connect.ngs.global', { credsFile: './myid.creds' })
 
 // Manually, you need to specify the JWT, and seed and sign the challenge
 const jwt = 'eyJ0eXAiOiLN1...'

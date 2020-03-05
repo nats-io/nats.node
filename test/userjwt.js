@@ -132,7 +132,7 @@ describe('NKeys, Signatures and User JWTs', function () {
   it('should connect with a user credentials file', done => {
     const nc = NATS.connect({
       port: PORT,
-      userCreds: './test/configs/nkeys/test.creds'
+      credsFile: './test/configs/nkeys/test.creds'
     })
     nc.on('connect', client => {
       client.should.equal(nc)
@@ -146,7 +146,7 @@ describe('NKeys, Signatures and User JWTs', function () {
   })
 
   it('should connect with new style of connect with url and a user credentials file', done => {
-    const nc = NATS.connect(uri, NATS.creds('./test/configs/nkeys/test.creds'))
+    const nc = NATS.connect(uri, { credsFile: './test/configs/nkeys/test.creds' })
     nc.on('connect', (client) => {
       client.should.equal(nc)
       nc.close()

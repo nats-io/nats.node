@@ -68,6 +68,7 @@ export function connect(url?: string|number, opts?: ConnectionOptions): Client;
 export function connect(opts: ConnectionOptions): Client;
 
 export interface ConnectionOptions {
+	credsFile?: string,
 	encoding?: BufferEncoding,
 	maxPingOut?: number,
 	maxReconnectAttempts?: number,
@@ -92,7 +93,6 @@ export interface ConnectionOptions {
 	url?: string,
 	useOldRequestStyle?: boolean,
 	user?: string,
-	userCreds?: string,
 	userJWT?: string | Function,
 	verbose?: boolean,
 	waitOnFirstConnect?: boolean,
