@@ -91,7 +91,6 @@ export interface ConnectionOptions {
 	token?: string,
 	tokenHandler?: Function,
 	url?: string,
-	useOldRequestStyle?: boolean,
 	user?: string,
 	userJWT?: string | Function,
 	verbose?: boolean,

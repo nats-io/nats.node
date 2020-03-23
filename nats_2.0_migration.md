@@ -132,3 +132,10 @@ Previous versions of NATS.js typically emitted errors. Error emitting provided n
  If no callback is provided or is the callback is not a function, the error will be thrown for all API usage errors.
 
 Errors emitted by the server or some other condition not associated or mappable to a provided callback will be emitted as before.
+
+
+## Changed Configuration Properties
+
+| Property | Comment |
+| ----     | ----     | 
+| `useOldRequestStyle` | change to `noMuxRequests`|
