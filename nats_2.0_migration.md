@@ -80,13 +80,13 @@ nc.request(subj, (err, m) => {
    
 ## Message Callbacks
 
-Messages callbacks have been normalized in NATS.js 2.0 - Standard Node.js pattern is `(err, args...)`, and NATS.js 2.0 now follows this pattern.
+Messages callbacks have been normalized in NATS.js 2.0 - Standard Node.js pattern is `(err, params...)`, and NATS.js 2.0 now follows this pattern.
 In addition we took the opportunity to consolidate all the arguments provided to a message callback into an object. This removes any ambiguity about the callback arguments or any ordering.
 ```
 (data: any|null, reply: string|null, subject: string, sid: number)
 ```
 
-new callback is:
+The new message callback is:
 
 ```
 (err: NatsError | null, m: Message)
@@ -104,7 +104,7 @@ If no error, the message argument follows the interface:
 }
 ```
 
-- Message allows to respond to requests:
+- Message instances allow to `respond` to a requests:
 ```
 nc.subscribe(subj, (err, m) => {
     if(err) {
