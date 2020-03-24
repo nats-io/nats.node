@@ -1,5 +1,6 @@
+/* tslint:disable:no-console */
 /*
- * Copyright 2013-2019 The NATS Authors
+ * Copyright 2013-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -51,6 +52,7 @@ let sid = nc.subscribe('foo', (err, m) => {
 
 // subscribe expecting 5 messages
 nc.subscribe('foo', () => {
+    // do something
 }, {timeout: 1000, expected: 5});
 
 
@@ -75,6 +77,7 @@ nc.subscribe('bar', (_, m) => {
 
 // sub all
 sid = nc.subscribe('foo', () => {
+    // do something
 }, {max: 1});
 console.log(sid);
 
@@ -82,8 +85,12 @@ console.log(sid);
 
 nc.publish('foo');
 nc.publish('foo', 'payload');
-nc.publish('foo', 'payload', () => {});
-nc.publishRequest('foo', 'reply', 'payload', () => {});
+nc.publish('foo', 'payload', () => {
+    // do something
+});
+nc.publishRequest('foo', 'reply', 'payload', () => {
+    // do something
+});
 nc.publishRequest('foo', 'reply');
 nc.publishRequest('foo', 'reply', 'payload');
 

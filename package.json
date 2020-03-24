@@ -35,7 +35,9 @@
     "test:typescript": "./node_modules/typescript/bin/tsc --strict --noEmit tstest/main.ts",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "cover": "nyc report --reporter=html && open coverage/index.html",
-    "lint": "standard './**/*.js'",
+    "lint": "npm run lint:js && npm run lint:ts",
+    "lint:js": "standard './**/*.js'",
+    "lint:ts": "tslint -c tslint.json index.d.ts 'tstest/**/*.ts'",
     "fmt": "standard --fix './**/*.js'"
   },
   "engines": {
@@ -56,6 +58,7 @@
     "nyc": "^15.0.0",
     "should": "^13.2.3",
     "standard": "^14.3.1",
+    "tslint": "^6.1.0",
     "typescript": "^3.8.2"
   },
   "typings": "./index.d.ts",
