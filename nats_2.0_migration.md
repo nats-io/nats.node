@@ -133,9 +133,26 @@ Previous versions of NATS.js typically emitted errors. Error emitting provided n
 
 Errors emitted by the server or some other condition not associated or mappable to a provided callback will be emitted as before.
 
+## Payloads
+
+Previous versions of nats.js handled payload types using a combination of `encoding`, `json` and `preserveBuffers`. Version 2, simplifies the intention by defining a `payload` option which accepts three constants:
+
+  - `Payload.String`
+  - `Payload.JSON`
+  - `Payload.Binary`
+  
+  The client will by use `Payload.String` by default. And convert decode the string as `utf8` unless a different encoding is provided. Note that Nodejs has very limited encodings. Check your Nodejs documentation on available encodings.
+  
+  `Payload.JSON` will set the encoding to `utf8` - the correct encoding for JSON payloads. Outbound payloads will be encoded to JSON with `JSON.stringify()` and inbound payloads decoded with `JSON.parse()`.
+  
+  `Payload.Binary` will use `binary` encoding and yield raw NodeJS `Buffer` types.
+
 
 ## Changed Configuration Properties
 
 | Property | Comment |
 | ----     | ----     | 
 | `useOldRequestStyle` | change to `noMuxRequests`|
+| `json` | use `payload: Payload.JSON` |
+| `preserveBuffers` | use `payload: Payload.Binary` | 
+

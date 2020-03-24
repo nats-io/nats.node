@@ -98,11 +98,11 @@ nc.close()
 
 ## JSON
 
-The `json` connect property makes it easier to exchange JSON data with other
-clients.
+The `payload` connect property makes it easy to exchange JSON data with other
+clients when set to `Payload.JSON`:
 
 ```javascript
-const nc = NATS.connect({ json: true })
+const nc = NATS.connect({ payload: Payload.JSON })
 nc.on('connect', () => {
   nc.on('error', (err) => {
     console.log(err)
@@ -152,7 +152,7 @@ nc.on('connect', () => {
 ## Wildcard Subscriptions
 
 ```javascript
-const nc = NATS.connect({ json: true })
+const nc = NATS.connect({ payload: Payload.JSON })
 // "*" matches any token, at any level of the subject.
 nc.subscribe('foo.*.baz', (_, m) => {
   console.log('Msg received on [' + m.subject + '] : ' + m.data)
@@ -391,12 +391,12 @@ sub.unsubscribe(100)
 
 NATS.connect({ encoding: 'ascii' })
 
-// PreserveBuffers
+// Binary Data
 
 // To prevent payload conversion from a Buffer to a string, set the
-// preserveBuffers option to true. Message payload return will be a Buffer.
+// `payload` option to `Payload.Binary`. Message payload return will be a Buffer.
 
-NATS.connect({ preserveBuffers: true })
+NATS.connect({ payload: Payload.Binary })
 
 // Reconnect Attempts and Time between reconnects
 
@@ -471,9 +471,8 @@ The following is the list of connection options and default values.
 
 | Option                 | Default                   | Description
 |--------                |---------                  |------------
-| `credsFile`            | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials).
+| `credsFile`            |                           | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials).
 | `encoding`             | `"utf8"`                  | Encoding specified by the client to encode/decode data
-| `json`                 | `false`                   | If true, message payloads are converted to/from JSON
 | `maxPingOut`           | `2`                       | Max number of pings the client will allow unanswered before raising a stale connection error
 | `maxReconnectAttempts` | `10`                      | Sets the maximum number of reconnect attempts. The value of `-1` specifies no limit
 | `name`                 |                           | Optional client name
@@ -481,11 +480,10 @@ The following is the list of connection options and default values.
 | `noEcho`               | `false`                   | Subscriptions receive messages published by the client. Requires server support (1.2.0). If set to true, and the server does not support the feature, an error with code `NO_ECHO_NOT_SUPPORTED` is emitted, and the connection is aborted. Note that it is possible for this error to be emitted on reconnect when the server reconnects to a server that does not support the feature.
 | `noMuxRequests`        | `false`                   | If set to `true` calls to `request()`  will create an inbox subscription per call.
 | `noRandomize`          | `false`                   | If set, the order of user-specified servers is randomized.
-| `nonceSigner`          | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). A function that takes a `Buffer` and returns a nkey signed signature.
+| `nonceSigner`          |                           | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). A function that takes a `Buffer` and returns a nkey signed signature.
 | `pass`                 |                           | Sets the password for a connection
 | `pedantic`             | `false`                   | Turns on strict subject format checks
 | `pingInterval`         | `120000`                  | Number of milliseconds between client-sent pings
-| `preserveBuffers`      | `false`                   | If true, data for a message is returned as Buffer
 | `reconnectTimeWait`    | `2000`                    | If disconnected, the client will wait the specified number of milliseconds between reconnect attempts
 | `reconnect`            | `true`                    | If false server will not attempt reconnecting
 | `servers`              |                           | Array of connection `url`s
@@ -494,7 +492,7 @@ The following is the list of connection options and default values.
 | `tokenHandler`         |                           | A function returning a `token` used for authentication.
 | `token`                |                           | Sets a authorization token for a connection
 | `url`                  | `"nats://localhost:4222"` | Connection url
-| `userJWT`              | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). The property can be a JWT or a function that returns a JWT.
+| `userJWT`              |                           | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). The property can be a JWT or a function that returns a JWT.
 | `user`                 |                           | Sets the username for a connection
 | `verbose`              | `false`                   | Turns on `+OK` protocol acknowledgements
 | `waitOnFirstConnect`   | `false`                   | If `true` the server will fall back to a reconnect mode if it fails its first connection attempt.
