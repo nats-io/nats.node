@@ -1,6 +1,6 @@
 {
   "name": "nats",
-  "version": "1.4.2",
+  "version": "1.4.4-0",
   "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
     "nats",
@@ -42,7 +42,7 @@
     "node": ">= 8.0.0"
   },
   "dependencies": {
-    "nuid": "^1.1.2",
+    "nuid": "^1.1.4",
     "ts-nkeys": "^1.0.16"
   },
   "devDependencies": {
