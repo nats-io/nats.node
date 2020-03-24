@@ -138,12 +138,57 @@ describe('Connection Properties', () => {
       const p = srv.address().port
       const nc = NATS.connect('nats://localhost:' + p, {
         noEcho: true,
-        reconnect: false
+        maxReconnectAttempts: 2,
+        reconnectTimeWait: 100
       })
+      let attempts = 0
       nc.on('error', (err) => {
-        // nc.close()
+        attempts++
         err.should.be.instanceof(NATS.NatsError)
         err.should.have.property('code', NATS.NO_ECHO_NOT_SUPPORTED)
+      })
+      nc.on('close', () => {
+        // validate that we tried to reconnect
+        attempts.should.be.equal(3)
+        client.end(() => {
+          srv.close(done)
+        })
+      })
+    })
+  })
+
+  it('should not die, if it publishes after closeStream() triggers', (done) => {
+    let client
+    const srv = net.createServer((c) => {
+      client = c
+      client.write('INFO ' + JSON.stringify({
+        server_id: 'TEST',
+        version: '0.0.0',
+        node: 'node0.0.0',
+        host: '127.0.0.1',
+        port: srv.address.port,
+        auth_required: false,
+        ssl_required: false,
+        tls_required: false,
+        tls_verify: false
+      }) + '\r\n')
+    })
+    srv.listen(0, () => {
+      const p = srv.address().port
+      const nc = NATS.connect('nats://localhost:' + p, {
+        noEcho: true,
+        maxReconnectAttempts: 2,
+        reconnectTimeWait: 100
+      })
+      nc.on('error', () => {
+        // we'll get an error here on the noEcho, but really
+        // what we are interested is in publishing after that
+        // error notification
+        process.nextTick(() => {
+          nc.publish('foo')
+        })
+      })
+      nc.on('close', () => {
         client.end(() => {
           srv.close(done)
         })
