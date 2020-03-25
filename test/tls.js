@@ -125,14 +125,26 @@ describe('TLS', () => {
       tls: tlsOptions,
       timeout: 1000
     })
+    let alive = false
     nc.on('connect', client => {
       setTimeout(() => {
-        nc.stream.destroy()
+        nc.flush((err) => {
+          if (err) {
+            done(err)
+            return
+          }
+          alive = true
+          nc.stream.destroy()
+        })
       }, 1100)
     })
     nc.on('reconnect', () => {
+      alive.should.be.true()
       nc.close()
       done()
+    })
+    nc.on('error', (err) => {
+      done(err)
     })
   })
 
