@@ -148,6 +148,40 @@ describe('TLS', () => {
     })
   })
 
+  it('should not timeout on multiple connection attempts', done => {
+    const tlsOptions = {
+      ca: [fs.readFileSync('./test/certs/ca.pem')]
+    }
+    const nc = NATS.connect({
+      url: 'nats://localhost:1234',
+      servers: ['nats://localhost:2345', `nats://localhost:${TLSPORT}`],
+      noRandomize: true,
+      tls: tlsOptions,
+      timeout: 500
+    })
+    let alive = false
+    nc.on('connect', client => {
+      setTimeout(() => {
+        nc.flush((err) => {
+          if (err) {
+            done(err)
+            return
+          }
+          alive = true
+          nc.stream.destroy()
+        })
+      }, 1100)
+    })
+    nc.on('reconnect', () => {
+      alive.should.be.true()
+      nc.close()
+      done()
+    })
+    nc.on('error', (err) => {
+      done(err)
+    })
+  }).timeout(5000)
+
   it('should reject without proper cert if required by server', done => {
     const nc = NATS.connect({
       port: TLSVERIFYPORT,

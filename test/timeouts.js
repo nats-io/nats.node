@@ -24,20 +24,30 @@ const after = require('mocha').after
 const before = require('mocha').before
 const describe = require('mocha').describe
 const it = require('mocha').it
+const fs = require('fs')
+const tls = require('tls')
 
 const PORT = 1428
+const TLSPORT = 12840
 
-describe('Timeout and max received events for subscriptions', () => {
+describe('Timeouts', () => {
   let server
+  let tlsServer
 
   // Start up our own nats-server
   before(done => {
-    server = nsc.startServer(PORT, done)
+    server = nsc.startServer(PORT, () => {
+      const flags = ['--tlscert', './test/certs/server.pem',
+        '--tlskey', './test/certs/key.pem',
+        '--tlscacert', './test/certs/ca.pem'
+      ]
+      tlsServer = nsc.startServer(TLSPORT, flags, done)
+    })
   })
 
   // Shutdown our server after we are done
   after(done => {
-    nsc.stopServer(server, done)
+    nsc.stopCluster([server, tlsServer], done)
   })
 
   // connect to a server that never sends data
@@ -121,7 +131,7 @@ describe('Timeout and max received events for subscriptions', () => {
     })
   })
 
-  it('should not timeout if exepected has been received', done => {
+  it('should not timeout if expected has been received', done => {
     const nc = NATS.connect(PORT)
     nc.on('connect', () => {
       const sid = nc.subscribe('foo')
@@ -219,22 +229,128 @@ describe('Timeout and max received events for subscriptions', () => {
     })
   })
 
-  it('should override request autoset timeouts', done => {
-    const nc = NATS.connect(PORT)
-    let calledOnRequestHandler = false
-    nc.on('connect', () => {
-      const sid = nc.request('foo', null, {
-        max: 2,
-        timeout: 1000
-      }, () => {
-        calledOnRequestHandler = true
+  it('should not timeout on connection errors', done => {
+    let ejected = false
+    const srv = net.createServer((c) => {
+      c.write('INFO ' + JSON.stringify({
+        server_id: 'TEST',
+        version: '0.0.0',
+        host: '127.0.0.1',
+        port: srv.address.port,
+        auth_required: false
+      }) + '\r\n')
+      c.on('data', (d) => {
+        const r = d.toString()
+        const lines = r.split('\r\n')
+        lines.forEach((line) => {
+          if (line === '\r\n') {
+            return
+          }
+          if (/^CONNECT\s+/.test(line)) {
+            c.destroy()
+            ejected = true
+          } else {
+            // ignored
+          }
+        })
       })
+    })
+    srv.listen(0, () => {
+      const p = srv.address().port
+      const opts = {
+        servers: [`nats://localhost:${PORT}`],
+        reconnectTimeWait: 250,
+        noRandomize: true,
+        timeout: 500
+      }
+      const nc = NATS.connect(`nats://localhost:${p}`, opts)
+      nc.on('connect', () => {
+        ejected.should.be.true()
+        nc.currentServer.url.port.should.be.equal(String(PORT))
+        setTimeout(() => {
+          nc.flush(() => {
+            nc.close()
+            srv.close(() => {
+              done()
+            })
+          })
+        }, 1000)
+      })
+      nc.on('error', (err) => {
+        done(err)
+      })
+    })
+  })
 
-      nc.timeout(sid, 1500, 2, v => {
-        calledOnRequestHandler.should.be.false()
-        v.should.be.equal(sid)
-        nc.close()
-        done()
+  it('should not timeout on tls connection errors', done => {
+    let ejected = false
+    const srv = net.createServer((c) => {
+      c.write('INFO ' + JSON.stringify({
+        server_id: 'TEST',
+        version: '0.0.0',
+        host: '127.0.0.1',
+        port: srv.address.port,
+        auth_required: false,
+        tls_required: true
+      }) + '\r\n')
+
+      const opts = {
+        isServer: true,
+        ca: fs.readFileSync('./test/certs/ca.pem'),
+        key: fs.readFileSync('./test/certs/key.pem'),
+        cert: fs.readFileSync('./test/certs/server.pem')
+      }
+
+      const tlssrv = new tls.TLSSocket(c, opts)
+      tlssrv.on('error', (err) => {
+        done(err)
+      })
+      tlssrv.on('readable', () => {
+        const d = tlssrv.read()
+        if (d) {
+          const r = d.toString()
+          const lines = r.split('\r\n')
+          lines.forEach((line) => {
+            if (line === '\r\n') {
+              return
+            }
+            if (/^CONNECT\s+/.test(line)) {
+              c.destroy()
+              ejected = true
+            } else {
+              // ignored
+            }
+          })
+        }
+      })
+    })
+    srv.listen(0, () => {
+      const p = srv.address().port
+      const opts = {
+        servers: [`nats://localhost:${TLSPORT}`],
+        reconnectTimeWait: 250,
+        noRandomize: true,
+        timeout: 500,
+        tls: {
+          ca: fs.readFileSync('./test/certs/ca.pem')
+        }
+      }
+      const nc = NATS.connect(`nats://localhost:${p}`, opts)
+      nc.on('connect', () => {
+        ejected.should.be.true()
+        nc.currentServer.url.port.should.be.equal(String(TLSPORT))
+        nc.stream.encrypted.should.be.true()
+        setTimeout(() => {
+          nc.flush(() => {
+            nc.close()
+            srv.close(() => {
+              done()
+            })
+          })
+        }, 1000)
+      })
+      nc.on('error', (err) => {
+        done(err)
       })
     })
   })
