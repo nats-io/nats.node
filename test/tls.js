@@ -82,6 +82,24 @@ describe('TLS', () => {
     })
   })
 
+  it('should keep rejecting without proper CA', done => {
+    const nc = NATS.connect({
+      port: TLSPORT,
+      tls: true,
+      maxReconnectAttempts: 5,
+      reconnectTimeWait: 100,
+      waitOnFirstConnect: true
+    })
+    let tries = 0
+    nc.on('dialing', () => {
+      tries++
+    })
+    nc.on('close', () => {
+      tries.should.equal(nc.options.maxReconnectAttempts)
+      done()
+    })
+  })
+
   it('should connect if authorized is overridden', done => {
     const tlsOptions = {
       rejectUnauthorized: false
@@ -126,7 +144,7 @@ describe('TLS', () => {
       timeout: 1000
     })
     let alive = false
-    nc.on('connect', client => {
+    nc.on('connect', () => {
       setTimeout(() => {
         nc.flush((err) => {
           if (err) {
@@ -160,7 +178,7 @@ describe('TLS', () => {
       timeout: 500
     })
     let alive = false
-    nc.on('connect', client => {
+    nc.on('connect', () => {
       setTimeout(() => {
         nc.flush((err) => {
           if (err) {
