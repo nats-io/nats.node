@@ -91,7 +91,7 @@ describe('TLS', () => {
       waitOnFirstConnect: true
     })
     let tries = 0
-    nc.on('dialing', () => {
+    nc.on('reconnecting', () => {
       tries++
     })
     nc.on('close', () => {
