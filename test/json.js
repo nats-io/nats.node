@@ -150,4 +150,35 @@ describe('JSON payloads', () => {
   it('should req/rep with undefined oldrr', testReqRep(
     undefined, null, true
   ))
+
+  it('should notify if there is an error decoding json', (done) => {
+    const nc = NATS.connect({
+      port: PORT
+    })
+
+    const jc = NATS.connect({
+      json: true,
+      port: PORT
+    })
+
+    jc.subscribe('bad_json', (d) => {
+      if (!(d instanceof Error)) {
+        jc.close()
+        nc.close()
+        done(new Error('should have not received a message'))
+      } else {
+        done()
+        jc.close()
+        nc.close()
+      }
+    })
+
+    nc.flush(() => {
+      jc.flush(() => {
+        nc.publish('bad_json', '')
+        nc.flush(() => {
+        })
+      })
+    })
+  })
 })
