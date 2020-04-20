@@ -18,6 +18,7 @@
 
 const NATS = require('../')
 const Payload = require('../').Payload
+const ErrorCode = require('../').ErrorCode
 const nsc = require('./support/nats_server_control')
 const should = require('should')
 const after = require('mocha').after
@@ -160,7 +161,7 @@ describe('JSON payloads', () => {
     jc.subscribe('bad_json', (err) => {
       jc.close()
       nc.close()
-      if (err) {
+      if (err && err.code === ErrorCode.BAD_JSON) {
         done()
       } else {
         done(new Error('should have not received a message'))
