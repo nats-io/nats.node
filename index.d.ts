@@ -78,7 +78,7 @@ export interface ConnectionOptions {
   noEcho?: boolean
   noMuxRequests?: boolean,
   noRandomize?: boolean,
-  nonceSigner?: () => void,
+  nonceSigner?: (s: string) => Buffer,
   pass?: string,
   payload?: Payload
   pedantic?: boolean,
@@ -90,7 +90,7 @@ export interface ConnectionOptions {
   timeout?: number,
   tls?: boolean | tls.TlsOptions,
   token?: string,
-  tokenHandler?: () => void,
+  tokenHandler?: () => string,
   url?: string,
   user?: string,
   userJWT?: string | cb,
