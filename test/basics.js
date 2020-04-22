@@ -152,7 +152,7 @@ describe('Basics', () => {
       nc.publish(reply, replyMsg)
     })
 
-    const sub = nc.request('foo', initMsg, _ => {
+    const sub = nc.request('foo', initMsg, () => {
       nc.flush(() => {
         received.should.equal(expected)
         nc.close()
@@ -1091,6 +1091,26 @@ describe('Basics', () => {
       ssid.should.be.equal(1)
       nc.close()
       done()
+    })
+  })
+
+  it('should handle hostports', (done) => {
+    const nc = NATS.connect(`localhost:${PORT}`)
+    nc.on('connect', () => {
+      nc.flush(() => {
+        nc.close()
+        done()
+      })
+    })
+  })
+
+  it('should handle hostports - servers', (done) => {
+    const nc = NATS.connect({ servers: [`localhost:${PORT}`] })
+    nc.on('connect', () => {
+      nc.flush(() => {
+        nc.close()
+        done()
+      })
     })
   })
 })
