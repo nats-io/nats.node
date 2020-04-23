@@ -82,6 +82,24 @@ describe('TLS', () => {
     })
   })
 
+  it('should keep rejecting without proper CA', done => {
+    const nc = NATS.connect({
+      port: TLSPORT,
+      tls: true,
+      maxReconnectAttempts: 5,
+      reconnectTimeWait: 100,
+      waitOnFirstConnect: true
+    })
+    let tries = 0
+    nc.on('reconnecting', () => {
+      tries++
+    })
+    nc.on('close', () => {
+      tries.should.equal(nc.options.maxReconnectAttempts)
+      done()
+    })
+  })
+
   it('should connect if authorized is overridden', done => {
     const tlsOptions = {
       rejectUnauthorized: false

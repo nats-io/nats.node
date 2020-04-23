@@ -153,7 +153,7 @@ describe('Basics', () => {
       m.respond(replyMsg)
     })
 
-    const req = nc.request('foo', _ => {
+    const req = nc.request('foo', () => {
       nc.flush(() => {
         received.should.equal(expected)
         nc.close()
@@ -998,4 +998,24 @@ describe('Basics', () => {
   it('should rr without muxsub with delay', rr(true, 'D', { timeout: 1000 }, 500))
   it('should rr with muxsub can timeout', rr(false, 'E', { timeout: 100 }, 250))
   it('should rr without muxsub can timeout', rr(true, 'F', { timeout: 100 }, 250))
+
+  it('should handle hostports', (done) => {
+    const nc = NATS.connect(`localhost:${PORT}`)
+    nc.on('connect', () => {
+      nc.flush(() => {
+        nc.close()
+        done()
+      })
+    })
+  })
+
+  it('should handle hostports - servers', (done) => {
+    const nc = NATS.connect({ servers: [`localhost:${PORT}`] })
+    nc.on('connect', () => {
+      nc.flush(() => {
+        nc.close()
+        done()
+      })
+    })
+  })
 })
