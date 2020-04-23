@@ -1018,4 +1018,18 @@ describe('Basics', () => {
       })
     })
   })
+
+  it('noMuxRequests request options are honored', (done) => {
+    const nc = NATS.connect(PORT)
+    nc.on('connect', () => {
+      const subj = NATS.createInbox()
+      const req = nc.request(subj, () => {},
+        '', { timeout: 1000, noMuxRequests: true })
+      nc.numSubscriptions().should.be.equal(1)
+      nc.reqs.length.should.be.equal(0)
+      req.cancel()
+      nc.close()
+      done()
+    })
+  })
 })

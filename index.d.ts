@@ -122,6 +122,7 @@ export interface SubscriptionOptions {
 
 export interface RequestOptions {
   max?: number,
+  noMuxRequests?: boolean,
   timeout?: number
 }
 
