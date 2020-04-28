@@ -20,6 +20,15 @@ npm install nats
 npm install nats@next
 ```
 
+## NATS.js 2.0 Preview
+> :warning: We have a preview for a nats.js v2 available. Nats.js v2 is currently hosted in the [v2 branch](https://github.com/nats-io/nats.js/tree/v2).
+> 
+> Version 2.0 changes existing APIs slightly, and while porting is trivial, it will
+> require careful changes on existing code bases. A description of the changes and migration can be found [here](https://github.com/nats-io/nats.js/blob/v2/nats_2.0_migration.md).
+> 
+> Nats.js 2.0 will be the underlying engine for ts-nats which provides an async/await API on top of nats.js.
+> You can play with the nats.js v2 by `npm install nats@alpha`.
+
 ## Basic Usage
 
 ```javascript
