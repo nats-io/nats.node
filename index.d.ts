@@ -78,17 +78,26 @@ export interface ClientOpts {
 	pingInterval?: number,
 	preserveBuffers?: boolean,
 	reconnect?: boolean,
+	// jitter for non-tls connections
+	reconnectJitter?: number,
+	// jitter for tls connections
+	reconnectJitterTLS?: number,
+	// handler for custom tls connection
+	// setting reconnectJitter and/or reconnectJitterTLS simply creates a function for the jitter
+	// if a function is provided, any custom values for reconnectJitter and/or reconnectJitterTLS
+	// are ignored
+	reconnectDelayHandler?: ()=>number,
 	reconnectTimeWait?: number,
 	servers?: Array<string>,
 	timeout?: number,
 	tls?: boolean | tls.TlsOptions,
 	token?: string,
-	tokenHandler?: Function,
+	tokenHandler?: ()=>string,
 	url?: string,
 	useOldRequestStyle?: boolean,
 	user?: string,
 	userCreds?: string,
-	userJWT?: string | Function,
+	userJWT?: ()=>string | string,
 	verbose?: boolean,
 	waitOnFirstConnect?: boolean,
 	yieldTime?: number

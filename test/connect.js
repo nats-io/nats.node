@@ -82,6 +82,7 @@ describe('Basic Connectivity', () => {
       url: 'nats://localhost:22222',
       waitOnFirstConnect: true,
       reconnectTimeWait: 100,
+      reconnectDelayHandler: () => { return 0 },
       maxReconnectAttempts: 20
     })
     let connectingEvents = 0

@@ -163,6 +163,7 @@ describe('Cluster', () => {
       noRandomize: true,
       servers: [s1Url, s2Url],
       reconnectTimeWait: WAIT,
+      reconnectDelayHandler: () => { return 0 },
       maxReconnectAttempts: ATTEMPTS
     })
     let startTime
