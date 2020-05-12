@@ -63,7 +63,8 @@ describe('Reconnect functionality', () => {
     const nc = NATS.connect({
       port: PORT,
       reconnectTimeWait: WAIT,
-      reconnectDelayHandler: () => { return 0 }
+      reconnectJitter: 0,
+      reconnectJitterTLS: 0
     })
     let startTime
     should.exist(nc)
