@@ -530,7 +530,7 @@ describe('Reconnect functionality', () => {
       nc.on('connect', crh)
       nc.on('reconnect', crh)
       nc.on('reconnecting', () => {
-        const elapsed = new Date() - startTime
+        const elapsed = Date.now() - startTime
         durations.push(elapsed)
         if (durations.length === 10) {
           const sum = durations.reduce((a, b) => {
