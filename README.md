@@ -513,7 +513,7 @@ The relationship between these is:
 - If `reconnectDelayHandler` is specified, the client will wait the value returned by this function. No other value will be taken into account.
 - If the client specified TLS options, the client will generate a number between 0 and `reconnectJitterTLS` and add it to
 `reconnectTimeWait`.
-- If the client didn't specify TLS options, the client will generate a number between 0 and `reconnectJItter` and add it to `reconnectTimeWait`.
+- If the client didn't specify TLS options, the client will generate a number between 0 and `reconnectJitter` and add it to `reconnectTimeWait`.
 
 
 ## Tools
