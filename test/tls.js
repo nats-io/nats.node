@@ -88,6 +88,7 @@ describe('TLS', () => {
       tls: true,
       maxReconnectAttempts: 5,
       reconnectTimeWait: 100,
+      reconnectDelayHandler: () => { return 0 },
       waitOnFirstConnect: true
     })
     let tries = 0

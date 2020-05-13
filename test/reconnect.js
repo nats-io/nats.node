@@ -62,7 +62,9 @@ describe('Reconnect functionality', () => {
   it('should emit a disconnect and a reconnecting event after proper delay', (done) => {
     const nc = NATS.connect({
       port: PORT,
-      reconnectTimeWait: WAIT
+      reconnectTimeWait: WAIT,
+      reconnectJitter: 0,
+      reconnectJitterTLS: 0
     })
     let startTime
     should.exist(nc)
@@ -473,6 +475,78 @@ describe('Reconnect functionality', () => {
             done()
           }, 500)
         })
+      })
+    })
+  })
+
+  it('jitter', (done) => {
+    let socket = null
+    const srv = net.createServer((c) => {
+      socket = c
+      c.write('INFO ' + JSON.stringify({
+        server_id: 'TEST',
+        version: '0.0.0',
+        host: '127.0.0.1',
+        port: srv.address.port,
+        auth_required: false
+      }) + '\r\n')
+      c.on('data', (d) => {
+        const r = d.toString()
+        const lines = r.split('\r\n')
+        lines.forEach((line) => {
+          if (line === '\r\n') {
+            return
+          }
+          if (/^CONNECT\s+/.test(line)) {
+          } else if (/^PING/.test(line)) {
+            c.write('PONG\r\n')
+          } else if (/^SUB\s+/i.test(line)) {
+          } else if (/^PUB\s+/i.test(line)) {
+          } else if (/^UNSUB\s+/i.test(line)) {
+          } else if (/^MSG\s+/i.test(line)) {
+          } else if (/^INFO\s+/i.test(line)) {
+          }
+        })
+      })
+      c.on('error', () => {
+        // we are messing with the server so this will raise connection reset
+      })
+    })
+    srv.listen(0, () => {
+      const p = srv.address().port
+      const nc = NATS.connect('nats://localhost:' + p, {
+        reconnect: true,
+        reconnectTimeWait: 100,
+        reconnectJitter: 100
+      })
+      const durations = []
+      let startTime
+      function crh () {
+        process.nextTick(() => {
+          // this is going to fake an outstanding ping
+          socket.destroy()
+        })
+      }
+      nc.on('connect', crh)
+      nc.on('reconnect', crh)
+      nc.on('reconnecting', () => {
+        const elapsed = Date.now() - startTime
+        durations.push(elapsed)
+        if (durations.length === 10) {
+          const sum = durations.reduce((a, b) => {
+            return a + b
+          }, 0)
+          sum.should.be.within(1000, 2000)
+          const extra = sum - 1000
+          extra.should.be.within(100, 900)
+          srv.close(() => {
+            nc.close()
+            done()
+          })
+        }
+      })
+      nc.on('disconnect', () => {
+        startTime = Date.now()
       })
     })
   })
