@@ -506,7 +506,7 @@ The settings `reconnectTimeWait`, `reconnectJitter`, `reconnectJitterTLS`, `reco
 They control how long before the NATS client attempts to reconnect to a server it has previously connected.
 
 The intention of the settings is to spread out the number of clients attempting to reconnect to a server over a period of time, 
-and thus preventing a ["Thundering Heard"](https://docs.nats.io/developing-with-nats/reconnect/random).
+and thus preventing a ["Thundering Herd"](https://docs.nats.io/developing-with-nats/reconnect/random).
 
 The relationship between these is:
 
