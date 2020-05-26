@@ -4,7 +4,7 @@ sudo: false
 node_js:
   - "10"
   - "12"
-  - "13"
+  - "14"
 
 cache: npm
 
@@ -12,7 +12,7 @@ git:
   depth: false
 
 env:
-  - NATS_VERSION=v2.1.2
+  - NATS_VERSION=v2.1.7
 
 before_script:
   - wget "https://github.com/nats-io/nats-server/releases/download/$NATS_VERSION/nats-server-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
@@ -23,4 +23,4 @@ script:
   npm test
 
 after_success:
-  - if [[ "$TRAVIS_NODE_VERSION" == 13 ]]; then npm run coveralls; fi
+  - if [[ "$TRAVIS_NODE_VERSION" == 14 ]]; then npm run coveralls; fi
