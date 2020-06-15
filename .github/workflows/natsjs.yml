@@ -1,0 +1,45 @@
+name: NATS.js CI
+
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - '*'
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    name: ${{ matrix.config.kind }} ${{ matrix.config.os }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x, 14.x]
+
+    steps:
+      - name: Checkout NATS.js
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Set NATS Server Version
+        run: echo '::set-env name=NATS_VERSION::v2.1.7'
+      - name: Get NATS
+        run: |
+          wget "https://github.com/nats-io/nats-server/releases/download/$NATS_VERSION/nats-server-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
+          unzip tmp.zip
+          mv nats-server-$NATS_VERSION-linux-amd64 nats-server
+      - run: npm ci
+      - run: npm test
+        env:
+          CI: true
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        if: ${{ matrix.node-version }} == '14.x'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
