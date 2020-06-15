@@ -29,7 +29,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Set NATS Server Version
         run: echo '::set-env name=NATS_VERSION::v2.1.7'
-      - name: Get NATS
+      - name: Get nats-server
         run: |
           wget "https://github.com/nats-io/nats-server/releases/download/$NATS_VERSION/nats-server-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
           unzip tmp.zip
@@ -38,11 +38,11 @@ jobs:
       - run: npm test
         env:
           CI: true
-      - name: Coverage
-        if: ${{ matrix.node-version }} == '14.x'
+      - name: Gather coverage
+        if: matrix.node-version == '14.x'
         run: npm run coveralls
       - name: Coveralls
         uses: coverallsapp/github-action@master
-        if: ${{ matrix.node-version }} == '14.x'
+        if: matrix.node-version == '14.x'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
