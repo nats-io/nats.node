@@ -49,4 +49,11 @@ describe('shifter', () => {
     const b = NATS.callbackShifter(4, a)
     should.deepEqual(a, b)
   })
+
+  it('should not accept arguments after callback all', () => {
+    const a = ['a', () => {}, 1];
+    (() => {
+      NATS.callbackShifter(3, a)
+    }).should.throw(Error)
+  })
 })
