@@ -38,6 +38,9 @@ jobs:
       - run: npm test
         env:
           CI: true
+      - name: Coverage
+        if: ${{ matrix.node-version }} == '14.x'
+        run: npm run coveralls
       - name: Coveralls
         uses: coverallsapp/github-action@master
         if: ${{ matrix.node-version }} == '14.x'

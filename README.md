@@ -4,7 +4,7 @@ A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://n
 
 [![license](https://img.shields.io/github/license/nats-io/node-nats.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Build Status](https://travis-ci.org/nats-io/nats.js.svg?branch=master)](https://travis-ci.org/nats-io/nats.js)
-[![Coverage Status](https://coveralls.io/repos/github/nats-io/nats.js/badge.svg?branch=master)](https://coveralls.io/github/nats-io/nats.js?branch=master)
+![NATS.js CI](https://github.com/nats-io/nats.js/workflows/NATS.js%20CI/badge.svg)
 [![npm](https://img.shields.io/npm/v/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dt/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dm/nats.svg)](https://www.npmjs.com/package/nats)
