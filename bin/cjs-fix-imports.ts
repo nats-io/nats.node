@@ -20,6 +20,10 @@ const argv = parse(
   },
 );
 
+const requires = new Map<string, {lib: string, arg: string}>();
+
+requires.set("https://raw.githubusercontent.com/nats-io/nkeys.js", {lib: "nkeys.js", arg: "nkeys"})
+
 // resolve the specified directories to fq
 let dirs = (argv._ as string[]).map((n) => {
   return resolve(n);
@@ -64,11 +68,34 @@ await Deno.lstat(out)
 for (const fn of files) {
   const data = await Deno.readFile(fn);
   let txt = new TextDecoder().decode(data);
+
+
   let mod = txt.replace(/from\s+"(\S+).[t|j]s"/gim, 'from "$1"');
   mod = mod.replace(/require\("(\S+).[j|t]s"\)/gim, 'require("$1")');
+
+  // some of the imports are references to external projects
+  // that in node we resolve with requires - if we encounter one that
+  // the script is not configured for, the build fails
+  while(true) {
+    const m = mod.match(/(export [\s\S]+ from\s+"(https:\/\/\S+)")/);
+    if(m) {
+      for (const k of requires.keys()) {
+        if(m[2].indexOf(k) === 0) {
+          const entry = requires.get(k);
+          mod = mod.replace(m[0], `export const ${entry!.arg} = require("${entry!.lib}")`);
+          break;
+        }
+      }
+    } else {
+      break
+    }
+  }
+
   const target = join(out, basename(fn));
   await Deno.writeFile(target, new TextEncoder().encode(mod));
   if (txt.length !== mod.length) {
     console.log(`${target}`);
   }
 }
+
+
