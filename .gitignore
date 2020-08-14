@@ -1,23 +1,9 @@
-node_modules/
-npm-debug.log
-
 .DS_Store
 .idea
-.settings/
 
-*.log
-*.heapsnapshot
-*.sock
-.coverrun
-.coverdata
-dump.rdb
-xunit.xml
-
-logs/
-reports/
-tmp/
+node_modules/
+.deps/
+benchmark/
 coverage/
-.nyc_output/
-
-
+lib/
 nats-base-client/

@@ -14,4 +14,4 @@
  */
 'use strict'
 
-module.exports = require('./lib/nats')
+module.exports = require('./lib/src/mod');

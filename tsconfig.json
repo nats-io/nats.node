@@ -2,14 +2,14 @@
   "compilerOptions": {
     "target": "ES6",
     "module": "CommonJS",
-    "outDir": "lib",
-    "moduleResolution": "node",
-    "declaration": true
+    "outDir": "lib/",
+    "moduleResolution": "node"
   },
   "include": [
     "src"
   ],
   "exclude": [
-    "test/**/*"
+    "test/**/*",
+    "lib/**/*"
   ]
 }

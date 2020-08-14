@@ -1,4 +1,4 @@
-#!/usr/bin/env deno run --allow-all --unstable
+#!/usr/bin/env node
 
 import * as parse from "minimist";
 import { ConnectionOptions, connect, StringCodec } from "../src/mod";

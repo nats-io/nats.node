@@ -26,7 +26,17 @@
     "name": "The NATS Authors"
   },
   "contributors": [],
-  "main": "./index.js",
+  "main": "nats.js",
+  "types": "nats.d.ts",
+  "files": [
+    "lib/",
+    "examples/",
+    "OWNERS.md",
+    "CODE-OF-CONDUCT.md",
+    "LICENSE",
+    "MAINTAINERS.md",
+    "nats.d.ts"
+  ],
   "scripts": {
     "build": "tsc",
     "cjs": "deno run --allow-all bin/cjs-fix-imports.ts -o nats-base-client/ ./.deps/nats.deno/nats-base-client/",
