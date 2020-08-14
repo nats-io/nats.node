@@ -3,7 +3,8 @@
     "target": "ES6",
     "module": "CommonJS",
     "outDir": "lib/",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "sourceMap": true
   },
   "include": [
     "src"

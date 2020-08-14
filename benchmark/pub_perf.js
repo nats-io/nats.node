@@ -13,49 +13,54 @@
  * limitations under the License.
  */
 
-'use strict'
+"use strict";
 
-const NATS = require('../lib/nats')
-const nats = NATS.connect()
-const fs = require('fs')
+const NATS = require("../lib/nats");
+const nats = NATS.connect();
+const fs = require("fs");
 
 /// ////////////////////////////////////
 // Publish Performance
 /// ////////////////////////////////////
 
-const loop = 1000000
-const hash = 2500
+const loop = 1000000;
+const hash = 2500;
 
-console.log('Publish Performance Test')
+console.log("Publish Performance Test");
 
-nats.on('connect', function () {
-  const start = new Date()
+nats.on("connect", function () {
+  const start = new Date();
 
   for (let i = 0; i < loop; i++) {
-    nats.publish('test', 'ok')
+    nats.publish("test", "ok");
     if (i % hash === 0) {
-      process.stdout.write('+')
+      process.stdout.write("+");
     }
   }
 
   nats.flush(function () {
-    const stop = new Date()
-    const mps = parseInt(loop / ((stop - start) / 1000), 10)
-    log('pub', loop, stop - start)
-    console.log('\nPublished at ' + mps + ' msgs/sec')
-  })
+    const stop = new Date();
+    const mps = parseInt(loop / ((stop - start) / 1000), 10);
+    log("pub", loop, stop - start);
+    console.log("\nPublished at " + mps + " msgs/sec");
+  });
 
-  function log (op, count, time) {
+  function log(op, count, time) {
     if (process.argv.length === 2) {
-      fs.appendFile('pub.csv', [op, count, time, new Date().toDateString(), NATS.version].join(',') + '\n', function (err) {
-        if (err) {
-          console.log(err)
-        }
-        process.exit()
-      })
+      fs.appendFile(
+        "pub.csv",
+        [op, count, time, new Date().toDateString(), NATS.version].join(",") +
+          "\n",
+        function (err) {
+          if (err) {
+            console.log(err);
+          }
+          process.exit();
+        },
+      );
     } else {
       // running for sub test, don't record
-      process.exit()
+      process.exit();
     }
   }
-})
+});

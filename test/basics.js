@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 The NATS Authors
+ * Copyright 2018-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,1105 +12,611 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const test = require("ava");
+const { connect, ErrorCode, createInbox, StringCodec, Empty } = require(
+  "../nats",
+);
+const { deferred, delay } = require("../lib/nats-base-client/internal_mod");
+const { Lock } = require("./helpers/lock");
 
-/* jslint node: true */
-'use strict'
+const u = "demo.nats.io:4222";
 
-const NATS = require('../')
-const nsc = require('./support/nats_server_control')
-const should = require('should')
-const after = require('mocha').after
-const before = require('mocha').before
-const describe = require('mocha').describe
-const it = require('mocha').it
-const net = require('net')
+test("basics - connect host", async (t) => {
+  const nc = await connect({ servers: "demo.nats.io" });
+  await nc.flush();
+  await nc.close();
+  t.pass();
+});
 
-describe('Basics', () => {
-  const PORT = 1423
-  let server
+test("basics - connect hostport", async (t) => {
+  const nc = await connect({ servers: "demo.nats.io:4222" });
+  await nc.flush();
+  await nc.close();
+  t.pass();
+});
 
-  // Start up our own nats-server
-  before(done => {
-    server = nsc.startServer(PORT, done)
-  })
+test("basics - connect servers", async (t) => {
+  const nc = await connect({ servers: ["demo.nats.io"] });
+  await nc.flush();
+  await nc.close();
+  t.pass();
+});
 
-  // Shutdown our server
-  after(done => {
-    nsc.stopServer(server, done)
-  })
-
-  it('should do basic subscribe and unsubscribe', done => {
-    const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo')
-    should.exist(sid)
-    nc.unsubscribe(sid)
-    nc.flush(() => {
-      nc.close()
-      done()
+test("basics - fail connect", async (t) => {
+  t.plan(1);
+  await connect({ servers: "127.0.0.1:32001" })
+    .then(() => {
+      t.fail("should have not connected");
     })
-  })
+    .catch((err) => {
+      t.is(err.code, ErrorCode.CONNECTION_REFUSED);
+    });
+});
 
-  it('should do count subscriptions', done => {
-    const nc = NATS.connect(PORT)
-    nc.numSubscriptions().should.be.equal(0)
-    const sid = nc.subscribe('foo', () => {})
-    nc.numSubscriptions().should.be.equal(1)
-    nc.unsubscribe(sid)
-    nc.numSubscriptions().should.be.equal(0)
-    nc.close()
-    done()
-  })
+test("basics - publish", async (t) => {
+  const nc = await connect({ servers: u });
+  nc.publish(createInbox());
+  await nc.flush();
+  await nc.close();
+  t.pass();
+});
 
-  it('url is sanitized', done => {
-    const nc = NATS.connect('localhost:' + PORT)
-    nc.on('connect', () => {
-      nc.currentServer.toString().should.equal('nats://localhost:' + PORT)
-      nc.close()
-      done()
-    })
-  })
+test("basics - no publish without subject", async (t) => {
+  t.plan(1);
+  const nc = await connect({ servers: u });
+  try {
+    nc.publish("");
+    fail("should not be able to publish without a subject");
+  } catch (err) {
+    t.is(err.code, ErrorCode.BAD_SUBJECT);
+  } finally {
+    await nc.close();
+  }
+});
 
-  it('should do basic publish', done => {
-    const nc = NATS.connect(PORT)
-    nc.publish('foo')
-    nc.flush(() => {
-      nc.close()
-      done()
-    })
-  })
-
-  it('should fire a callback for subscription', done => {
-    const nc = NATS.connect(PORT)
-    nc.subscribe('foo', () => {
-      nc.close()
-      done()
-    })
-    nc.publish('foo')
-  })
-
-  it('should include the correct message in the callback', done => {
-    const nc = NATS.connect(PORT)
-    const data = 'Hello World'
-    nc.subscribe('foo', msg => {
-      should.exist(msg)
-      msg.should.equal(data)
-      nc.close()
-      done()
-    })
-    nc.publish('foo', data)
-  })
-
-  it('should include the correct reply in the callback', done => {
-    const nc = NATS.connect(PORT)
-    const data = 'Hello World'
-    const inbox = nc.createInbox()
-    nc.subscribe('foo', (msg, reply) => {
-      should.exist(msg)
-      msg.should.equal(data)
-      should.exist(reply)
-      reply.should.equal(inbox)
-      nc.close()
-      done()
-    })
-    nc.publish('foo', data, inbox)
-  })
-
-  it('should do request-reply', done => {
-    const nc = NATS.connect(PORT)
-    const initMsg = 'Hello World'
-    const replyMsg = 'Hello Back!'
-
-    nc.subscribe('foo', (msg, reply) => {
-      should.exist(msg)
-      msg.should.equal(initMsg)
-      should.exist(reply)
-      reply.should.match(/_INBOX\.*/)
-      nc.publish(reply, replyMsg)
-    })
-
-    nc.request('foo', initMsg, reply => {
-      should.exist(reply)
-      reply.should.equal(replyMsg)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should return a sub id for requests', done => {
-    const nc = NATS.connect(PORT)
-    const initMsg = 'Hello World'
-    const replyMsg = 'Hello Back!'
-    const expected = 1
-    let received = 0
-
-    // Add two subscribers. We will only receive a reply from one.
-    nc.subscribe('foo', (msg, reply) => {
-      nc.publish(reply, replyMsg)
-    })
-
-    nc.subscribe('foo', (msg, reply) => {
-      nc.publish(reply, replyMsg)
-    })
-
-    const sub = nc.request('foo', initMsg, () => {
-      nc.flush(() => {
-        received.should.equal(expected)
-        nc.close()
-        done()
-      })
-
-      received += 1
-      nc.unsubscribe(sub)
-    })
-  })
-
-  it('should do single partial wildcard subscriptions correctly', done => {
-    const nc = NATS.connect(PORT)
-    const expected = 3
-    let received = 0
-    nc.subscribe('*', () => {
-      received += 1
-      if (received === expected) {
-        nc.close()
-        done()
-      }
-    })
-    nc.publish('foo.baz') // miss
-    nc.publish('foo.baz.foo') // miss
-    nc.publish('foo')
-    nc.publish('bar')
-    nc.publish('foo.bar.3') // miss
-    nc.publish('baz')
-  })
-
-  it('should do partial wildcard subscriptions correctly', done => {
-    const nc = NATS.connect(PORT)
-    const expected = 3
-    let received = 0
-    nc.subscribe('foo.bar.*', () => {
-      received += 1
-      if (received === expected) {
-        nc.close()
-        done()
-      }
-    })
-    nc.publish('foo.baz') // miss
-    nc.publish('foo.baz.foo') // miss
-    nc.publish('foo.bar.1')
-    nc.publish('foo.bar.2')
-    nc.publish('bar')
-    nc.publish('foo.bar.3')
-  })
-
-  it('should do full wildcard subscriptions correctly', done => {
-    const nc = NATS.connect(PORT)
-    const expected = 5
-    let received = 0
-    nc.subscribe('foo.>', () => {
-      received += 1
-      if (received === expected) {
-        nc.close()
-        done()
-      }
-    })
-    nc.publish('foo.baz')
-    nc.publish('foo.baz.foo')
-    nc.publish('foo.bar.1')
-    nc.publish('foo.bar.2')
-    nc.publish('bar') // miss
-    nc.publish('foo.bar.3')
-  })
-
-  it('should pass exact subject to callback', (done) => {
-    const nc = NATS.connect(PORT)
-    const subject = 'foo.bar.baz'
-    nc.subscribe('*.*.*', (msg, reply, subj) => {
-      should.exist(subj)
-      subj.should.equal(subject)
-      nc.close()
-      done()
-    })
-    nc.publish(subject)
-  })
-
-  it('should do callback after publish is flushed', (done) => {
-    const nc = NATS.connect(PORT)
-    nc.publish('foo', () => {
-      nc.close()
-      done()
-    })
-  })
-
-  it('should do callback after flush', (done) => {
-    const nc = NATS.connect(PORT)
-    nc.flush(() => {
-      nc.close()
-      done()
-    })
-  })
-
-  it('should handle an unsubscribe after close of connection', (done) => {
-    const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo')
-    nc.close()
-    nc.unsubscribe(sid)
-    done()
-  })
-
-  it('should not receive data after unsubscribe call', (done) => {
-    const nc = NATS.connect(PORT)
-    let received = 0
-    const expected = 1
-
-    const sid = nc.subscribe('foo', () => {
-      nc.unsubscribe(sid)
-      received += 1
-    })
-
-    nc.publish('foo')
-    nc.publish('foo')
-    nc.publish('foo', () => {
-      received.should.equal(expected)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should pass sid properly to a message callback if requested', (done) => {
-    const nc = NATS.connect(PORT)
-    const sid = nc.subscribe('foo', (msg, reply, subj, lsid) => {
-      sid.should.equal(lsid)
-      nc.close()
-      done()
-    })
-    nc.publish('foo')
-  })
-
-  it('should parse json messages', (done) => {
-    const config = {
-      port: PORT,
-      json: true
+test("basics - pubsub", async (t) => {
+  t.plan(1);
+  const subj = createInbox();
+  const nc = await connect({ servers: u });
+  const sub = nc.subscribe(subj);
+  const iter = (async () => {
+    for await (const m of sub) {
+      break;
     }
-    const nc = NATS.connect(config)
-    const jsonMsg = {
-      key: true
+  })();
+
+  nc.publish(subj);
+  await iter;
+  t.is(sub.getProcessed(), 1);
+  await nc.close();
+});
+
+test("basics - subscribe and unsubscribe", async (t) => {
+  t.plan(12);
+  const subj = createInbox();
+  const nc = await connect({ servers: u });
+  const sub = nc.subscribe(subj, { max: 1000, queue: "aaa" });
+
+  // check the subscription
+  t.is(nc.protocol.subscriptions.size(), 1);
+  let s = nc.protocol.subscriptions.get(1);
+  t.truthy(s);
+  t.is(s.getReceived(), 0);
+  t.is(s.subject, subj);
+  t.truthy(s.callback);
+  t.is(s.max, 1000);
+  t.is(s.queue, "aaa");
+
+  // modify the subscription
+  sub.unsubscribe(10);
+  s = nc.protocol.subscriptions.get(1);
+  t.truthy(s);
+  t.is(s.max, 10);
+
+  // verify subscription updates on message
+  nc.publish(subj);
+  await nc.flush();
+  s = nc.protocol.subscriptions.get(1);
+  t.truthy(s);
+  t.is(s.getReceived(), 1);
+
+  // verify cleanup
+  sub.unsubscribe();
+  t.is(nc.protocol.subscriptions.size(), 0);
+  await nc.close();
+});
+
+test("basics - subscriptions iterate", async (t) => {
+  const lock = Lock();
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const sub = nc.subscribe(subj);
+  const _ = (async () => {
+    for await (const m of sub) {
+      lock.unlock();
     }
-    nc.subscribe('foo1', msg => {
-      msg.should.have.property('key').and.be.a.Boolean()
-      nc.close()
-      done()
-    })
-    nc.publish('foo1', jsonMsg)
-  })
+  })();
+  nc.publish(subj);
+  await nc.flush();
+  await lock;
+  await nc.close();
+  t.pass();
+});
 
-  it('should parse UTF8 json messages', (done) => {
-    const config = {
-      port: PORT,
-      json: true
+test("basics - subscriptions pass exact subject to cb", async (t) => {
+  const s = createInbox();
+  const subj = `${s}.foo.bar.baz`;
+  const nc = await connect({ servers: u });
+  const sub = nc.subscribe(`${s}.*.*.*`);
+  const sp = deferred();
+  const _ = (async () => {
+    for await (const m of sub) {
+      sp.resolve(m.subject);
+      break;
     }
-    const nc = NATS.connect(config)
-    const utf8msg = {
-      key: 'CEDILA-Ç'
+  })();
+  nc.publish(subj);
+  await nc.flush();
+
+  t.is(await sp, subj);
+  await nc.close();
+});
+
+test("basics - subscribe returns Subscription", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const sub = nc.subscribe(subj);
+  t.is(sub.sid, 1);
+  t.is(typeof sub.getReceived, "function");
+  t.is(typeof sub.drain, "function");
+  t.is(typeof sub.isClosed, "function");
+  t.is(typeof sub.callback, "function");
+  t.is(typeof sub.getSubject, "function");
+  t.is(typeof sub.getID, "function");
+  t.is(typeof sub.getMax, "function");
+  await nc.close();
+});
+
+test("basics - wildcard subscriptions", async (t) => {
+  const single = 3;
+  const partial = 2;
+  const full = 5;
+
+  let nc = await connect({ servers: u });
+  const s = createInbox();
+
+  const sub = nc.subscribe(`${s}.*`);
+  const sub2 = nc.subscribe(`${s}.foo.bar.*`);
+  const sub3 = nc.subscribe(`${s}.foo.>`);
+
+  nc.publish(`${s}.bar`);
+  nc.publish(`${s}.baz`);
+  nc.publish(`${s}.foo.bar.1`);
+  nc.publish(`${s}.foo.bar.2`);
+  nc.publish(`${s}.foo.baz.3`);
+  nc.publish(`${s}.foo.baz.foo`);
+  nc.publish(`${s}.foo.baz`);
+  nc.publish(`${s}.foo`);
+
+  await nc.drain();
+  t.is(sub.getReceived(), single, "single");
+  t.is(sub2.getReceived(), partial, "partial");
+  t.is(sub3.getReceived(), full, "full");
+});
+
+test("basics - correct data in message", async (t) => {
+  const sc = StringCodec();
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const mp = deferred();
+  const sub = nc.subscribe(subj);
+  const _ = (async () => {
+    for await (const m of sub) {
+      mp.resolve(m);
+      break;
     }
-    nc.subscribe('foo2', msg => {
-      msg.should.have.property('key')
-      msg.key.should.equal('CEDILA-Ç')
-      nc.close()
-      done()
-    })
-    nc.publish('foo2', utf8msg)
-  })
+  })();
 
-  function requestOneGetsReply (nc, done) {
-    const initMsg = 'Hello World'
-    const replyMsg = 'Hello Back!'
+  nc.publish(subj, sc.encode(subj));
+  const m = await mp;
+  t.is(m.subject, subj);
+  t.is(sc.decode(m.data), subj);
+  t.is(m.reply, "");
+  await nc.close();
+});
 
-    nc.subscribe('foo', (msg, reply) => {
-      should.exist(msg)
-      msg.should.equal(initMsg)
-      should.exist(reply)
-      reply.should.match(/_INBOX\.*/)
-      nc.publish(reply, replyMsg)
-    })
+test("basics - correct reply in message", async (t) => {
+  const nc = await connect({ servers: u });
+  const s = createInbox();
+  const r = createInbox();
 
-    let gotOne = false
-    nc.requestOne('foo', initMsg, null, 1000, reply => {
-      should.exist(reply)
-      reply.should.equal(replyMsg)
-      if (!gotOne) {
-        gotOne = true
-        nc.close()
-        done()
-      }
+  const rp = deferred();
+  const sub = nc.subscribe(s);
+  const _ = (async () => {
+    for await (const m of sub) {
+      rp.resolve(m.reply);
+      break;
+    }
+  })();
+  nc.publish(s, Empty, { reply: r });
+  t.is(await rp, r);
+  await nc.close();
+});
+
+test("basics - respond returns false if no reply subject set", async (t) => {
+  let nc = await connect({ servers: u });
+  let s = createInbox();
+  const dr = deferred();
+  const sub = nc.subscribe(s);
+  const _ = (async () => {
+    for await (const m of sub) {
+      dr.resolve(m.respond());
+      break;
+    }
+  })();
+  nc.publish(s);
+  const responded = await dr;
+  t.false(responded);
+  await nc.close();
+});
+
+test("basics - closed cannot subscribe", async (t) => {
+  let nc = await connect({ servers: u });
+  await nc.close();
+  let failed = false;
+  try {
+    nc.subscribe(createInbox());
+    t.fail("should have not been able to subscribe");
+  } catch (err) {
+    failed = true;
+  }
+  t.true(failed);
+});
+
+test("basics - close cannot request", async (t) => {
+  let nc = await connect({ servers: u });
+  await nc.close();
+  let failed = false;
+  try {
+    await nc.request(createInbox());
+    t.fail("should have not been able to request");
+  } catch (err) {
+    failed = true;
+  }
+  t.true(failed);
+});
+
+test("basics - flush returns promise", async (t) => {
+  const nc = await connect({ servers: u });
+  let p = nc.flush();
+  if (!p) {
+    t.fail("should have returned a promise");
+  }
+  await p;
+  t.pass();
+  await nc.close();
+});
+
+test("basics - unsubscribe after close", async (t) => {
+  let nc = await connect({ servers: u });
+  let sub = nc.subscribe(createInbox());
+  await nc.close();
+  sub.unsubscribe();
+  t.pass();
+});
+
+test("basics - unsubscribe stops messages", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  // in this case we use a callback otherwise messages are buffered.
+  const sub = nc.subscribe(subj, {
+    callback: () => {
+      sub.unsubscribe();
+    },
+  });
+  nc.publish(subj);
+  nc.publish(subj);
+  nc.publish(subj);
+  nc.publish(subj);
+
+  await nc.flush();
+  t.is(sub.getReceived(), 1);
+  await nc.close();
+});
+
+test("basics - request", async (t) => {
+  const sc = StringCodec();
+  const nc = await connect({ servers: u });
+  const s = createInbox();
+  const sub = nc.subscribe(s);
+  const _ = (async () => {
+    for await (const m of sub) {
+      m.respond(sc.encode("foo"));
+    }
+  })();
+  const msg = await nc.request(s);
+  await nc.close();
+  t.is(sc.decode(msg.data), "foo");
+});
+
+test("basics - request timeout", async (t) => {
+  const nc = await connect({ servers: u });
+  const s = createInbox();
+  const lock = Lock();
+
+  nc.request(s, Empty, { timeout: 100 })
+    .then(() => {
+      fail();
     })
+    .catch((err) => {
+      t.is(err.code, ErrorCode.TIMEOUT);
+      lock.unlock();
+    });
+
+  await lock;
+  await nc.close();
+});
+
+test("basics - request cancel rejects", async (t) => {
+  const nc = await connect({ servers: u });
+  const s = createInbox();
+  const lock = Lock();
+
+  nc.request(s, Empty, { timeout: 1000 })
+    .then(() => {
+      t.fail();
+    })
+    .catch((err) => {
+      t.is(err.code, ErrorCode.CANCELLED);
+      lock.unlock();
+    });
+
+  nc.protocol.muxSubscriptions.reqs.forEach((v) => {
+    v.cancel();
+  });
+  await lock;
+  await nc.close();
+});
+
+// test("basics - close promise resolves", async (t) => {
+//   const lock = Lock();
+//   const cs = new TestServer(false, (ca) => {
+//     setTimeout(() => {
+//       ca.close();
+//     }, 0);
+//   });
+//   const nc = await connect(
+//     { port: cs.getPort(), reconnect: false },
+//   );
+//   nc.closed().then(() => {
+//     lock.unlock();
+//   });
+//
+//   await lock;
+//   await cs.stop();
+//   await nc.close();
+// });
+//
+// test("basics - closed returns error", async () => {
+//   const lock = Lock(1);
+//   const cs = new TestServer(false, (ca: Connection) => {
+//     setTimeout(async () => {
+//       await ca.write(new TextEncoder().encode("-ERR 'here'\r\n"));
+//     }, 500);
+//   });
+//
+//   const nc = await connect(
+//     { servers: `127.0.0.1:${cs.getPort()}` },
+//   );
+//   await nc.closed()
+//     .then((v) => {
+//       assertEquals((v as Error).message, "'here'");
+//       lock.unlock();
+//     });
+//   assertEquals(nc.isClosed(), true);
+//   await cs.stop();
+// });
+
+test("basics - subscription with timeout", async (t) => {
+  const lock = Lock(1);
+  const nc = await connect({ servers: u });
+  const sub = nc.subscribe(createInbox(), { max: 1, timeout: 250 });
+  (async () => {
+    for await (const m of sub) {}
+  })().catch((err) => {
+    t.is(err.code, ErrorCode.TIMEOUT);
+    lock.unlock();
+  });
+  await lock;
+  await nc.close();
+});
+
+test("basics - subscription expecting 2 doesn't fire timeout", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const sub = nc.subscribe(subj, { max: 2, timeout: 500 });
+  (async () => {
+    for await (const m of sub) {}
+  })().catch((err) => {
+    t.fail(err);
+  });
+
+  nc.publish(subj);
+  await nc.flush();
+  await delay(1000);
+
+  t.is(sub.getReceived(), 1);
+  await nc.close();
+});
+
+test("basics - subscription timeout auto cancels", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  let c = 0;
+  const sub = nc.subscribe(subj, { max: 2, timeout: 300 });
+  (async () => {
+    for await (const m of sub) {
+      c++;
+    }
+  })().catch((err) => {
+    t.fail(err);
+  });
+
+  nc.publish(subj);
+  nc.publish(subj);
+  await delay(500);
+  t.is(c, 2);
+  await nc.close();
+});
+
+test("basics - no mux requests create normal subs", async (t) => {
+  const nc = await connect({ servers: u });
+  const _ = nc.request(createInbox(), Empty, { timeout: 1000, noMux: true });
+  t.is(nc.protocol.subscriptions.size(), 1);
+  t.is(nc.protocol.muxSubscriptions.size(), 0);
+  const sub = nc.protocol.subscriptions.get(1);
+  t.truthy(sub);
+  t.is(sub.max, 1);
+  sub.unsubscribe();
+  t.is(nc.protocol.subscriptions.size(), 0);
+  await nc.close();
+});
+
+test("basics - no mux requests timeout", async (t) => {
+  const nc = await connect({ servers: u });
+  const lock = Lock();
+  nc.request(createInbox(), Empty, { timeout: 250, noMux: true })
+    .catch((err) => {
+      t.is(err.code, ErrorCode.TIMEOUT);
+      lock.unlock();
+    });
+  await lock;
+  await nc.close();
+});
+
+test("basics - no mux requests", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const sub = nc.subscribe(subj);
+  const data = Uint8Array.from([1234]);
+  (async () => {
+    for await (const m of sub) {
+      m.respond(data);
+    }
+  })().then();
+
+  const m = await nc.request(subj, Empty, { timeout: 1000, noMux: true });
+  t.deepEqual(Uint8Array.from(m.data), data);
+  await nc.close();
+});
+
+test("basics - no max_payload messages", async (t) => {
+  const nc = await connect({ servers: u });
+  t.truthy(nc.protocol.info.max_payload);
+  const big = new Uint8Array(nc.protocol.info.max_payload + 1);
+
+  const subj = createInbox();
+  try {
+    nc.publish(subj, big);
+    t.fail();
+  } catch (err) {
+    t.is(err.code, ErrorCode.MAX_PAYLOAD_EXCEEDED);
   }
 
-  it('should do requestone-get-reply', (done) => {
-    const nc = NATS.connect(PORT)
-    requestOneGetsReply(nc, done)
-  })
-
-  it('oldRequestOne should do requestone-get-reply', (done) => {
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    requestOneGetsReply(nc, done)
-  })
-
-  function requestOneWillUnsubscribe (nc, done) {
-    const rsub = 'x.y.z'
-    let count = 0
-
-    nc.subscribe(rsub, (msg, reply) => {
-      reply.should.match(/_INBOX\.*/)
-      nc.publish(reply, 'y')
-      nc.publish(reply, 'yy')
-      nc.flush()
-      setTimeout(() => {
-        nc.publish(reply, 'z')
-        nc.flush()
-        nc.close()
-        setTimeout(() => {
-          count.should.equal(1)
-          nc.close()
-          done()
-        }, 1000)
-      }, 1500)
-    })
-
-    nc.requestOne(rsub, '', null, 1000, reply => {
-      reply.should.not.be.instanceof(NATS.NatsError)
-      should.exist(reply)
-      count++
-    })
+  try {
+    const _ = await nc.request(subj, big);
+    t.fail();
+  } catch (err) {
+    t.is(err.code, ErrorCode.MAX_PAYLOAD_EXCEEDED);
   }
 
-  it('should do requestone-will-unsubscribe', function (done) {
-    // eslint-disable-next-line
-    this.timeout(3000);
-    const nc = NATS.connect(PORT)
-    requestOneWillUnsubscribe(nc, done)
-  })
-
-  it('oldRequest: should do requestone-will-unsubscribe', function (done) {
-    // eslint-disable-next-line
-    this.timeout(3000);
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    requestOneWillUnsubscribe(nc, done)
-  })
-
-  function requestTimeoutTest (nc, done) {
-    nc.requestOne('a.b.c', '', null, 1000, reply => {
-      should.exist(reply)
-      reply.should.be.instanceof(NATS.NatsError)
-      reply.should.have.property('code', NATS.REQ_TIMEOUT)
-      nc.close()
-      done()
-    })
-  }
-
-  it('should do requestone-can-timeout', done => {
-    const nc = NATS.connect(PORT)
-    requestTimeoutTest(nc, done)
-  })
-
-  it('old request one - should do requestone-can-timeout', done => {
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    requestTimeoutTest(nc, done)
-  })
-
-  function shouldUnsubscribeWhenRequestOneTimeout (nc, done) {
-    let replies = 0
-    let responses = 0
-    // set a subscriber to respond to the request
-    nc.subscribe('a.b.c', {
-      max: 1
-    }, (msg, reply) => {
-      setTimeout(() => {
-        nc.publish(reply, '')
-        nc.flush()
-        replies++
-      }, 500)
-    })
-
-    // request one - we expect a timeout
-    nc.requestOne('a.b.c', '', null, 250, reply => {
-      reply.should.be.instanceof(NATS.NatsError)
-      reply.should.have.property('code', NATS.REQ_TIMEOUT)
-      if (!Object.hasOwnProperty.call(reply, 'code')) {
-        responses++
-      }
-    })
-
-    // verify reply was sent, but we didn't get it
-    setTimeout(() => {
-      should(replies).equal(1)
-      should(responses).equal(0)
-      nc.close()
-      done()
-    }, 1000)
-  }
-
-  it('should unsubscribe when request one timesout', function (done) {
-    // eslint-disable-next-line
-        this.timeout(3000);
-    const nc = NATS.connect(PORT)
-    shouldUnsubscribeWhenRequestOneTimeout(nc, done)
-  })
-
-  it('old requestOne should unsubscribe when request one timesout', function (done) {
-    // eslint-disable-next-line
-        this.timeout(3000);
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    shouldUnsubscribeWhenRequestOneTimeout(nc, done)
-  })
-
-  it('requestone has negative sids', (done) => {
-    const nc = NATS.connect(PORT)
-    nc.flush(() => {
-      const sid = nc.requestOne('121.2.13.4', 1000, r => {
-        should.fail("got message when it shouldn't have", r)
-      })
-      sid.should.be.type('number')
-      sid.should.be.below(0)
-
-      // this cancel returns the config
-      const conf = nc.cancelMuxRequest(sid)
-
-      // after cancel it shouldn't exit
-      nc.respmux.requestMap.should.not.have.ownProperty(conf.token)
-      nc.close()
-      done()
-    })
-  })
-
-  function paramTranspositions (nc, done) {
-    let all = false
-    let four = false
-    let three = true
-    let count = 0
-    nc.flush(() => {
-      nc.requestOne('a', NATS.EMPTY, {}, 1, () => {
-        all = true
-        called()
-      })
-
-      nc.requestOne('b', NATS.EMPTY, 1, () => {
-        four = true
-        called()
-      })
-
-      nc.requestOne('c', 1, () => {
-        three = true
-        called()
-      })
-    })
-
-    function called () {
-      count++
-      if (count === 3) {
-        all.should.be.true()
-        four.should.be.true()
-        three.should.be.true()
-        nc.close()
-        done()
-      }
+  const sub = nc.subscribe(subj);
+  (async () => {
+    for await (const m of sub) {
+      m.respond(big);
+      t.fail();
     }
-  }
+  })().catch((err) => {
+    t.is(err.code, ErrorCode.MAX_PAYLOAD_EXCEEDED);
+  });
 
-  it('requestOne: optional param transpositions', (done) => {
-    const nc = NATS.connect(PORT)
-    paramTranspositions(nc, done)
-  })
+  await nc.request(subj).then(() => {
+    t.fail();
+  }).catch((err) => {
+    t.is(err.code, ErrorCode.TIMEOUT);
+  });
 
-  it('old requestOne: optional param transpositions', (done) => {
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    paramTranspositions(nc, done)
-  })
+  await nc.close();
+});
 
-  it('echo false is honored', done => {
-    let nc1 = NATS.connect({
-      port: PORT,
-      noEcho: true,
-      name: 'no echo client'
-    })
-    nc1.on('error', err => {
-      if (err.code === NATS.NATS_PROTOCOL_ERR) {
-        nc1 = null
-        done()
-      }
-    })
-
-    nc1.flush(() => {
-      var subj = NATS.createInbox()
-
-      var count = 0
-      nc1.subscribe(subj, () => {
-        count++
-      })
-
-      var nc2 = NATS.connect({
-        port: PORT,
-        name: 'default client'
-      })
-      nc2.on('connect', () => {
-        nc2.subscribe(subj, () => {
-          count++
-        })
-      })
-
-      nc2.flush(() => {
-        nc1.publish(subj)
-        nc2.flush(() => {
-          nc1.flush(() => {
-            should(count).be.equal(1)
-            nc1.close()
-            nc2.close()
-            done()
-          })
-        })
-      })
-    })
-  })
-
-  it('echo is on by default', done => {
-    let nc1 = NATS.connect({
-      port: PORT,
-      name: 'echo client'
-    })
-    nc1.on('error', err => {
-      if (err.code === NATS.NATS_PROTOCOL_ERR) {
-        nc1 = null
-        done()
-      }
-    })
-
-    nc1.flush(() => {
-      var subj = NATS.createInbox()
-
-      var count = 0
-      nc1.subscribe(subj, () => {
-        count++
-      })
-
-      var nc2 = NATS.connect({
-        port: PORT,
-        name: 'default client'
-      })
-      nc2.on('connect', () => {
-        nc2.subscribe(subj, () => {
-          count++
-        })
-      })
-
-      nc2.flush(() => {
-        nc1.publish(subj)
-        nc2.flush(() => {
-          nc1.flush(() => {
-            count.should.be.equal(2)
-            nc1.close()
-            nc2.close()
-            done()
-          })
-        })
-      })
-    })
-  })
-
-  it('connection drains when no subs', done => {
-    const nc = NATS.connect(PORT)
-    nc.on('error', err => {
-      done(err)
-    })
-    nc.on('connect', () => {
-      nc.drain(() => {
-        nc.closed.should.be.true()
-        done()
-      })
-    })
-  })
-
-  it('connection drain', done => {
-    const subj = NATS.createInbox()
-
-    const nc1 = NATS.connect(PORT)
-    let c1 = 0
-    nc1.on('error', err => {
-      done(err)
-    })
-    let drainCB = false
-    nc1.on('connect', () => {
-      nc1.subscribe(subj, { queue: 'q1' }, () => {
-        c1++
-        if (c1 === 1) {
-          nc1.drain(() => {
-            drainCB = true
-            finish()
-          })
-        }
-      })
-    })
-    nc1.flush(() => {
-      start()
-    })
-
-    const nc2 = NATS.connect(PORT)
-    let c2 = 0
-    nc2.on('error', err => {
-      done(err)
-    })
-    nc2.on('connect', () => {
-      nc2.subscribe(subj, { queue: 'q1' }, () => {
-        c2++
-      })
-    })
-    nc2.flush(() => {
-      start()
-    })
-
-    let startCount = 0
-    function start () {
-      startCount++
-      if (startCount === 2) {
-        for (let i = 0; i < 10000; i++) {
-          nc2.publish(subj)
-        }
-        nc2.flush(finish)
-      }
+test("basics - empty message", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const mp = deferred();
+  const sub = nc.subscribe(subj);
+  const _ = (async () => {
+    for await (const m of sub) {
+      mp.resolve(m);
+      break;
     }
+  })();
 
-    let finishCount = 0
-    function finish () {
-      finishCount++
-      if (finishCount === 2) {
-        should(drainCB).be.true()
-        should(c1 + c2).be.equal(10000, `c1: ${c1}  c2: ${c2}`)
-        should(c1 >= 1).be.true('c1 got more than one message')
-        should(c2 >= 1).be.true('c2 got more than one message')
-        done()
-        nc2.close()
-      }
-    }
-  })
-
-  it('subscription drain', done => {
-    const subj = NATS.createInbox()
-
-    const nc1 = NATS.connect(PORT)
-    let c1 = 0
-    let c2 = 0
-
-    nc1.on('error', err => {
-      done(err)
-    })
-    let sid1 = 0
-    nc1.on('connect', () => {
-      sid1 = nc1.subscribe(subj, { queue: 'q1' }, () => {
-        c1++
-        if (c1 === 1) {
-          nc1.drainSubscription(sid1, () => {
-            finish()
-          })
-        }
-      })
-
-      nc1.subscribe(subj, { queue: 'q1' }, () => {
-        c2++
-      })
-    })
-
-    nc1.flush(() => {
-      start()
-    })
-
-    function start () {
-      for (let i = 0; i < 10000; i++) {
-        nc1.publish(subj)
-      }
-      nc1.flush(finish)
-    }
-
-    function finish () {
-      should(c1 + c2).be.equal(10000, `c1: ${c1}  c2: ${c2}`)
-      should(c1 >= 1).be.true('c1 got more than one message')
-      should(c2 >= 1).be.true('c2 got more than one message')
-      done()
-      nc1.close()
-    }
-  })
-
-  it('publish after drain fails', done => {
-    const subj = NATS.createInbox()
-    const nc1 = NATS.connect(PORT)
-
-    nc1.flush(() => {
-      nc1.drain()
-      try {
-        nc1.publish(subj)
-      } catch (err) {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      }
-    })
-  })
-
-  it('request after drain fails toss', done => {
-    const subj = NATS.createInbox()
-    const nc1 = NATS.connect(PORT)
-
-    nc1.flush(() => {
-      nc1.drain()
-      try {
-        nc1.request(subj)
-      } catch (err) {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      }
-    })
-  })
-
-  it('request after drain fails callback', done => {
-    const subj = NATS.createInbox()
-    const nc1 = NATS.connect(PORT)
-
-    nc1.flush(() => {
-      nc1.drain()
-      nc1.request(subj, (err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      })
-    })
-  })
-
-  it('oldrequest after drain fails callback', done => {
-    const subj = NATS.createInbox()
-    const nc1 = NATS.connect(PORT)
-
-    nc1.flush(() => {
-      nc1.drain()
-      nc1.oldRequest(subj, (err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      })
-    })
-  })
-
-  it('reject drain after close', done => {
-    const nc1 = NATS.connect(PORT)
-    nc1.on('connect', () => {
-      nc1.close()
-      nc1.drain((err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      })
-    })
-  })
-
-  it('reject drainsubscription after close', done => {
-    const nc1 = NATS.connect(PORT)
-    nc1.on('connect', () => {
-      nc1.close()
-      nc1.drainSubscription(100, (err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      })
-    })
-  })
-
-  it('reject subscribe on draining', done => {
-    const nc1 = NATS.connect(PORT)
-    nc1.on('connect', () => {
-      nc1.drain()
-      nc1.subscribe(NATS.createInbox(), (err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      })
-    })
-  })
-
-  it('reject drain on draining', done => {
-    const nc1 = NATS.connect(PORT)
-    nc1.on('connect', () => {
-      nc1.drain()
-      nc1.drain((err) => {
-        if (err.code === NATS.CONN_CLOSED || err.code === NATS.CONN_DRAINING) {
-          done()
-        } else {
-          done(err)
-        }
-      })
-    })
-  })
-
-  it('drain cleared timeout', done => {
-    const nc1 = NATS.connect(PORT)
-    nc1.on('connect', () => {
-      const sid = nc1.subscribe(NATS.createInbox(), () => {})
-      const sub = nc1.subs[sid]
-      nc1.timeout(sid, 250, 1000, () => {
-        done('timeout fired')
-      })
-      nc1.drainSubscription(sid, () => {
-        should(sub.timeout).is.null()
-        nc1.close()
-        done()
-      })
-    })
-  })
-
-  it('json requests', done => {
-    const nc = NATS.connect({ port: PORT, json: true })
-    nc.on('connect', () => {
-      let c = 0
-      const subj = NATS.createInbox()
-      nc.subscribe(subj, (m, reply) => {
-        nc.publish(reply, m)
-      })
-
-      let str = 0
-      let obj = 0
-      let num = 0
-      const h = m => {
-        switch (typeof m) {
-          case 'number':
-            num++
-            break
-          case 'string':
-            str++
-            break
-          case 'object':
-            obj++
-            break
-        }
-        c++
-        if (c === 11) {
-          str.should.be.equal(4)
-          obj.should.be.equal(4)
-          num.should.be.equal(3)
-          nc.close()
-          done()
-        }
-      }
-
-      nc.flush(() => {
-        // simplest signature - empty resolves to ''
-        nc.requestOne(subj, 1000, h)
-
-        // subj, payload, timeout, handler
-        nc.requestOne(subj, 'a', 1000, h)
-        nc.requestOne(subj, {}, 1000, h)
-        nc.requestOne(subj, 10, 1000, h)
-
-        nc.requestOne(subj, 'a', 1000, h)
-        nc.requestOne(subj, {}, 1000, h)
-        nc.requestOne(subj, 10, 1000, h)
-
-        // this one is misleading, the option is really a payload
-        nc.requestOne(subj, { queue: 'bar' }, 1000, h)
-
-        nc.requestOne(subj, 'a', { queue: 'worker' }, 1000, h)
-        nc.requestOne(subj, {}, { queue: 'worker' }, 1000, h)
-        nc.requestOne(subj, 10, { queue: 'worker' }, 1000, h)
-      })
-    })
-  })
-
-  it('json json old requests', done => {
-    const nc = NATS.connect({ port: PORT, json: true, useOldRequestStyle: true })
-    nc.on('connect', () => {
-      let c = 0
-      const subj = NATS.createInbox()
-      nc.subscribe(subj, (m, reply) => {
-        nc.publish(reply, m)
-      })
-
-      let str = 0
-      let obj = 0
-      let num = 0
-      const h = m => {
-        switch (typeof m) {
-          case 'number':
-            num++
-            break
-          case 'string':
-            str++
-            break
-          case 'object':
-            obj++
-            break
-        }
-        c++
-        if (c === 11) {
-          str.should.be.equal(4)
-          obj.should.be.equal(4)
-          num.should.be.equal(3)
-          nc.close()
-          done()
-        }
-      }
-
-      nc.flush(() => {
-        // simplest signature - empty resolves to ''
-        nc.requestOne(subj, 1000, h)
-
-        // subj, payload, timeout, handler
-        nc.requestOne(subj, 'a', 1000, h)
-        nc.requestOne(subj, {}, 1000, h)
-        nc.requestOne(subj, 10, 1000, h)
-
-        nc.requestOne(subj, 'a', 1000, h)
-        nc.requestOne(subj, {}, 1000, h)
-        nc.requestOne(subj, 10, 1000, h)
-
-        // this one is misleading, the option is really a payload
-        nc.requestOne(subj, { queue: 'bar' }, 1000, h)
-
-        nc.requestOne(subj, 'a', { queue: 'worker' }, 1000, h)
-        nc.requestOne(subj, {}, { queue: 'worker' }, 1000, h)
-        nc.requestOne(subj, 10, { queue: 'worker' }, 1000, h)
-      })
-    })
-  })
-
-  it('reject non-tls server', (done) => {
-    const nc = NATS.connect({ port: PORT, tls: true })
-    nc.on('error', (err) => {
-      nc.close()
-      err.should.be.instanceof(NATS.NatsError)
-      err.should.have.property('code', NATS.NON_SECURE_CONN_REQ)
-      done()
-    })
-  })
-
-  it('should resend unsubs', (done) => {
-    let conn
-    let unsubs = 0
-    const srv = net.createServer((c) => {
-      c.write('INFO ' + JSON.stringify({
-        server_id: 'TEST',
-        version: '0.0.0',
-        host: '127.0.0.1',
-        port: srv.address.port,
-        auth_required: false
-      }) + '\r\n')
-      c.on('data', (d) => {
-        const r = d.toString()
-        const lines = r.split('\r\n')
-        lines.forEach((line) => {
-          if (line === '\r\n') {
-            return
-          }
-          if (/^CONNECT\s+/.test(line)) {
-          } else if (/^PING/.test(line)) {
-            c.write('PONG\r\n')
-          } else if (/^SUB\s+/i.test(line)) {
-            c.write('MSG test 1 11\r\nHello World\r\n')
-          } else if (/^UNSUB\s+/i.test(line)) {
-            unsubs++
-            if (unsubs === 1) {
-              const args = line.split(' ')
-              args.length.should.equal(3)
-              // number of messages to when to unsub
-              args[2].should.equal('10')
-              // kick the client
-              c.destroy()
-              return
-            }
-            if (unsubs === 2) {
-              const args = line.split(' ')
-              args.length.should.equal(3)
-              args[2].should.equal('9')
-              conn.close()
-              srv.close(() => {
-                done()
-              })
-            }
-          } else if (/^MSG\s+/i.test(line)) {
-          } else if (/^INFO\s+/i.test(line)) {
-          } else {
-            // unknown
-          }
-        })
-      })
-      c.on('error', () => {
-        // we are messing with the server so this will raise connection reset
-      })
-    })
-    srv.listen(0, () => {
-      const p = srv.address().port
-      const nc = NATS.connect('nats://localhost:' + p, {
-        reconnect: true,
-        reconnectTimeWait: 250
-      })
-      conn = nc
-      nc.on('connect', () => {
-        const opts = { max: 10 }
-        nc.subscribe('test', opts, () => {})
-      })
-    })
-  })
-
-  it('sub ids should start at 1', (done) => {
-    const nc = NATS.connect({ port: PORT, json: true, useOldRequestStyle: true })
-    nc.on('connect', () => {
-      const ssid = nc.subscribe(nc.createInbox(), () => {})
-      ssid.should.be.equal(1)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should handle hostports', (done) => {
-    const nc = NATS.connect(`localhost:${PORT}`)
-    nc.on('connect', () => {
-      nc.flush(() => {
-        nc.close()
-        done()
-      })
-    })
-  })
-
-  it('should handle hostports - servers', (done) => {
-    const nc = NATS.connect({ servers: [`localhost:${PORT}`] })
-    nc.on('connect', () => {
-      nc.flush(() => {
-        nc.close()
-        done()
-      })
-    })
-  })
-})
+  nc.publish(subj);
+  const m = await mp;
+  t.is(m.subject, subj);
+  t.is(m.data.length, 0);
+  await nc.close();
+});
+//
+// test("basics - msg buffers dont overwrite", async (t) => {
+//   const N = 100;
+//   const ns = await NatsServer.start();
+//   const nc = await connect({ port: ns.port });
+//   const sub = nc.subscribe(">");
+//   const msgs = [];
+//   const _ = (async () => {
+//     for await (const m of sub) {
+//       msgs.push(m);
+//     }
+//   })();
+//
+//   const a = "a".charCodeAt(0);
+//   const fill = (n, b) => {
+//     const v = n % 26 + a;
+//     for (let i = 0; i < b.length; i++) {
+//       b[i] = v;
+//     }
+//   };
+//   const td = new TextDecoder();
+//   const buf = new Uint8Array(nc.protocol.info.max_payload);
+//   for (let i = 0; i < N; i++) {
+//     fill(i, buf);
+//     const subj = td.decode(buf.subarray(0, 26));
+//     nc.publish(subj, buf, { reply: subj });
+//     await nc.flush();
+//   }
+//
+//   await nc.drain();
+//   await ns.stop();
+//
+//   const check = (n, m) => {
+//     const v = n % 26 + a;
+//     t.is(m.data.length, nc.protocol.info.max_payload);
+//     for (let i = 0; i < m.data.length; i++) {
+//       if (m.data[i] !== v) {
+//         t.fail(
+//           `failed on iteration ${i} - expected ${String.fromCharCode(v)} got ${
+//             String.fromCharCode(m.data[i])
+//           }`,
+//         );
+//       }
+//     }
+//     t.is(m.subject, td.decode(m.data.subarray(0, 26)), "subject check");
+//     t.is(m.reply, td.decode(m.data.subarray(0, 26)), "reply check");
+//   };
+//
+//   t.is(msgs.length, N);
+//   for (let i = 0; i < N; i++) {
+//     check(i, msgs[i]);
+//   }
+// });

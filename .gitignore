@@ -1,9 +1,9 @@
+.deps/
 .DS_Store
 .idea
-
-node_modules/
-.deps/
+.nyc_output/
 benchmark/
 coverage/
 lib/
 nats-base-client/
+node_modules/

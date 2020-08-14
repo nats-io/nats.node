@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 The NATS Authors
+ * Copyright 2018-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,269 +12,200 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const test = require("ava");
+const { connect, ErrorCode, createInbox, Empty } = require(
+  "../nats",
+);
+const { Lock } = require("./helpers/lock");
 
-/* jslint node: true */
-'use strict'
+const u = "demo.nats.io:4222";
 
-const NATS = require('../')
-const nsc = require('./support/nats_server_control')
-const should = require('should')
-const after = require('mocha').after
-const before = require('mocha').before
-const describe = require('mocha').describe
-const it = require('mocha').it
-
-describe('Max responses and Auto-unsub', () => {
-  const PORT = 1422
-  let server
-
-  // Start up our own nats-server
-  before(done => {
-    server = nsc.startServer(PORT, done)
-  })
-
-  // Shutdown our server after we are done
-  after(done => {
-    nsc.stopServer(server, done)
-  })
-
-  it('should only received max responses requested', done => {
-    const nc = NATS.connect(PORT)
-    const WANT = 10
-    const SEND = 20
-    let received = 0
-
-    nc.subscribe('foo', {
-      max: WANT
-    }, () => {
-      received += 1
-    })
-    for (let i = 0; i < SEND; i++) {
-      nc.publish('foo')
-    }
-    nc.flush(() => {
-      should.exists(received)
-      received.should.equal(WANT)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should unsub if max messages already received', done => {
-    const nc = NATS.connect(PORT)
-    let gotOne = false
-    const sid = nc.subscribe('foo', () => {
-      if (!gotOne) {
-        gotOne = true
-        nc.unsubscribe(sid, 1)
-      }
-    })
-    for (let i = 0; i < 2; i++) {
-      nc.publish('foo')
-    }
-    nc.flush(() => {
-      nc.numSubscriptions().should.be.equal(0)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should only received max responses requested (client support)', done => {
-    const nc = NATS.connect(PORT)
-    const WANT = 10
-    const SEND = 20
-    let received = 0
-
-    const sid = nc.subscribe('foo', () => {
-      received += 1
-    })
-    for (let i = 0; i < SEND; i++) {
-      nc.publish('foo')
-    }
-    nc.unsubscribe(sid, WANT)
-
-    nc.flush(() => {
-      should.exists(received)
-      received.should.equal(WANT)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should not complain when unsubscribing an auto-unsubscribed sid', done => {
-    const nc = NATS.connect(PORT)
-    const SEND = 20
-    let received = 0
-
-    const sid = nc.subscribe('foo', {
-      max: 1
-    }, () => {
-      received += 1
-    })
-    for (let i = 0; i < SEND; i++) {
-      nc.publish('foo')
-    }
-
-    nc.flush(() => {
-      nc.unsubscribe(sid)
-      should.exists(received)
-      received.should.equal(1)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should allow proper override to a lesser value ', done => {
-    const nc = NATS.connect(PORT)
-    const SEND = 20
-    let received = 0
-
-    const sid = nc.subscribe('foo', () => {
-      received += 1
-      nc.unsubscribe(sid, 1)
-    })
-    nc.unsubscribe(sid, SEND)
-
-    for (let i = 0; i < SEND; i++) {
-      nc.publish('foo')
-    }
-
-    nc.flush(() => {
-      should.exists(received)
-      received.should.equal(1)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should allow proper override to a higher value', done => {
-    const nc = NATS.connect(PORT)
-    const WANT = 10
-    const SEND = 20
-    let received = 0
-
-    const sid = nc.subscribe('foo', () => {
-      received += 1
-    })
-    nc.unsubscribe(sid, 1)
-    nc.unsubscribe(sid, WANT)
-
-    for (let i = 0; i < SEND; i++) {
-      nc.publish('foo')
-    }
-
-    nc.flush(() => {
-      should.exists(received)
-      received.should.equal(WANT)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should only receive N msgs in request mode with multiple helpers', done => {
-    /* jshint loopfunc: true */
-    const nc = NATS.connect(PORT)
-    let received = 0
-
-    // Create 5 helpers
-    for (let i = 0; i < 5; i++) {
-      nc.subscribe('help', (msg, reply) => {
-        nc.publish(reply, 'I can help!')
-      })
-    }
-
-    nc.request('help', null, {
-      max: 1
-    }, () => {
-      received += 1
-      nc.flush(() => {
-        should.exists(received)
-        received.should.equal(1)
-        nc.close()
-        done()
-      })
-    })
-  })
-
-  function requestSubscriptions (nc, done) {
-    let received = 0
-
-    nc.subscribe('help', (msg, reply) => {
-      nc.publish(reply, 'I can help!')
-    })
-
-    /* jshint loopfunc: true */
-    // Create 5 requests
-    for (let i = 0; i < 5; i++) {
-      nc.request('help', null, {
-        max: 1
-      }, () => {
-        received += 1
-      })
-    }
-    nc.flush(() => {
-      setTimeout(() => {
-        received.should.equal(5)
-        const expectedSubs = (nc.options.useOldRequestStyle ? 1 : 2)
-        Object.keys(nc.subs).length.should.equal(expectedSubs)
-        nc.close()
-        done()
-      }, 100)
-    })
+test("autounsub - max option", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const sub = nc.subscribe(subj, { max: 10 });
+  for (let i = 0; i < 20; i++) {
+    nc.publish(subj);
   }
+  await nc.flush();
+  t.is(sub.getReceived(), 10);
+  await nc.close();
+});
 
-  it('should not leak subscriptions when using max', done => {
-    const nc = NATS.connect(PORT)
-    requestSubscriptions(nc, done)
-  })
-
-  it('oldRequest should not leak subscriptions when using max', done => {
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    requestSubscriptions(nc, done)
-  })
-
-  function requestGetsWantedNumberOfMessages (nc, done) {
-    let received = 0
-
-    nc.subscribe('help', (msg, reply) => {
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
-      nc.publish(reply, 'I can help!')
-    })
-
-    nc.request('help', null, {
-      max: 3
-    }, () => {
-      received++
-    })
-
-    nc.flush(() => {
-      setTimeout(() => {
-        received.should.equal(3)
-        nc.close()
-        done()
-      }, 100)
-    })
+test("autounsub - unsubscribe", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const sub = nc.subscribe(subj, { max: 10 });
+  sub.unsubscribe(11);
+  for (let i = 0; i < 20; i++) {
+    nc.publish(subj);
   }
+  await nc.flush();
+  t.is(sub.getReceived(), 11);
+  await nc.close();
+});
 
-  it('request should received specified number of messages', done => {
-    /* jshint loopfunc: true */
-    const nc = NATS.connect(PORT)
-    requestGetsWantedNumberOfMessages(nc, done)
-  })
+test("autounsub - can unsub from auto-unsubscribed", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const sub = nc.subscribe(subj, { max: 1 });
+  for (let i = 0; i < 20; i++) {
+    nc.publish(subj);
+  }
+  await nc.flush();
+  t.is(sub.getReceived(), 1);
+  sub.unsubscribe();
+  await nc.close();
+});
 
-  it('old request should received specified number of messages', done => {
-    /* jshint loopfunc: true */
-    const nc = NATS.connect({
-      port: PORT,
-      useOldRequestStyle: true
-    })
-    requestGetsWantedNumberOfMessages(nc, done)
-  })
-})
+test("autounsub - can break to unsub", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const sub = nc.subscribe(subj, { max: 20 });
+  const iter = (async () => {
+    for await (const m of sub) {
+      break;
+    }
+  })();
+  for (let i = 0; i < 20; i++) {
+    nc.publish(subj);
+  }
+  await nc.flush();
+  await iter;
+  t.is(sub.getProcessed(), 1);
+  await nc.close();
+});
+
+test("autounsub - can change auto-unsub to a higher value", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const sub = nc.subscribe(subj, { max: 1 });
+  sub.unsubscribe(10);
+  for (let i = 0; i < 20; i++) {
+    nc.publish(subj);
+  }
+  await nc.flush();
+  t.is(sub.getReceived(), 10);
+  await nc.close();
+});
+
+test("autounsub - request receives expected count with multiple helpers", async (
+  t,
+) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+
+  const fn = (async (sub) => {
+    for await (const m of sub) {
+      m.respond();
+    }
+  });
+  const subs = [];
+  for (let i = 0; i < 5; i++) {
+    const sub = nc.subscribe(subj);
+    const _ = fn(sub);
+    subs.push(sub);
+  }
+  await nc.request(subj);
+  await nc.drain();
+
+  let counts = subs.map((s) => {
+    return s.getReceived();
+  });
+  const count = counts.reduce((a, v) => a + v);
+  t.is(count, 5);
+});
+
+test("autounsub - manual request receives expected count with multiple helpers", async (
+  t,
+) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const lock = Lock(5);
+
+  const fn = (async (sub) => {
+    for await (const m of sub) {
+      m.respond();
+      lock.unlock();
+    }
+  });
+  for (let i = 0; i < 5; i++) {
+    const sub = nc.subscribe(subj);
+    const _ = fn(sub);
+  }
+  const replySubj = createInbox();
+  const sub = nc.subscribe(replySubj);
+  nc.publish(subj, Empty, { reply: replySubj });
+  await lock;
+  await nc.drain();
+  t.is(sub.getReceived(), 5);
+});
+
+test("autounsub - check subscription leaks", async (t) => {
+  let nc = await connect({ servers: u });
+  let subj = createInbox();
+  let sub = nc.subscribe(subj);
+  sub.unsubscribe();
+  t.is(nc.protocol.subscriptions.size(), 0);
+  await nc.close();
+});
+
+test("autounsub - check request leaks", async (t) => {
+  let nc = await connect({ servers: u });
+  let subj = createInbox();
+
+  // should have no subscriptions
+  t.is(nc.protocol.subscriptions.size(), 0);
+
+  let sub = nc.subscribe(subj);
+  const _ = (async () => {
+    for await (const m of sub) {
+      m.respond();
+    }
+  })();
+
+  // should have one subscription
+  t.is(nc.protocol.subscriptions.size(), 1);
+
+  let msgs = [];
+  msgs.push(nc.request(subj));
+  msgs.push(nc.request(subj));
+
+  // should have 2 mux subscriptions, and 2 subscriptions
+  t.is(nc.protocol.subscriptions.size(), 2);
+  t.is(nc.protocol.muxSubscriptions.size(), 2);
+
+  await Promise.all(msgs);
+
+  // mux subs should have pruned
+  t.is(nc.protocol.muxSubscriptions.size(), 0);
+
+  sub.unsubscribe();
+  t.is(nc.protocol.subscriptions.size(), 1);
+  await nc.close();
+});
+
+test("autounsub - check cancelled request leaks", async (t) => {
+  let nc = await connect({ servers: u });
+  let subj = createInbox();
+
+  // should have no subscriptions
+  t.is(nc.protocol.subscriptions.size(), 0);
+
+  let rp = nc.request(subj, Empty, { timeout: 100 });
+
+  t.is(nc.protocol.subscriptions.size(), 1);
+  t.is(nc.protocol.muxSubscriptions.size(), 1);
+
+  // the rejection should be timeout
+  const lock = Lock();
+  rp.catch((rej) => {
+    t.is(rej?.code, ErrorCode.TIMEOUT);
+    lock.unlock();
+  });
+
+  await lock;
+  // mux subs should have pruned
+  t.is(nc.protocol.muxSubscriptions.size(), 0);
+  await nc.close();
+});

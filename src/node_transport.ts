@@ -87,6 +87,10 @@ export class NodeTransport implements Transport {
   }
 
   _errorHandler(err) {
+    if (err.code === "ECONNREFUSED") {
+      // this will turn into ErrorCode.CONNECTION_REFUSED
+      return this.connection.reject();
+    }
     this._closed(err);
   }
 
@@ -162,6 +166,9 @@ export class NodeTransport implements Transport {
   }
 
   send(frame: Uint8Array): Promise<void> {
+    if (this.isClosed) {
+      return Promise.resolve();
+    }
     if (this.options.debug) {
       console.info(`< ${render(frame)}`);
     }
