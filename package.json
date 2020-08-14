@@ -60,11 +60,5 @@
     "tslint": "^6.1.3",
     "typescript": "^3.9.7"
   },
-  "typings": "./index.d.ts",
-  "bin": {
-    "node-pub": "examples/node-pub",
-    "node-sub": "examples/node-sub",
-    "node-req": "examples/node-req",
-    "node-reply": "examples/node-reply"
-  }
+  "typings": "./index.d.ts"
 }

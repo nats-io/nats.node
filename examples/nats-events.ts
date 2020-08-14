@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env ts-node
 
 import * as parse from "minimist";
 import { ConnectionOptions, connect } from "../src/mod";
