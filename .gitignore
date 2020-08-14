@@ -18,3 +18,6 @@ reports/
 tmp/
 coverage/
 .nyc_output/
+
+
+nats-base-client/
