@@ -1,8 +1,7 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env node
 
-import * as parse from "minimist";
-import { ConnectionOptions, connect, StringCodec } from "../src/mod";
-import { headers } from "../nats-base-client/mod";
+const parse = require("minimist");
+const { connect, StringCodec, headers } = require("../nats");
 
 const argv = parse(
   process.argv.slice(2),
@@ -21,7 +20,7 @@ const argv = parse(
   },
 );
 
-const opts = { servers: argv.s } as ConnectionOptions;
+const opts = { servers: argv.s };
 const subject = argv._[0] ? String(argv._[0]) : "";
 const payload = argv._[1] || "";
 

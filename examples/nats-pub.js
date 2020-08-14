@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import * as parse from "minimist";
-import { ConnectionOptions, connect, StringCodec } from "../src/mod";
-import { delay, headers, MsgHdrs } from "../src/nats-base-client";
+const parse = require("minimist");
+const { connect, StringCodec, headers } = require("../nats");
+const { delay } = require("./util");
 
 const argv = parse(
   process.argv.slice(2),
@@ -22,10 +22,10 @@ const argv = parse(
   },
 );
 
-const copts = { servers: argv.s } as ConnectionOptions;
+const copts = { servers: argv.s };
 const subject = String(argv._[0]);
 const payload = argv._[1] || "";
-const count = (argv.c == -1 ? Number.MAX_SAFE_INTEGER : argv.c) || 1;
+const count = (argv.c === -1 ? Number.MAX_SAFE_INTEGER : argv.c) || 1;
 const interval = argv.i || 0;
 
 if (argv.headers) {
@@ -53,10 +53,10 @@ if (argv.h || argv.help || !subject) {
       }
     });
 
-  const pubopts = {} as { reply?: string; headers?: MsgHdrs };
+  const pubopts = {};
   if (argv.headers) {
     const hdrs = headers();
-    argv.headers.split(";").map((l: string) => {
+    argv.headers.split(";").map((l) => {
       const [k, v] = l.split("=");
       hdrs.append(k, v);
     });
@@ -74,5 +74,4 @@ if (argv.h || argv.help || !subject) {
   }
   await nc.flush();
   await nc.close();
-})()
-
+})();

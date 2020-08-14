@@ -1,7 +1,7 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env node
 
-import * as parse from "minimist";
-import { ConnectionOptions, connect } from "../src/mod";
+const parse = require("minimist");
+const { connect } = require("../nats");
 
 const argv = parse(
   process.argv.slice(2),
@@ -15,14 +15,14 @@ const argv = parse(
   },
 );
 
-const opts = { servers: argv.s } as ConnectionOptions;
+const opts = { servers: argv.s };
 
 (async () => {
   const nc = await connect(opts);
   (async () => {
     console.info(`connected ${nc.getServer()}`);
     for await (const s of nc.status()) {
-      console.info(`${s.type}: ${s.data}`);
+      console.info(`${s.type}: ${JSON.stringify(s.data)}`);
     }
   })().then();
 

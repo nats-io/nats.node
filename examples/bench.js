@@ -1,12 +1,15 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env node
 
-import * as parse from "minimist";
-import { connect, Empty, Nuid } from "../src/mod";
+const parse = require("minimist");
+const { Nuid, connect, Empty } = require("../nats");
+
+const nuid = new Nuid();
+
 const defaults = {
   s: "127.0.0.1:4222",
   c: 1000000,
   p: 0,
-  subject: new Nuid().next(),
+  subject: nuid.next(),
 };
 
 const argv = parse(
@@ -42,7 +45,7 @@ const payload = bytes ? new Uint8Array(bytes) : Empty;
 
 (async () => {
   const nc = await connect({ servers: server, debug: argv.debug });
-  const jobs: Promise<void>[] = [];
+  const jobs = [];
   const p = new Performance();
 
   if (argv.req) {
@@ -144,4 +147,4 @@ const payload = bytes ? new Uint8Array(bytes) : Empty;
   }
 
   await nc.close();
-})()
+})();
