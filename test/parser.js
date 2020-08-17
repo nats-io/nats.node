@@ -26,7 +26,7 @@ const {
   Empty,
   Msg,
   MsgImpl,
-}  = require("../lib/nats-base-client/internal_mod");
+} = require("../lib/nats-base-client/internal_mod");
 
 let te = new TextEncoder();
 const td = new TextDecoder();
@@ -35,7 +35,7 @@ class NoopDispatcher {
   push(a) {}
 }
 
-class TestDispatcher  {
+class TestDispatcher {
   count = 0;
   pings = 0;
   pongs = 0;
@@ -72,9 +72,7 @@ class TestDispatcher  {
 
 // These are almost verbatim ports of the NATS parser tests
 
-function byByteTest(t,
-  data,
-) {
+function byByteTest(t, data) {
   const e = new TestDispatcher();
   const p = new Parser(e);
   const states = [];
@@ -234,10 +232,10 @@ test("parser - errors", (t) => {
     try {
       p.parse(te.encode(s));
       t.fail();
-    } catch(err) {
+    } catch (err) {
       t.truthy(err);
     }
-    });
+  });
 });
 //
 // test("parser - split msg", (t) => {

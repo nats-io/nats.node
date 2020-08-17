@@ -7,6 +7,8 @@ import {
   extractProtocolMessage,
   INFO,
   checkOptions,
+  ErrorCode,
+  NatsError,
 } from "./nats-base-client";
 
 import { ConnectionOptions } from "./nats-base-client";
@@ -23,17 +25,32 @@ export class NodeTransport implements Transport {
   lang: string = LANG;
   closeError?: Error;
 
-  yields: Uint8Array[];
+  yields: Uint8Array[] = [];
   signal: Deferred<void> = deferred<void>();
   private done = false;
 
   peeked = false;
-  connection: Deferred<void> = deferred<void>();
+  connection: Deferred<void> = deferred();
   closedNotification: Deferred<void | Error> = deferred();
   private options!: ConnectionOptions;
 
   constructor() {
-    this.yields = [];
+  }
+
+  async connect(
+    hp: { hostname: string; port: number },
+    options: ConnectionOptions,
+  ): Promise<void> {
+    this.options = options;
+    this.socket = createConnection(hp.port, hp.hostname);
+    this.socket.setNoDelay(true);
+    this._setupHandlers();
+
+    await this.connection;
+    this.peeked = true;
+    this.signal.resolve();
+
+    return Promise.resolve();
   }
 
   get isClosed(): boolean {
@@ -87,10 +104,10 @@ export class NodeTransport implements Transport {
   }
 
   _errorHandler(err) {
-    if (err.code === "ECONNREFUSED") {
-      // this will turn into ErrorCode.CONNECTION_REFUSED
-      return this.connection.reject();
-    }
+    err = err.code === "ECONNREFUSED"
+      ? NatsError.errorForCode(ErrorCode.CONNECTION_REFUSED)
+      : err;
+    this.connection.reject(err);
     this._closed(err);
   }
 
@@ -115,22 +132,6 @@ export class NodeTransport implements Transport {
     this.socket.on("close", () => {
       this._closeHandler();
     });
-  }
-
-  async connect(
-    hp: { hostname: string; port: number },
-    options: ConnectionOptions,
-  ): Promise<void> {
-    this.options = options;
-    this.socket = createConnection(hp.port, hp.hostname);
-    this.socket.setNoDelay(true);
-    this._setupHandlers();
-
-    await this.connection;
-    this.peeked = true;
-    this.signal.resolve();
-
-    return Promise.resolve();
   }
 
   [Symbol.asyncIterator](): AsyncIterableIterator<Uint8Array> {

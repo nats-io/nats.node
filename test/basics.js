@@ -12,14 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const test = require("ava");
-const { connect, ErrorCode, createInbox, StringCodec, Empty } = require(
+const { connect, ErrorCode, createInbox, StringCodec, Empty, Events } = require(
   "../nats",
 );
 const { deferred, delay } = require("../lib/nats-base-client/internal_mod");
 const { Lock } = require("./helpers/lock");
+const { NatsServer } = require("./helpers/launcher");
 
 const u = "demo.nats.io:4222";
+
+test("basics - connect default", async (t) => {
+  const ns = await NatsServer.start({ port: 4222 });
+  const nc = await connect();
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
+
+test("basics - tls connect", async (t) => {
+  const nc = await connect({ servers: ["demo.nats.io:4443"] });
+  await nc.flush();
+  await nc.close();
+  t.pass();
+});
 
 test("basics - connect host", async (t) => {
   const nc = await connect({ servers: "demo.nats.io" });
@@ -567,56 +585,48 @@ test("basics - empty message", async (t) => {
   t.is(m.data.length, 0);
   await nc.close();
 });
-//
-// test("basics - msg buffers dont overwrite", async (t) => {
-//   const N = 100;
-//   const ns = await NatsServer.start();
-//   const nc = await connect({ port: ns.port });
-//   const sub = nc.subscribe(">");
-//   const msgs = [];
-//   const _ = (async () => {
-//     for await (const m of sub) {
-//       msgs.push(m);
-//     }
-//   })();
-//
-//   const a = "a".charCodeAt(0);
-//   const fill = (n, b) => {
-//     const v = n % 26 + a;
-//     for (let i = 0; i < b.length; i++) {
-//       b[i] = v;
-//     }
-//   };
-//   const td = new TextDecoder();
-//   const buf = new Uint8Array(nc.protocol.info.max_payload);
-//   for (let i = 0; i < N; i++) {
-//     fill(i, buf);
-//     const subj = td.decode(buf.subarray(0, 26));
-//     nc.publish(subj, buf, { reply: subj });
-//     await nc.flush();
-//   }
-//
-//   await nc.drain();
-//   await ns.stop();
-//
-//   const check = (n, m) => {
-//     const v = n % 26 + a;
-//     t.is(m.data.length, nc.protocol.info.max_payload);
-//     for (let i = 0; i < m.data.length; i++) {
-//       if (m.data[i] !== v) {
-//         t.fail(
-//           `failed on iteration ${i} - expected ${String.fromCharCode(v)} got ${
-//             String.fromCharCode(m.data[i])
-//           }`,
-//         );
-//       }
-//     }
-//     t.is(m.subject, td.decode(m.data.subarray(0, 26)), "subject check");
-//     t.is(m.reply, td.decode(m.data.subarray(0, 26)), "reply check");
-//   };
-//
-//   t.is(msgs.length, N);
-//   for (let i = 0; i < N; i++) {
-//     check(i, msgs[i]);
-//   }
-// });
+
+test("basics - subject is required", async (t) => {
+  t.plan(2);
+  const nc = await connect({ servers: u });
+  t.throws(() => {
+    nc.publish();
+  }, { code: ErrorCode.BAD_SUBJECT });
+
+  await nc.request().catch((err) => {
+    t.is(err.code, ErrorCode.BAD_SUBJECT);
+  });
+
+  await nc.close();
+});
+
+test("basics - payload is only Uint8Array", async (t) => {
+  const nc = await connect({ servers: u });
+  t.throws(() => {
+    nc.publish(createInbox(), "s");
+  }, { code: ErrorCode.BAD_PAYLOAD });
+
+  await nc.close();
+});
+
+test("basics - disconnect reconnects", async (t) => {
+  const lock = new Lock();
+  const nc = await connect({ servers: u });
+
+  const status = nc.status();
+  (async () => {
+    for await (const s of status) {
+      switch (s.type) {
+        case "reconnect":
+          lock.unlock();
+          break;
+        default:
+      }
+    }
+  })().then();
+
+  nc.protocol.transport.disconnect();
+  await lock;
+  await nc.close();
+  t.pass();
+});

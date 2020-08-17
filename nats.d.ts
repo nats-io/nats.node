@@ -204,3 +204,5 @@ export declare interface NatsError extends Error {
   code: string;
   chainedError?: Error;
 }
+
+export type Events = ("disconnect" | "reconnect" | "update" | "ldm");

@@ -85,6 +85,17 @@
       "lib/nats-base-client/**/*.js"
     ],
     "exclude": [
+      "nats-base-client/nkeys.ts",
+      "nats-base-client/codec.ts",
+      "nats-base-client/util.ts",
+      "nats-base-client/servers.ts",
+      "nats-base-client/buffer.ts",
+      "nats-base-client/parser.ts",
+      "nats-base-client/muxsubscription.ts",
+      "nats-base-client/transport.ts",
+      "nats-base-client/databuffer.ts",
+      "nats-base-client/queued_iterator.ts",
+      "nats-base-client/nuid.ts",
       "lib/test/**",
       "examples/**",
       "benchmark/**"
