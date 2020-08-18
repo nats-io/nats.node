@@ -21,20 +21,18 @@ const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
   socket: Socket;
-  version: string = VERSION;
-  lang: string = LANG;
-  closeError?: Error;
-
+  version: string;
+  lang: string;
   yields: Uint8Array[] = [];
   signal: Deferred<void> = deferred<void>();
-  private done = false;
-
-  peeked = false;
-  connection: Deferred<void> = deferred();
   closedNotification: Deferred<void | Error> = deferred();
-  private options!: ConnectionOptions;
+  options!: ConnectionOptions;
+  connected = false;
+  done = false;
 
   constructor() {
+    this.lang = LANG;
+    this.version = VERSION;
   }
 
   async connect(
@@ -42,15 +40,44 @@ export class NodeTransport implements Transport {
     options: ConnectionOptions,
   ): Promise<void> {
     this.options = options;
-    this.socket = createConnection(hp.port, hp.hostname);
-    this.socket.setNoDelay(true);
-    this._setupHandlers();
+    try {
+      this.socket = await this.dial(hp);
+      const info = await this.peekInfo();
+      checkOptions(info, options);
+      // @ts-ignore
+      const { tls_required } = info;
+      if (tls_required) {
+        this.socket = await this.startTLS();
+      }
+      this.connected = true;
+      this.setupHandlers();
+      this.signal.resolve();
+      return Promise.resolve();
+    } catch (err) {
+      const { code } = err;
+      err = code === "ECONNREFUSED"
+        ? NatsError.errorForCode(ErrorCode.CONNECTION_REFUSED, err)
+        : err;
+      return Promise.reject(err);
+    }
+  }
 
-    await this.connection;
-    this.peeked = true;
-    this.signal.resolve();
-
-    return Promise.resolve();
+  dial(hp: { hostname: string; port: number }): Promise<Socket> {
+    const d = deferred<Socket>();
+    let dialError: Error;
+    const socket = createConnection(hp.port, hp.hostname, () => {
+      d.resolve(socket);
+      socket.removeAllListeners();
+    });
+    socket.on("error", (err) => {
+      dialError = err;
+    });
+    socket.on("close", () => {
+      socket.removeAllListeners();
+      d.reject(dialError);
+    });
+    socket.setNoDelay(true);
+    return d;
   }
 
   get isClosed(): boolean {
@@ -61,76 +88,73 @@ export class NodeTransport implements Transport {
     return this._closed(err, false);
   }
 
-  _extractInfo(pm: string): object {
-    const m = INFO.exec(pm);
-    if (!m) {
-      throw new Error("unexpected response from server");
-    }
-    return JSON.parse(m[1]);
-  }
-
-  _peek(): void {
-    const t = DataBuffer.concat(...this.yields);
-    const pm = extractProtocolMessage(t);
-    if (pm) {
-      try {
-        const info = this._extractInfo(pm);
-        checkOptions(info, this.options);
-        // @ts-ignore
-        if (info?.tls_required) {
-          this._startTLS();
+  peekInfo(): Promise<object> {
+    const d = deferred<object>();
+    let peekError: Error;
+    this.socket.on("data", (frame) => {
+      this.yields.push(frame);
+      const t = DataBuffer.concat(...this.yields);
+      const pm = extractProtocolMessage(t);
+      if (pm) {
+        try {
+          const m = INFO.exec(pm);
+          if (!m) {
+            throw new Error("unexpected response from server");
+          }
+          const info = JSON.parse(m[1]);
+          d.resolve(info);
+        } catch (err) {
+          d.reject(err);
+        } finally {
+          this.socket.removeAllListeners();
         }
-        this.connection.resolve();
-      } catch (err) {
-        this.connection.reject(err);
       }
-    }
+    });
+    this.socket.on("error", (err) => {
+      peekError = err;
+    });
+    this.socket.on("close", () => {
+      this.socket.removeAllListeners();
+      d.reject(peekError);
+    });
+
+    return d;
   }
 
-  _startTLS(): void {
+  startTLS(): Promise<TLSSocket> {
+    const d = deferred<TLSSocket>();
+    let tlsError: Error;
     let tlsOpts = { socket: this.socket };
     if (typeof this.options.tls === "object") {
       tlsOpts = extend(tlsOpts, this.options.tls);
     }
-    this.socket.removeAllListeners();
-    this.socket = tlsConnect(tlsOpts);
-    this._setupHandlers();
-  }
-
-  _connectHandler() {}
-
-  _closeHandler() {
-    this._closed(undefined, false);
-  }
-
-  _errorHandler(err) {
-    err = err.code === "ECONNREFUSED"
-      ? NatsError.errorForCode(ErrorCode.CONNECTION_REFUSED)
-      : err;
-    this.connection.reject(err);
-    this._closed(err);
-  }
-
-  _dataHandler(frame: Uint8Array) {
-    this.yields.push(frame);
-    if (this.peeked) {
-      return this.signal.resolve();
-    }
-    this._peek();
-  }
-
-  _setupHandlers() {
-    this.socket.on("connect", () => {
-      this._connectHandler();
+    const tlsSocket = tlsConnect(tlsOpts, () => {
+      tlsSocket.removeAllListeners();
+      d.resolve(tlsSocket);
     });
-    this.socket.on("data", (frame) => {
-      this._dataHandler(frame);
+    tlsSocket.on("error", (err) => {
+      tlsError = err;
+    });
+    tlsSocket.on("close", () => {
+      tlsSocket.removeAllListeners();
+      d.reject(tlsError);
+    });
+    return d;
+  }
+
+  setupHandlers() {
+    let connError: Error;
+    this.socket.on("data", (frame: Uint8Array) => {
+      this.yields.push(frame);
+      return this.signal.resolve();
     });
     this.socket.on("error", (err) => {
-      this._errorHandler(err);
+      connError = err;
     });
     this.socket.on("close", () => {
-      this._closeHandler();
+      // if socket notified a close, any write will fail
+      this.socket = undefined;
+      this._closed(connError, false);
     });
   }
 
@@ -184,9 +208,10 @@ export class NodeTransport implements Transport {
   }
 
   private async _closed(err?: Error, internal: boolean = true): Promise<void> {
+    // if this connection didn't succeed, then ignore it.
+    if (!this.connected) return;
     if (this.done) return;
-    this.closeError = err;
-    if (!err) {
+    if (!err && this.socket) {
       try {
         // this is a noop for the server, but gives us a place to hang
         // a close and ensure that we sent all before closing
@@ -197,16 +222,15 @@ export class NodeTransport implements Transport {
         }
       }
     }
-    this.done = true;
     try {
-      this.socket.removeAllListeners();
-      this.socket.destroy();
-    } catch (err) {
-    }
+      if (this.socket) {
+        this.socket.removeAllListeners();
+        this.socket.destroy();
+      }
+    } catch (err) {}
 
-    if (internal) {
-      this.closedNotification.resolve(err);
-    }
+    this.done = true;
+    this.closedNotification.resolve(err);
   }
 
   closed(): Promise<void | Error> {

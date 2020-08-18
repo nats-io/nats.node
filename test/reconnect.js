@@ -77,7 +77,6 @@ test("reconnect - events", async (t) => {
   await srv.stop();
   try {
     await nc.closed();
-    console.log("closed");
   } catch (err) {
     t.is(err.code, ErrorCode.CONNECTION_REFUSED);
   }
@@ -108,6 +107,7 @@ test("reconnect - reconnect not emitted if suppressed", async (t) => {
 
   await srv.stop();
   await nc.closed();
+  t.pass();
 });
 
 test("reconnect - reconnecting after proper delay", async (t) => {
