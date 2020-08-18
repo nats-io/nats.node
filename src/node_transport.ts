@@ -14,7 +14,9 @@ import {
 import { ConnectionOptions } from "./nats-base-client";
 import { Socket, createConnection } from "net";
 import { extend } from "../nats-base-client/util";
-import { connect as tlsConnect, TLSSocket } from "tls";
+import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
+const { resolve } = require("path");
+const { readFile } = require("fs");
 
 const VERSION = "2.0.0-0";
 const LANG = "nats.js";
@@ -121,12 +123,67 @@ export class NodeTransport implements Transport {
     return d;
   }
 
-  startTLS(): Promise<TLSSocket> {
+  loadFile(fn: string): Promise<Buffer | void> {
+    if (!fn) {
+      return Promise.resolve();
+    }
+    const d = deferred<Buffer | void>();
+    try {
+      fn = resolve(fn);
+      readFile(fn, (err, data) => {
+        if (err) {
+          return d.reject(err);
+        }
+        d.resolve(data);
+      });
+    } catch (err) {
+      d.reject(err);
+    }
+    return d;
+  }
+
+  async loadClientCerts(): Promise<TlsOptions | void> {
+    const tlsOpts = {} as TlsOptions;
+    // @ts-ignore
+    const { certFile, caFile, keyFile } = this.options.tls;
+    try {
+      if (certFile) {
+        const data = await this.loadFile(certFile);
+        if (data) {
+          tlsOpts.cert = data;
+        }
+      }
+      if (keyFile) {
+        const data = await this.loadFile(keyFile);
+        if (data) {
+          tlsOpts.key = data;
+        }
+      }
+      if (caFile) {
+        const data = await this.loadFile(caFile);
+        if (data) {
+          console.log("loaded ca from", caFile);
+          tlsOpts.ca = [data];
+        }
+      }
+      return Promise.resolve(tlsOpts);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  async startTLS(): Promise<TLSSocket> {
     const d = deferred<TLSSocket>();
     let tlsError: Error;
     let tlsOpts = { socket: this.socket };
     if (typeof this.options.tls === "object") {
-      tlsOpts = extend(tlsOpts, this.options.tls);
+      try {
+        const certOpts = await this.loadClientCerts() || {};
+        tlsOpts = extend(tlsOpts, this.options.tls, certOpts);
+      } catch (err) {
+        this.socket.destroy(err);
+        d.reject(err);
+      }
     }
     const tlsSocket = tlsConnect(tlsOpts, () => {
       tlsSocket.removeAllListeners();
