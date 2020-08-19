@@ -113,7 +113,6 @@ between objects and Uint8Arrays.
 
 | Property | Description |
 | ---      | ---         |
-
 | `authenticator`         |  A function that deals with providing credentials |
 | `debug`                 | If set to `true`, client will output to the console the raw protocol interactions. Only useful for developing the client. |
 | `headers`               | If set to `true`, client enables use of headers |
