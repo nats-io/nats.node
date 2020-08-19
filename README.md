@@ -433,19 +433,31 @@ nc.subscribe('foo', {max:10});
 // within the timeout, the function running the iterator with
 // reject - depending on how you code it, you may need a
 // try/catch block.
-const sub = nc.subscribe("hello", { timeout: 1000 });
+// import the connect function
+const { connect, ErrorCode } = require("nats");
+
 (async () => {
-for await (const m of sub) {
-  console.log(`got message #${sub.getProcessed()}`);
-}
-})().catch((err) => {
-if (err.code === ErrorCode.TIMEOUT) {
-  console.log(`sub timed out!`);
-} else {
-  console.log(`sub iterator got an error!`);
-}
-nc.close();
-});
+  // to create a connection to a nats-server:
+  const nc = await connect({ servers: "demo.nats.io" });
+
+  // create subscription with a timeout, if no message arrives
+  // within the timeout, the subscription throws a timeout error
+  const sub = nc.subscribe("hello", { timeout: 1000 });
+  (async () => {
+    for await (const m of sub) {
+      console.log(`got message #${sub.getProcessed()}`);
+    }
+  })().catch((err) => {
+    if (err.code === ErrorCode.TIMEOUT) {
+      console.log(`sub timed out!`);
+    } else {
+      console.log(`sub iterator got an error!`);
+    }
+    nc.close();
+  });
+
+  await nc.closed();
+})();
 ```
 
 ### Lifecycle/Informational Events
