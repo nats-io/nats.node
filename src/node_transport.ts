@@ -170,7 +170,6 @@ export class NodeTransport implements Transport {
       if (caFile) {
         const data = await this.loadFile(caFile);
         if (data) {
-          console.log("loaded ca from", caFile);
           tlsOpts.ca = [data];
         }
       }

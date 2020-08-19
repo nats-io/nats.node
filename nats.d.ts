@@ -30,6 +30,13 @@ export interface NatsConnection {
   status(): AsyncIterable<Status>;
 }
 
+export const Events = Object.freeze({
+  DISCONNECT: "disconnect",
+  RECONNECT: "reconnect",
+  UPDATE: "update",
+  LDM: "ldm",
+});
+
 export interface Status {
   type: string;
   data: string | ServersChanged;
