@@ -16,7 +16,7 @@ import { Socket, createConnection } from "net";
 import { extend } from "../nats-base-client/util";
 import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
 const { resolve } = require("path");
-const { readFile } = require("fs");
+const { readFile, existsSync } = require("fs");
 
 const VERSION = "2.0.0-0";
 const LANG = "nats.js";
@@ -45,12 +45,17 @@ export class NodeTransport implements Transport {
     try {
       this.socket = await this.dial(hp);
       const info = await this.peekInfo();
-      checkOptions(info, options);
       // @ts-ignore
       const { tls_required } = info;
       if (tls_required) {
         this.socket = await this.startTLS();
       }
+      checkOptions(info, options);
+      //@ts-ignore
+      if (tls_required && this.socket.encrypted !== true) {
+        throw new NatsError("tls", ErrorCode.SERVER_OPTION_NA);
+      }
+
       this.connected = true;
       this.setupHandlers();
       this.signal.resolve();
@@ -130,6 +135,9 @@ export class NodeTransport implements Transport {
     const d = deferred<Buffer | void>();
     try {
       fn = resolve(fn);
+      if (!existsSync(fn)) {
+        throw new Error(`${fn} doesn't exist`);
+      }
       readFile(fn, (err, data) => {
         if (err) {
           return d.reject(err);
@@ -173,7 +181,6 @@ export class NodeTransport implements Transport {
   }
 
   async startTLS(): Promise<TLSSocket> {
-    const d = deferred<TLSSocket>();
     let tlsError: Error;
     let tlsOpts = { socket: this.socket };
     if (typeof this.options.tls === "object") {
@@ -181,21 +188,26 @@ export class NodeTransport implements Transport {
         const certOpts = await this.loadClientCerts() || {};
         tlsOpts = extend(tlsOpts, this.options.tls, certOpts);
       } catch (err) {
-        this.socket.destroy(err);
-        d.reject(err);
+        return Promise.reject(new NatsError(err.message, ErrorCode.TLS, err));
       }
     }
-    const tlsSocket = tlsConnect(tlsOpts, () => {
-      tlsSocket.removeAllListeners();
-      d.resolve(tlsSocket);
-    });
-    tlsSocket.on("error", (err) => {
-      tlsError = err;
-    });
-    tlsSocket.on("close", () => {
-      tlsSocket.removeAllListeners();
-      d.reject(tlsError);
-    });
+    const d = deferred<TLSSocket>();
+    try {
+      const tlsSocket = tlsConnect(tlsOpts, () => {
+        tlsSocket.removeAllListeners();
+        d.resolve(tlsSocket);
+      });
+      tlsSocket.on("error", (err) => {
+        tlsError = err;
+      });
+      tlsSocket.on("close", () => {
+        d.reject(tlsError);
+        tlsSocket.removeAllListeners();
+      });
+    } catch (err) {
+      // tls throws errors on bad certs see nats.js#310
+      d.reject(NatsError.errorForCode(ErrorCode.TLS, err));
+    }
     return d;
   }
 

@@ -6,9 +6,18 @@ const {
   "../nats",
 );
 const { resolve, join } = require("path");
-const { cwd } = require("process");
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
+
+const dir = process.cwd();
+const tlsConfig = {
+  host: "0.0.0.0",
+  tls: {
+    cert_file: resolve(join(dir, "./test/certs/localhost.crt")),
+    key_file: resolve(join(dir, "./test/certs/localhost.key")),
+    ca_file: resolve(join(dir, "./test/certs/ca.crt")),
+  },
+};
 
 test("tls - fail if server doesn't support TLS", async (t) => {
   t.plan(1);
@@ -33,19 +42,9 @@ test("tls - connects to tls without option", async (t) => {
 
 test("tls - custom ca fails without proper ca", async (t) => {
   t.plan(1);
-  const dir = cwd();
-  const config = {
-    host: "0.0.0.0",
-    tls: {
-      cert_file: resolve(join(dir, "./test/certs/localhost.crt")),
-      key_file: resolve(join(dir, "./test/certs/localhost.key")),
-      ca_file: resolve(join(dir, "./test/certs/RootCA.crt")),
-    },
-  };
-
-  const ns = await NatsServer.start(config);
+  const ns = await NatsServer.start(tlsConfig);
   const lock = Lock();
-  await connect({ servers: `localhost:${ns.port}` })
+  await connect({ servers: `localhost:${ns.port}`, maxReconnectAttempts: 4 })
     .then(() => {
       t.fail("shouldn't have connected without client ca");
     })
@@ -60,21 +59,11 @@ test("tls - custom ca fails without proper ca", async (t) => {
 });
 
 test("tls - connects with proper ca", async (t) => {
-  const dir = cwd();
-  const config = {
-    host: "0.0.0.0",
-    tls: {
-      cert_file: resolve(join(dir, "./test/certs/localhost.crt")),
-      key_file: resolve(join(dir, "./test/certs/localhost.key")),
-      ca_file: resolve(join(dir, "./test/certs/RootCA.crt")),
-    },
-  };
-
-  const ns = await NatsServer.start(config);
+  const ns = await NatsServer.start(tlsConfig);
   const nc = await connect({
     servers: `localhost:${ns.port}`,
     tls: {
-      caFile: config.tls.ca_file,
+      caFile: tlsConfig.tls.ca_file,
     },
   });
   await nc.flush();
@@ -83,3 +72,74 @@ test("tls - connects with proper ca", async (t) => {
   await ns.stop();
   t.pass();
 });
+
+test("tls - client auth", async (t) => {
+  const ns = await NatsServer.start(tlsConfig);
+
+  const certs = {
+    keyFile: resolve(join(dir, "./test/certs/client.key")),
+    certFile: resolve(join(dir, "./test/certs/client.crt")),
+    caFile: resolve(join(dir, "./test/certs/ca.crt")),
+  };
+  const nc = await connect({
+    port: ns.port,
+    tls: certs,
+  });
+
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
+
+async function tlsInvalidCertMacro(t, conf, tlsCode) {
+  t.plan(3);
+  const ns = await NatsServer.start(tlsConfig);
+  try {
+    await connect({ servers: `localhost:${ns.port}`, tls: conf });
+    t.fail("shouldn't have connected");
+  } catch (err) {
+    t.is(err.code, ErrorCode.TLS);
+    t.truthy(err.chainedError);
+    t.is(err.chainedError.code, tlsCode);
+  }
+  await ns.stop();
+}
+
+test("tls - invalid cert", tlsInvalidCertMacro, {
+  keyFile: resolve(join(dir, "./test/certs/client.key")),
+  certFile: resolve(join(dir, "./test/certs/ca.crt")),
+  caFile: resolve(join(dir, "./test/certs/localhost.crt")),
+}, "ERR_OSSL_X509_KEY_VALUES_MISMATCH");
+
+test("tls - invalid pem no start", tlsInvalidCertMacro, {
+  keyFile: resolve(join(dir, "./test/certs/client.crt")),
+  certFile: resolve(join(dir, "./test/certs/client.key")),
+  caFile: resolve(join(dir, "./test/certs/ca.crt")),
+}, "ERR_OSSL_PEM_NO_START_LINE");
+
+async function tlsInvalidArgPathMacro(t, conf, arg) {
+  t.plan(2);
+  const ns = await NatsServer.start(tlsConfig);
+  try {
+    await connect({ servers: `localhost:${ns.port}`, tls: conf });
+    t.fail("shouldn't have connected");
+  } catch (err) {
+    t.is(err.code, ErrorCode.TLS);
+    const v = conf[arg];
+    t.is(err.message, `${v} doesn't exist`);
+  }
+  await ns.stop();
+}
+
+test("tls - invalid key file", tlsInvalidArgPathMacro, {
+  keyFile: resolve(join(dir, "./test/certs/client.ky")),
+}, "keyFile");
+
+test("tls - invalid cert file", tlsInvalidArgPathMacro, {
+  certFile: resolve(join(dir, "./test/certs/client.cert")),
+}, "certFile");
+
+test("tls - invalid ca file", tlsInvalidArgPathMacro, {
+  caFile: resolve(join(dir, "./test/certs/ca.cert")),
+}, "caFile");
