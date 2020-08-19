@@ -21,7 +21,7 @@ The new library is `async`/`await`.
 The new signature is:
 `publish(subject: string, data?: Uint8Array, opts?: PublishOptions)`
 
-The `PublishOptions` has the following interface: {reply?: string, headers?: MsgHdrs}`
+The `PublishOptions` has the following interface: `{reply?: string, headers?: MsgHdrs}`
 
 
 ## Changes to `subscribe`
