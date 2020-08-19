@@ -3,7 +3,7 @@ const {
   connect,
   Events,
 } = require(
-  "../nats",
+  "../",
 );
 
 const { resolve, join } = require("path");

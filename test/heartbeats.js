@@ -13,14 +13,9 @@
  * limitations under the License.
  */
 const test = require("ava");
-const { connect, ErrorCode, createInbox, StringCodec, Empty } = require(
-  "../nats",
-);
 const { deferred, delay, DebugEvents, Heartbeat, Status } = require(
   "../lib/nats-base-client/internal_mod",
 );
-const { Lock } = require("./helpers/lock");
-const { NatsServer } = require("./helpers/launcher");
 
 function pm(
   lag,

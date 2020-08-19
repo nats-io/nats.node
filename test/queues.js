@@ -15,7 +15,7 @@
 
 const test = require("ava");
 const { connect, createInbox } = require(
-  "../nats",
+  "../",
 );
 
 const u = "demo.nats.io:4222";

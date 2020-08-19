@@ -3,7 +3,7 @@ const {
   connect,
   ErrorCode,
 } = require(
-  "../nats",
+  "../",
 );
 const { resolve, join } = require("path");
 const { Lock } = require("./helpers/lock");

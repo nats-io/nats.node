@@ -21,7 +21,7 @@ const {
   nkeyAuthenticator,
   credsAuthenticator,
 } = require(
-  "../nats",
+  "../",
 );
 const { nkeys } = require("../lib/nats-base-client/internal_mod");
 const { Lock } = require("./helpers/lock");

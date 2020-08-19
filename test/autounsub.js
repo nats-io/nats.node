@@ -14,7 +14,7 @@
  */
 const test = require("ava");
 const { connect, ErrorCode, createInbox, Empty } = require(
-  "../nats",
+  "../",
 );
 const { Lock } = require("./helpers/lock");
 

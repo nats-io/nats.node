@@ -15,7 +15,7 @@
 
 const test = require("ava");
 const { connect, ErrorCode, createInbox, StringCodec, Empty, Events } = require(
-  "../nats",
+  "../",
 );
 const { deferred, delay } = require("../lib/nats-base-client/internal_mod");
 const { Lock } = require("./helpers/lock");

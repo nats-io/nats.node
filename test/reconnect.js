@@ -25,7 +25,7 @@ const {
 const { Lock } = require("./helpers/lock");
 const {
   connect,
-} = require("../nats");
+} = require("../");
 
 test("reconnect - should receive when some servers are invalid", async (t) => {
   const lock = Lock(1);

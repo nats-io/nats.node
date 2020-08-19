@@ -26,8 +26,8 @@
     "name": "The NATS Authors"
   },
   "contributors": [],
-  "main": "nats.js",
-  "types": "nats.d.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
   "files": [
     "lib/",
     "examples/",

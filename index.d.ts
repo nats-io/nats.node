@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 export interface NatsConnection {
   closed(): Promise<void | Error>;
   close(): Promise<void>;
@@ -30,12 +31,12 @@ export interface NatsConnection {
   status(): AsyncIterable<Status>;
 }
 
-export const Events = Object.freeze({
-  DISCONNECT: "disconnect",
-  RECONNECT: "reconnect",
-  UPDATE: "update",
-  LDM: "ldm",
-});
+export declare enum Events {
+  DISCONNECT = "disconnect",
+  RECONNECT = "reconnect",
+  UPDATE = "update",
+  LDM = "ldm"
+}
 
 export interface Status {
   type: string;
@@ -211,5 +212,3 @@ export declare interface NatsError extends Error {
   code: string;
   chainedError?: Error;
 }
-
-export type Events = ("disconnect" | "reconnect" | "update" | "ldm");
