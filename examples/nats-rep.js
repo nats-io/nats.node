@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { connect, StringCodec, headers } = require("../nats");
+const { connect, StringCodec, headers } = require("../");
 
 const argv = parse(
   process.argv.slice(2),
@@ -34,13 +34,20 @@ if (argv.debug) {
 
 if (argv.h || argv.help || !subject || (argv._[1] && argv.q)) {
   console.log(
-    "Usage: nats-rep [-s server] [-q queue] [--headers] [-e echo_payload] subject [payload]",
+    "Usage: nats-rep [-s server] [-q queue] [--headers='k=v;k2=v2'] [-e echo_payload] subject [payload]",
   );
   process.exit(1);
 }
 
 (async () => {
-  const nc = await connect(opts);
+  let nc;
+  try {
+    nc = await connect(opts);
+  } catch (err) {
+    console.log(`error connecting to nats: ${err.message}`);
+    return;
+  }
+
   console.info(`connected ${nc.getServer()}`);
   nc.closed()
     .then((err) => {
@@ -50,10 +57,10 @@ if (argv.h || argv.help || !subject || (argv._[1] && argv.q)) {
     });
 
   const sc = StringCodec();
-  const hdrs = argv.headers ? headers() : undefined;
   const sub = nc.subscribe(subject, { queue: argv.q });
   console.info(`${argv.q !== "" ? "queue " : ""}listening to ${subject}`);
   for await (const m of sub) {
+    const hdrs = argv.headers ? (argv.e ? m.headers : headers()) : undefined;
     if (hdrs) {
       hdrs.set("sequence", sub.getProcessed().toString());
       hdrs.set("time", Date.now().toString());

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { connect, StringCodec, headers } = require("../nats");
+const { connect, StringCodec, headers } = require("../");
 const { delay } = require("./util");
 
 const argv = parse(
@@ -22,18 +22,18 @@ const argv = parse(
   },
 );
 
-const copts = { servers: argv.s };
+const opts = { servers: argv.s };
 const subject = String(argv._[0]);
 const payload = argv._[1] || "";
 const count = (argv.c === -1 ? Number.MAX_SAFE_INTEGER : argv.c) || 1;
 const interval = argv.i || 0;
 
 if (argv.headers) {
-  copts.headers = true;
+  opts.headers = true;
 }
 
 if (argv.debug) {
-  copts.debug = true;
+  opts.debug = true;
 }
 
 if (argv.h || argv.help || !subject) {
@@ -45,7 +45,15 @@ if (argv.h || argv.help || !subject) {
 }
 
 (async () => {
-  const nc = await connect(copts);
+  let nc;
+  try {
+    nc = await connect(opts);
+  } catch (err) {
+    console.log(`error connecting to nats: ${err.message}`);
+    return;
+  }
+  console.info(`connected ${nc.getServer()}`);
+
   nc.closed()
     .then((err) => {
       if (err) {

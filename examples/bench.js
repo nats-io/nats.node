@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { Nuid, connect, Empty } = require("../nats");
+const { Nuid, connect, Empty } = require("../");
+const { Performance } = require("./util");
 
 const nuid = new Nuid();
 
 const defaults = {
   s: "127.0.0.1:4222",
-  c: 1000000,
+  c: 100000,
   p: 0,
   subject: nuid.next(),
 };

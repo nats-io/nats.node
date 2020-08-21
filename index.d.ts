@@ -35,7 +35,7 @@ export declare enum Events {
   DISCONNECT = "disconnect",
   RECONNECT = "reconnect",
   UPDATE = "update",
-  LDM = "ldm"
+  LDM = "ldm",
 }
 
 export interface Status {

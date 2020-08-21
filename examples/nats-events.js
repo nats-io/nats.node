@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { connect } = require("../nats");
+const { connect } = require("../");
 
 const argv = parse(
   process.argv.slice(2),
@@ -18,9 +18,16 @@ const argv = parse(
 const opts = { servers: argv.s };
 
 (async () => {
-  const nc = await connect(opts);
+  let nc;
+  try {
+    nc = await connect(opts);
+  } catch (err) {
+    console.log(`error connecting to nats: ${err.message}`);
+    return;
+  }
+  console.info(`connected ${nc.getServer()}`);
+
   (async () => {
-    console.info(`connected ${nc.getServer()}`);
     for await (const s of nc.status()) {
       console.info(`${s.type}: ${JSON.stringify(s.data)}`);
     }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { connect, StringCodec } = require("../nats");
+const { connect, StringCodec, headers } = require("../");
 const { delay } = require("./util");
 
 const argv = parse(
@@ -40,7 +40,7 @@ if (argv.debug) {
 
 if (argv.h || argv.help || !subject) {
   console.log(
-    "Usage: nats-pub [-s server] [-c <count>=1] [-t <timeout>=1000] [-i <interval>=0] [--headers] subject [msg]",
+    "Usage: nats-pub [-s server] [-c <count>=1] [-t <timeout>=1000] [-i <interval>=0] [--headers='k=v;k2=v2' subject [msg]",
   );
   console.log("to request forever, specify -c=-1 or --count=-1");
   process.exit(1);
@@ -49,7 +49,14 @@ if (argv.h || argv.help || !subject) {
 const sc = StringCodec();
 
 (async () => {
-  const nc = await connect(opts);
+  let nc;
+  try {
+    nc = await connect(opts);
+  } catch (err) {
+    console.log(`error connecting to nats: ${err.message}`);
+    return;
+  }
+  console.info(`connected ${nc.getServer()}`);
   nc.closed()
     .then((err) => {
       if (err) {
@@ -57,8 +64,20 @@ const sc = StringCodec();
       }
     });
 
+  const hdrs = argv.headers ? headers() : undefined;
+  if (hdrs) {
+    argv.headers.split(";").map((l) => {
+      const [k, v] = l.split("=");
+      hdrs.append(k, v);
+    });
+  }
+
   for (let i = 1; i <= count; i++) {
-    await nc.request(subject, sc.encode(payload), { timeout: argv.t })
+    await nc.request(
+      subject,
+      sc.encode(payload),
+      { timeout: argv.t, headers: hdrs },
+    )
       .then((m) => {
         console.log(`[${i}]: ${sc.decode(m.data)}`);
         if (argv.headers && m.headers) {
