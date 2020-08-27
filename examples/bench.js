@@ -13,7 +13,7 @@ const defaults = {
   json: false,
   csv: false,
   csvheader: false,
-  pendingLimit: 1024*32
+  pending: 1024*32
 };
 
 const argv = parse(
@@ -31,7 +31,8 @@ const argv = parse(
       "subject",
     ],
     boolean: [
-      "async",
+      "asyncRequests",
+      "callbacks",
       "json",
       "csv",
       "csvheader",
@@ -41,7 +42,7 @@ const argv = parse(
 
 if (argv.h || argv.help || (!argv.sub && !argv.pub && !argv.req)) {
   console.log(
-    "usage: bench.ts [--json] [--csv] [--csvheader] [--iterations <#loop: 1>] [--pub] [--sub] [--req (--async)] [--count messages:1M] [--payload <#bytes>=128] [--server server] [--subject <subj>]\n",
+    "usage: bench.ts [--json] [--callbacks] [--csv] [--csvheader] [--pub] [--sub] [--req (--asyncRequests)] [--count <#messages>=100000] [--payload <#bytes>=128] [--iterations <#loop>=1>] [--server server] [--subject <subj>]\n",
   );
   process.exit(0);
 }
@@ -54,11 +55,12 @@ const metrics = [];
 
 (async () => {
   for (let i = 0; i < iters; i++) {
-    const nc = await connect({ servers: server, pendingLimit: argv.pendingLimit });
+    const nc = await connect({ servers: server, debug: argv.debug, pending: argv.pending });
     const opts = {
       msgs: count,
       size: bytes,
-      async: argv.async,
+      asyncRequests: argv.asyncRequests,
+      callbacks: argv.callbacks,
       pub: argv.pub,
       sub: argv.sub,
       req: argv.req,
