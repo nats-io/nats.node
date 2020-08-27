@@ -231,20 +231,28 @@ export class NodeTransport implements Transport {
   }
 
   async *iterate(): AsyncIterableIterator<Uint8Array> {
+    const debug = this.options.debug;
     while (true) {
-      await this.signal;
-      while (this.yields.length > 0) {
-        const frame = this.yields.shift();
-        if (frame) {
-          if (this.options.debug) {
-            console.info(`> ${render(frame)}`);
-          }
-          yield frame;
-        }
+      if (this.yields.length === 0) {
+        await this.signal;
       }
+      const yields = this.yields;
+      this.yields = [];
+
+      for (let i = 0; i < yields.length; i++) {
+        if (debug) {
+          console.info(`> ${render(yields[i])}`);
+        }
+        yield yields[i];
+      }
+      // yielding could have paused and microtask
+      // could have added messages. Prevent allocations
+      // if possible
       if (this.done) {
         break;
-      } else {
+      } else if (this.yields.length === 0) {
+        yields.length = 0;
+        this.yields = yields;
         this.signal = deferred();
       }
     }
