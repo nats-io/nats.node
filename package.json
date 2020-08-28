@@ -67,7 +67,7 @@
   },
   "typings": "./index.d.ts",
   "ava": {
-    "failFast": true,
+    "failFast": false,
     "files": [
       "./test/**/*.js",
       "!./test/helpers/**/*.js"
