@@ -460,6 +460,40 @@ const { connect, ErrorCode } = require("nats");
 })();
 ```
 
+### Async vs. Callbacks
+
+Previous versions of the JavaScript NATS clients specified callbacks
+for message processing. This required complex handling logic when a
+service required coordination of operations. Callbacks are an 
+inversion of control anti-pattern.
+
+The async APIs trivialize complex coordination and makes your code
+easier to maintain. With that said, there are some implications:
+
+- Async subscriptions buffer inbound messages.
+- Subscription processing delays until the runtime executes the promise related 
+microtasks at the end of an event loop.
+
+In a traditional callback based library, I/O happens after all data yielded by 
+a read in the current event loop completes processing. This means that
+callbacks are invoked as part of processing. With async, processing is queued
+up in a microtask queue. At the end of the event loop, the runtime processes 
+the microtasks, which in turn resumes your functions. As expected, this 
+increases latency, but also provides additional liveliness.
+
+To reduce async latency, the NATS client allows processing a subscription 
+in the same event loop that dispatched the message. Simply specify a `callback`
+in the subscription options. The signature for a callback is 
+`(err: (Error|null), msg: Msg) => void`. When specified, the subscription
+iterator will never yield a message.
+
+Note that `callback` likely shouldn't even be documented,  as likely it 
+is a workaround to an underlying application problem where you should be 
+considering a different strategy to horizontally scale your application, 
+or reduce pressure on the clients, such as using queue workers, 
+or more explicitly targeting messages.
+
+
 ### Lifecycle/Informational Events
 Clients can get notification on various event types:
 - `Events.DISCONNECT`
