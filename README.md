@@ -1,4 +1,4 @@
-# NATS.deno - A [NATS](http://nats.io) client for [Node.Js](https://nodejs.org/en/)
+# NATS.js - A [NATS](http://nats.io) client for [Node.Js](https://nodejs.org/en/)
 
 
 A Node.js client for the [NATS messaging system](https://nats.io).
