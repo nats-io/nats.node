@@ -19,7 +19,7 @@ const tlsConfig = {
 };
 
 test("tls - reconnect via tls by ip", async (t) => {
-  if(process.env.CI) {
+  if (process.env.CI) {
     t.log("skipped test");
     t.pass();
     return;

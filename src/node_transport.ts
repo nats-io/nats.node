@@ -136,7 +136,7 @@ export class NodeTransport implements Transport {
     try {
       fn = resolve(fn);
       if (!existsSync(fn)) {
-        throw new Error(`${fn} doesn't exist`);
+        d.reject(new Error(`${fn} doesn't exist`));
       }
       readFile(fn, (err, data) => {
         if (err) {
