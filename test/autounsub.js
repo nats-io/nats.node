@@ -200,7 +200,7 @@ test("autounsub - check cancelled request leaks", async (t) => {
   // the rejection should be timeout
   const lock = Lock();
   rp.catch((rej) => {
-    t.is(rej?.code, ErrorCode.TIMEOUT);
+    t.is(rej.code, ErrorCode.TIMEOUT);
     lock.unlock();
   });
 

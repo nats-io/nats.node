@@ -14,7 +14,11 @@ import {
 import { ConnectionOptions } from "./nats-base-client";
 import { Socket, createConnection } from "net";
 import { extend } from "../nats-base-client/util";
-import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
+import {
+  connect as tlsConnect,
+  TlsOptions,
+  TLSSocket,
+} from "tls";
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
@@ -199,6 +203,11 @@ export class NodeTransport implements Transport {
       tlsSocket.on("error", (err) => {
         tlsError = err;
       });
+      tlsSocket.on("secureConnect", () => {
+        if (!tlsSocket.authorized) {
+          throw tlsSocket.authorizationError;
+        }
+      });
       tlsSocket.on("close", () => {
         d.reject(tlsError);
         tlsSocket.removeAllListeners();
@@ -219,8 +228,14 @@ export class NodeTransport implements Transport {
     this.socket.on("error", (err) => {
       connError = err;
     });
+
+    this.socket.on("end", () => {
+      this.socket.write(new Uint8Array(0), () => {
+        this.socket.end();
+      });
+    });
+
     this.socket.on("close", () => {
-      // if socket notified a close, any write will fail
       this.socket = undefined;
       this._closed(connError, false);
     });

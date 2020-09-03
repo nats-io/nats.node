@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 const path = require("path");
+const http = require("http");
 const { check } = require("./delay");
 const {
   deferred,
@@ -25,7 +26,7 @@ const { spawn } = require("child_process");
 
 const fs = require("fs");
 const os = require("os");
-const net = require("net");
+const { Lock } = require("./lock");
 
 const ServerSignals = new Map();
 ServerSignals.set("KILL", "SIGKILL");
@@ -63,7 +64,7 @@ function parsePorts(ports) {
 
   const cluster = ports.cluster.map((v) => {
     if (v) {
-      return parseHostport(v)?.port;
+      return parseHostport(v).port;
     }
     return undefined;
   });
@@ -71,7 +72,7 @@ function parsePorts(ports) {
 
   const monitoring = ports.monitoring.map((v) => {
     if (v) {
-      return parseHostport(v)?.port;
+      return parseHostport(v).port;
     }
     return undefined;
   });
@@ -79,7 +80,7 @@ function parsePorts(ports) {
 
   const websocket = ports.websocket.map((v) => {
     if (v) {
-      return parseHostport(v)?.port;
+      return parseHostport(v).port;
     }
     return undefined;
   });
@@ -89,19 +90,6 @@ function parsePorts(ports) {
 }
 
 exports.NatsServer = class NatsServer {
-  hostname;
-  clusterName;
-  port;
-  cluster;
-  monitoring;
-  websocket;
-  process;
-  logBuffer = [];
-  stopped = false;
-  done;
-  debug;
-  config;
-
   constructor(opts = {
     info: {
       hostname: "",
@@ -118,13 +106,16 @@ exports.NatsServer = class NatsServer {
     const { info, process, debug, config } = opts;
     this.hostname = info.hostname;
     this.port = info.port;
+    this.clusterName = info.clusterName;
     this.cluster = info.cluster;
     this.monitoring = info.monitoring;
     this.websocket = info.websocket;
-    this.clusterName = info.clusterName;
     this.process = process;
     this.done = deferred();
     this.config = config;
+    this.logBuffer = [];
+    this.stopped = false;
+    this.debug = debug;
 
     this.process.stderr.on("data", (data) => {
       data = data.toString();
@@ -174,13 +165,73 @@ exports.NatsServer = class NatsServer {
 
   async varz() {
     if (!this.monitoring) {
-      return Promise.reject(new Error("server is not monitoring"));
+      return Promise.reject(new Error(`server is not monitoring`));
     }
-    const resp = await fetch(`http://127.0.0.1:${this.monitoring}/varz`);
-    return await resp.json();
+    return this.fetch(`http://127.0.0.1:${this.monitoring}/varz`, true);
   }
 
-  static async cluster(
+  waitClusterLen(len, maxWait = 5000) {
+    const lock = Lock(1, maxWait);
+    const interval = setInterval(async () => {
+      const vz = await this.varz();
+      if (vz.connect_urls.length === len) {
+        clearInterval(interval);
+        if (this.debug) {
+          this.debug.log(`[${this.process.pid}] - cluster formed`);
+        }
+        lock.unlock();
+      }
+    }, 250);
+    lock.catch(() => {
+      clearInterval(interval);
+      if (this.debug) {
+        this.debug.log(`[${this.process.pid}] - failed to form cluster`);
+      }
+    });
+    return lock;
+  }
+
+  async fetch(u, json = false) {
+    const d = deferred();
+    let data = "";
+    if (this.debug) {
+      this.debug.log(`${this.process.pid}] - fetching ${u}`);
+    }
+    http.get(u, (res) => {
+      const { statusCode } = res;
+      if (statusCode !== 200) {
+        d.reject(new Error(`${statusCode}: ${u}`));
+      }
+      res.on("error", (err) => {
+        if (this.debug) {
+          this.debug.log(
+            `${this.process.pid}] error connecting: ${u}: ${err.message}`,
+          );
+        }
+        d.reject(err);
+      });
+      res.on("data", (s) => {
+        data += s;
+      });
+      res.on("end", () => {
+        if (json) {
+          try {
+            const o = JSON.parse(data);
+            d.resolve(o);
+          } catch (err) {
+            return d.reject(err);
+          }
+        } else {
+          d.resolve(data);
+        }
+      });
+    });
+
+    await d;
+    return d;
+  }
+
+  static async startCluster(
     count = 2,
     conf = {},
     debug = false,
@@ -199,7 +250,17 @@ exports.NatsServer = class NatsServer {
       cluster.push(s);
     }
 
-    return cluster;
+    const waits = cluster.map((s) => {
+      return s.waitClusterLen(cluster.length);
+    });
+
+    try {
+      await Promise.all(waits);
+      return cluster;
+    } catch (err) {
+      await NatsServer.stopAll(cluster);
+      throw new Error(`error waiting for cluster to form: ${err.message}`);
+    }
   }
 
   static async start(conf = {}, debug = undefined) {
@@ -234,6 +295,9 @@ exports.NatsServer = class NatsServer {
         const pi = await check(
           () => {
             try {
+              if (debug) {
+                debug.log(portsFile);
+              }
               const data = fs.readFileSync(portsFile);
               const txt = new TextDecoder().decode(data);
               const d = JSON.parse(txt);
@@ -252,34 +316,25 @@ exports.NatsServer = class NatsServer {
         }
 
         const ports = parsePorts(pi);
-        if (conf.cluster?.name) {
+        if (conf.cluster && conf.cluster.name) {
           ports.clusterName = conf.cluster.name;
         }
+
+        const ns = new NatsServer(
+          { info: ports, process: srv, debug: debug, config: conf },
+        );
+
         await check(
           async () => {
-            const d = deferred();
-            try {
-              if (debug) {
-                debug.log(`[${srv.pid}] - attempting to connect`);
-              }
-              const tc = net.createConnection(ports.port, ports.hostname);
-              tc.on("connect", () => {
-                tc.destroy();
-                d.resolve(ports.port);
-              });
-            } catch (err) {
-              return d.reject(err);
+            if (debug) {
+              debug.log(`[${srv.pid}] - attempting to connect`);
             }
-            return d;
+            return await ns.varz();
           },
           5000,
-          { name: "wait for server" },
+          { name: "wait for server", interval: 250 },
         );
-        resolve(
-          new NatsServer(
-            { info: ports, process: srv, debug: debug, config: conf },
-          ),
-        );
+        resolve(ns);
       } catch (err) {
         if (srv) {
           try {
@@ -332,7 +387,7 @@ exports.NatsServer = class NatsServer {
         if (data) {
           const urls = data.connect_urls;
           const others = urls.map((s) => {
-            return parseHostport(s)?.port;
+            return parseHostport(s).port;
           });
 
           if (others.every((v) => ports.includes(v))) {
