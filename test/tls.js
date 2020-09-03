@@ -92,7 +92,7 @@ test("tls - client auth", async (t) => {
   t.pass();
 });
 
-async function tlsInvalidCertMacro(t, conf, tlsCode) {
+async function tlsInvalidCertMacro(t, conf, tlsCode, re) {
   t.plan(3);
   const ns = await NatsServer.start(tlsConfig);
   try {
@@ -101,22 +101,34 @@ async function tlsInvalidCertMacro(t, conf, tlsCode) {
   } catch (err) {
     t.is(err.code, ErrorCode.TLS);
     t.truthy(err.chainedError);
-    t.is(err.chainedError.code, tlsCode);
+    t.truthy(re.exec(err.chainedError.message));
   }
   await ns.stop();
 }
 
-test("tls - invalid cert", tlsInvalidCertMacro, {
-  keyFile: resolve(join(dir, "./test/certs/client.key")),
-  certFile: resolve(join(dir, "./test/certs/ca.crt")),
-  caFile: resolve(join(dir, "./test/certs/localhost.crt")),
-}, "ERR_OSSL_X509_KEY_VALUES_MISMATCH");
+test(
+  "tls - invalid cert",
+  tlsInvalidCertMacro,
+  {
+    keyFile: resolve(join(dir, "./test/certs/client.key")),
+    certFile: resolve(join(dir, "./test/certs/ca.crt")),
+    caFile: resolve(join(dir, "./test/certs/localhost.crt")),
+  },
+  "ERR_OSSL_X509_KEY_VALUES_MISMATCH",
+  /key values mismatch/i,
+);
 
-test("tls - invalid pem no start", tlsInvalidCertMacro, {
-  keyFile: resolve(join(dir, "./test/certs/client.crt")),
-  certFile: resolve(join(dir, "./test/certs/client.key")),
-  caFile: resolve(join(dir, "./test/certs/ca.crt")),
-}, "ERR_OSSL_PEM_NO_START_LINE");
+test(
+  "tls - invalid pem no start",
+  tlsInvalidCertMacro,
+  {
+    keyFile: resolve(join(dir, "./test/certs/client.crt")),
+    certFile: resolve(join(dir, "./test/certs/client.key")),
+    caFile: resolve(join(dir, "./test/certs/ca.crt")),
+  },
+  "ERR_OSSL_PEM_NO_START_LINE",
+  /no start line/i,
+);
 
 async function tlsInvalidArgPathMacro(t, conf, arg) {
   t.plan(2);

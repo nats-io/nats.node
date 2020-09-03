@@ -14,6 +14,9 @@
  *
  */
 const test = require("ava");
+const {
+  connect,
+} = require("../");
 const { NatsServer } = require("./helpers/launcher");
 const {
   createInbox,
@@ -23,9 +26,6 @@ const {
   DebugEvents,
 } = require("../lib/nats-base-client/internal_mod");
 const { Lock } = require("./helpers/lock");
-const {
-  connect,
-} = require("../");
 
 test("reconnect - should receive when some servers are invalid", async (t) => {
   const lock = Lock(1);

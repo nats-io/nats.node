@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 const test = require("ava");
+// install globals
+require("../");
 const { deferred, delay, DebugEvents, Heartbeat, Status } = require(
   "../lib/nats-base-client/internal_mod",
 );

@@ -14,10 +14,10 @@
  */
 
 const test = require("ava");
-const { NatsServer } = require("./helpers/launcher");
 const {
   createInbox,
 } = require("../");
+const { NatsServer } = require("./helpers/launcher");
 const { connect } = require("../");
 const { DataBuffer } = require("../lib/nats-base-client/internal_mod");
 

@@ -13,19 +13,13 @@
  * limitations under the License.
  */
 const test = require("ava");
+// install globals
+require("../lib/src/mod");
 
 const {
   Kind,
   Parser,
-  ParserEvent,
   State,
-  Dispatcher,
-  headers,
-  MsgHdrsImpl,
-  Buffer,
-  Empty,
-  Msg,
-  MsgImpl,
 } = require("../lib/nats-base-client/internal_mod");
 
 let te = new TextEncoder();
@@ -36,13 +30,15 @@ class NoopDispatcher {
 }
 
 class TestDispatcher {
-  count = 0;
-  pings = 0;
-  pongs = 0;
-  ok = 0;
-  errs = [];
-  infos = [];
-  msgs = [];
+  constructor() {
+    this.count = 0;
+    this.pings = 0;
+    this.pongs = 0;
+    this.ok = 0;
+    this.errs = [];
+    this.infos = [];
+    this.msgs = [];
+  }
 
   push(a) {
     this.count++;

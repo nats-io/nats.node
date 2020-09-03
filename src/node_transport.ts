@@ -22,7 +22,7 @@ import {
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
-const VERSION = "2.0.0-201";
+const VERSION = "2.0.0-202";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
