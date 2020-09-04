@@ -4,7 +4,8 @@
     "module": "CommonJS",
     "outDir": "lib/",
     "moduleResolution": "node",
-    "sourceMap": true
+    "sourceMap": true,
+    "declaration": true
   },
   "include": [
     "src"
