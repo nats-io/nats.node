@@ -124,7 +124,7 @@ export interface Msg {
   reply?: string;
   data: Uint8Array;
   headers?: MsgHdrs;
-  respond(data?: Uint8Array, headers?: MsgHdrs): boolean;
+  respond(data?: Uint8Array, opts?: PublishOptions): boolean;
 }
 
 export interface MsgHdrs extends Iterable<[string, string[]]> {

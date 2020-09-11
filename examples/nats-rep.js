@@ -65,7 +65,7 @@ if (argv.h || argv.help || !subject || (argv._[1] && argv.q)) {
       hdrs.set("sequence", sub.getProcessed().toString());
       hdrs.set("time", Date.now().toString());
     }
-    if (m.respond(argv.e ? m.data : sc.encode(payload), hdrs)) {
+    if (m.respond(argv.e ? m.data : sc.encode(payload), {headers: hdrs})) {
       console.log(`[${sub.getProcessed()}]: ${m.reply}: ${m.data}`);
     } else {
       console.log(`[${sub.getProcessed()}]: ignored - no reply subject`);
