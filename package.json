@@ -35,7 +35,7 @@
     "CODE-OF-CONDUCT.md",
     "LICENSE",
     "MAINTAINERS.md",
-    "nats.d.ts"
+    "index.d.ts"
   ],
   "scripts": {
     "build": "tsc",
