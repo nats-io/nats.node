@@ -22,6 +22,9 @@ const {
 const { resolve, join } = require("path");
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
+const { buildAuthenticator } = require("../lib/nats-base-client/authenticator");
+const { extend } = require("../lib/nats-base-client/util");
+const { Connect } = require("../lib/nats-base-client/protocol");
 
 const dir = process.cwd();
 const tlsConfig = {
@@ -104,6 +107,27 @@ test("tls - client auth", async (t) => {
   await nc.close();
   await ns.stop();
   t.pass();
+});
+
+test("tls - shouldn't leak tls config", (t) => {
+  const tlsOptions = {
+    keyFile: resolve(join(dir, "./test/certs/client.key")),
+    certFile: resolve(join(dir, "./test/certs/client.crt")),
+    caFile: resolve(join(dir, "./test/certs/ca.crt")),
+  };
+
+  let opts = { tls: tlsOptions, cert: "another" };
+  const auth = buildAuthenticator(opts);
+  opts = extend(opts, auth);
+
+  const c = new Connect({ version: "1.2.3", lang: "test" }, opts);
+  const cc = JSON.parse(JSON.stringify(c));
+  t.is(cc.tls_required, true);
+  t.is(cc.cert, undefined);
+  t.is(cc.keyFile, undefined);
+  t.is(cc.certFile, undefined);
+  t.is(cc.caFile, undefined);
+  t.is(cc.tls, undefined);
 });
 
 async function tlsInvalidCertMacro(t, conf, tlsCode, re) {
