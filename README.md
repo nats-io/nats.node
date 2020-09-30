@@ -23,7 +23,7 @@ npm install nats@next
 
 > :warning: We have a preview for nats.js 2.0 available. The preview is currently hosted in the [nd branch](https://github.com/nats-io/nats.js/tree/nd).
 >
-> NATS.js 2.0 is a complete re-write of the client and uses a shared client implementation supporting all our JavaScript environments (Node, Browser, Node.js). This means that code that you write for one platform will run on the other platforms with minimal changes; such as changing `require` statements for `imports`, and server specification in the case the websocket (browser) compatible library.
+> NATS.js 2.0 is a complete re-write of the client and uses a shared client implementation supporting all our JavaScript environments (Node.js, Browser, Deno). This means that code that you write for one platform will run on the other platforms with minimal changes; such as changing `require` statements for `imports`, and server specification in the case the websocket (browser) compatible library.
 >
 > NATS.js 2.0 changes existing APIs, the library embraces `async`/`await`, and while porting is easy, it will require careful changes on existing code bases. A description of the changes and migration can be found [here](https://github.com/nats-io/nats.js/blob/nd/migration.md).
 >
