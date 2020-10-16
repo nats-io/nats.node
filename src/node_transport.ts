@@ -36,7 +36,7 @@ import {
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
-const VERSION = "2.0.0-209";
+const VERSION = "2.0.0-210";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
