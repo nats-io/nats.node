@@ -36,7 +36,7 @@ import {
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
-const VERSION = "2.0.0-210";
+const VERSION = "2.0.0-211";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -48,6 +48,7 @@ export class NodeTransport implements Transport {
   closedNotification: Deferred<void | Error> = deferred();
   options!: ConnectionOptions;
   connected = false;
+  tlsName = "";
   done = false;
 
   constructor() {
@@ -56,9 +57,10 @@ export class NodeTransport implements Transport {
   }
 
   async connect(
-    hp: { hostname: string; port: number },
+    hp: { hostname: string; port: number, tlsName: string },
     options: ConnectionOptions,
   ): Promise<void> {
+    this.tlsName = hp.tlsName;
     this.options = options;
     try {
       this.socket = await this.dial(hp);
@@ -199,7 +201,7 @@ export class NodeTransport implements Transport {
 
   async startTLS(): Promise<TLSSocket> {
     let tlsError: Error;
-    let tlsOpts = { socket: this.socket };
+    let tlsOpts = { socket: this.socket, servername: this.tlsName };
     if (typeof this.options.tls === "object") {
       try {
         const certOpts = await this.loadClientCerts() || {};
