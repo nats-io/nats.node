@@ -13,26 +13,22 @@
  * limitations under the License.
  */
 import {
-  render,
-  Transport,
+  checkOptions,
+  DataBuffer,
   Deferred,
   deferred,
-  DataBuffer,
+  ErrorCode,
   extractProtocolMessage,
   INFO,
-  checkOptions,
-  ErrorCode,
   NatsError,
+  render,
+  Transport,
 } from "./nats-base-client";
 
 import { ConnectionOptions } from "./nats-base-client";
-import { Socket, createConnection } from "net";
+import { createConnection, Socket } from "net";
 import { extend } from "../nats-base-client/util";
-import {
-  connect as tlsConnect,
-  TlsOptions,
-  TLSSocket,
-} from "tls";
+import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
@@ -57,7 +53,7 @@ export class NodeTransport implements Transport {
   }
 
   async connect(
-    hp: { hostname: string; port: number, tlsName: string },
+    hp: { hostname: string; port: number; tlsName: string },
     options: ConnectionOptions,
   ): Promise<void> {
     this.tlsName = hp.tlsName;

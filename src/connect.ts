@@ -14,11 +14,11 @@
  */
 import { NodeTransport } from "./node_transport";
 import {
-  NatsConnection,
   ConnectionOptions,
+  NatsConnection,
+  NatsConnectionImpl,
   setTransportFactory,
   Transport,
-  NatsConnectionImpl,
 } from "./nats-base-client";
 
 export function connect(opts: ConnectionOptions = {}): Promise<NatsConnection> {
