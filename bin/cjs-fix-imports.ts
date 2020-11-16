@@ -1,9 +1,9 @@
 import { parse } from "https://deno.land/std@0.61.0/flags/mod.ts";
 import {
-  join,
-  resolve,
   basename,
   extname,
+  join,
+  resolve,
 } from "https://deno.land/std@0.61.0/path/mod.ts";
 
 const argv = parse(

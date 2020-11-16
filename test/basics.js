@@ -629,3 +629,26 @@ test("basics - disconnect reconnects", async (t) => {
   await nc.close();
   t.pass();
 });
+
+test("basics - drain connection publisher", async (t) => {
+  const nc = await connect({ servers: u });
+  const nc2 = await connect({ servers: u });
+
+  const subj = createInbox();
+
+  const lock = new Lock(5);
+  nc2.subscribe(subj, {
+    callback: (err, m) => {
+      lock.unlock();
+    },
+  });
+  await nc2.flush();
+
+  for (let i = 0; i < 5; i++) {
+    nc.publish(subj);
+  }
+  await nc.drain();
+  await lock;
+  await nc.close();
+  t.pass();
+});
