@@ -62,18 +62,13 @@ export interface ConnectionOptions {
   user?: string;
   verbose?: boolean;
   waitOnFirstConnect?: boolean;
+  ignoreClusterUpdates?: boolean;
 }
 
 export interface TlsOptions {
   certFile?: string;
   caFile?: string;
   keyFile?: string;
-}
-
-declare type Auth = NoAuth | TokenAuth | UserPass | NKeyAuth | JwtAuth;
-
-export interface Authenticator {
-  (nonce?: string): Auth;
 }
 
 export declare enum Events {
@@ -111,6 +106,8 @@ export interface SubscriptionOptions {
 export interface RequestOptions {
   timeout: number;
   headers?: MsgHdrs;
+  noMux?: boolean;
+  reply?: string;
 }
 
 export interface PublishOptions {
@@ -128,6 +125,9 @@ export interface Msg {
 }
 
 export interface MsgHdrs extends Iterable<[string, string[]]> {
+  hasError: boolean;
+  status: string;
+  code?: number;
   get(k: string): string;
   set(k: string, v: string): void;
   append(k: string, v: string): void;
@@ -142,27 +142,28 @@ export interface ServersChanged {
   readonly deleted: string[];
 }
 
-export declare type NoAuth = void;
+export interface Authenticator {
+  (nonce?: string): Auth;
+}
 
+export declare type NoAuth = void;
 export interface TokenAuth {
   auth_token: string;
 }
-
 export interface UserPass {
   user: string;
   pass?: string;
 }
-
 export interface NKeyAuth {
   nkey: string;
   sig: string;
 }
-
 export interface JwtAuth {
   jwt: string;
   nkey?: string;
   sig?: string;
 }
+declare type Auth = NoAuth | TokenAuth | UserPass | NKeyAuth | JwtAuth;
 
 export declare function noAuthFn(): Authenticator;
 
