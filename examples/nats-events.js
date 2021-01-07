@@ -15,7 +15,7 @@ const argv = parse(
   },
 );
 
-const opts = { servers: argv.s };
+const opts = { servers: argv.s, maxReconnectAttempts: -1 };
 
 (async () => {
   let nc;
@@ -27,9 +27,11 @@ const opts = { servers: argv.s };
   }
   console.info(`connected ${nc.getServer()}`);
 
+  let counter = 0;
   (async () => {
     for await (const s of nc.status()) {
-      console.info(`${s.type}: ${JSON.stringify(s.data)}`);
+      counter++
+      console.info(`${counter} ${s.type}: ${JSON.stringify(s.data)}`);
     }
   })().then();
 

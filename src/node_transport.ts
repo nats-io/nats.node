@@ -23,6 +23,7 @@ import {
   NatsError,
   render,
   Transport,
+  ServerInfo
 } from "./nats-base-client";
 
 import { ConnectionOptions } from "./nats-base-client";
@@ -32,7 +33,7 @@ import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
-const VERSION = "2.0.0-213";
+const VERSION = "2.0.0-215";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -61,14 +62,13 @@ export class NodeTransport implements Transport {
     try {
       this.socket = await this.dial(hp);
       const info = await this.peekInfo();
-      // @ts-ignore
-      const { tls_required } = info;
-      if (tls_required) {
+      const { tls_required: tlsRequired } = info;
+      if (tlsRequired) {
         this.socket = await this.startTLS();
       }
       checkOptions(info, options);
-      //@ts-ignore
-      if (tls_required && this.socket.encrypted !== true) {
+      //@ts-ignore: this is possibly a TlsSocket
+      if (tlsRequired && this.socket.encrypted !== true) {
         throw new NatsError("tls", ErrorCode.SERVER_OPTION_NA);
       }
 
@@ -78,10 +78,10 @@ export class NodeTransport implements Transport {
       return Promise.resolve();
     } catch (err) {
       const { code } = err;
-      err = code === "ECONNREFUSED"
+      const perr = code === "ECONNREFUSED"
         ? NatsError.errorForCode(ErrorCode.CONNECTION_REFUSED, err)
         : err;
-      return Promise.reject(err);
+      return Promise.reject(perr);
     }
   }
 
@@ -111,8 +111,8 @@ export class NodeTransport implements Transport {
     return this._closed(err, false);
   }
 
-  peekInfo(): Promise<object> {
-    const d = deferred<object>();
+  peekInfo(): Promise<ServerInfo> {
+    const d = deferred<ServerInfo>();
     let peekError: Error;
     this.socket.on("data", (frame) => {
       this.yields.push(frame);
@@ -168,7 +168,6 @@ export class NodeTransport implements Transport {
 
   async loadClientCerts(): Promise<TlsOptions | void> {
     const tlsOpts = {} as TlsOptions;
-    // @ts-ignore
     const { certFile, caFile, keyFile } = this.options.tls;
     try {
       if (certFile) {
@@ -310,7 +309,7 @@ export class NodeTransport implements Transport {
     return d;
   }
 
-  private async _closed(err?: Error, internal: boolean = true): Promise<void> {
+  private async _closed(err?: Error, internal = true): Promise<void> {
     // if this connection didn't succeed, then ignore it.
     if (!this.connected) return;
     if (this.done) return;
