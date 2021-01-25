@@ -22,18 +22,18 @@ import {
   INFO,
   NatsError,
   render,
+  ServerInfo,
   Transport,
-  ServerInfo
 } from "./nats-base-client";
 
-import { ConnectionOptions } from "./nats-base-client";
+import type { ConnectionOptions } from "./nats-base-client";
 import { createConnection, Socket } from "net";
 import { extend } from "../nats-base-client/util";
 import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
-const VERSION = "2.0.0-215";
+const VERSION = "2.0.0-216";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -62,11 +62,11 @@ export class NodeTransport implements Transport {
     try {
       this.socket = await this.dial(hp);
       const info = await this.peekInfo();
+      checkOptions(info, options);
       const { tls_required: tlsRequired } = info;
       if (tlsRequired) {
         this.socket = await this.startTLS();
       }
-      checkOptions(info, options);
       //@ts-ignore: this is possibly a TlsSocket
       if (tlsRequired && this.socket.encrypted !== true) {
         throw new NatsError("tls", ErrorCode.SERVER_OPTION_NA);
@@ -81,7 +81,10 @@ export class NodeTransport implements Transport {
       const perr = code === "ECONNREFUSED"
         ? NatsError.errorForCode(ErrorCode.CONNECTION_REFUSED, err)
         : err;
-      return Promise.reject(perr);
+      if (this.socket) {
+        this.socket.destroy()
+      }
+      throw perr
     }
   }
 

@@ -30,7 +30,7 @@ const opts = { servers: argv.s, maxReconnectAttempts: -1 };
   let counter = 0;
   (async () => {
     for await (const s of nc.status()) {
-      counter++
+      counter++;
       console.info(`${counter} ${s.type}: ${JSON.stringify(s.data)}`);
     }
   })().then();
