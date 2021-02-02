@@ -13,7 +13,7 @@ jobs:
   test:
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [15.x, 14.x, 12.x, 10.x]
 
     runs-on: ubuntu-latest
 
@@ -29,7 +29,7 @@ jobs:
       - name: Use Deno Version ${{ matrix.deno-version }}
         uses: denolib/setup-deno@master
         with:
-          deno-version: 1.2.2
+          deno-version: 1.7.1
       - name: Set NATS Server Version
         run: echo "NATS_VERSION=v2.1.7" >> $GITHUB_ENV
       - name: Get nats-server
