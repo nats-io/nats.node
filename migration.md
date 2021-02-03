@@ -1,17 +1,23 @@
 # NATS.js 2.0 API Changes
 
-V2 is a complete re-write of the client, making it reusable in all other supported JavaScript environments (Node, Browser, Node.js).
+V2 is a complete re-write of the client using a shared underlying client engine. The new API is 100% compatible across all our supported JavaScript environments; Code written for Node will work on Browser or Deno.
 
-The API is not only 100% compatible, but actually leveraging the same underlying client engine. This means that code you write, is portable to our other supported platforms.
-
-The new library is `async`/`await`.
+The new library is also `async` / `await`, while still supporting `callbacks` for subscription handling if desired.
 
 ## General Changes:
 
-- All API signatures are greatly simplified. Required arguments listed first. Optional arguments follow. In the case that the API takes two optional arguments, an empty value must be provided.
-- Callbacks have been eliminated. Instead subscriptions and notifications are async iterators.
-- Message payloads are always Uint8Arrays. Simple codecs are provided to encode/decode between strings and JSON.
+- All API signatures are greatly simplified, with required arguments listed first. Optional arguments follow. In the case that the API takes two optional arguments, an empty required.
+- Subscriptions and notifications are async iterators, but subscriptions can specify a `callback` if desired.
+- Message payloads are always Uint8Arrays. Simple `Codec`s are provided to encode/decode strings, JSON, or custom data.
     
+## Changes to Connect
+
+Previous versions of the `connect(url, opts)` function depended on notifications from an event listener, to know if the client connected, etc. The new version changes to `connect(opts: ConnectionOptions): Promise<NatsConnection>.
+
+If the connect resolves, you have a connection and you can use the client. Otherwise depending on the connection options, the connection will fail.
+
+Similarly, to detect that the connection closed, you had to register a handler. The new API simplifies handling a closed connection by waiting for the promise from `closed(): Promise<void|Error>`.
+
 
 ## Changes to `publish`
 
@@ -19,16 +25,16 @@ The new library is `async`/`await`.
 `publish(subject: string, msg?: any, reply?: string, callback?: Function):void`
 
 The new signature is:
-`publish(subject: string, data?: Uint8Array, opts?: PublishOptions)`
+`publish(subject: string, data?: Uint8Array, opts?: PublishOptions): void`
 
-The `PublishOptions` has the following interface: `{reply?: string, headers?: MsgHdrs}`
+The `PublishOptions` has the following interface: `{ reply?: string, headers?: MsgHdrs }`
 
 
 ## Changes to `subscribe`
 
 - Previous subscribe signature was: `subscribe(subject: string, opts: SubscribeOptions, callback: Function): number`
 
-- The new subscribe deprecates the handler into an option: `subscribe(subject: string, opts?: SubscriptionOptions): Subscription`
+- The new signature is `subscribe(subject: string, opts?: SubscriptionOptions): Subscription`
 
 `SubscriptionOptions` has the following interface:
 ```
@@ -40,27 +46,46 @@ The `PublishOptions` has the following interface: `{reply?: string, headers?: Ms
 }
 ```
 
-The returned `Subscription` is an object. Providing functionality to `drain()`, `unsubscribe()` and more.
-
+The returned `Subscription` is an object. Providing functionality to `drain()`, `unsubscribe()` and more:
+```
+{
+  unsubscribe(max?: number): void;
+  drain(): Promise<void>;
+  isDraining(): boolean;
+  isClosed(): boolean;
+  getSubject(): string;
+  getReceived(): number;
+  getProcessed(): number;
+  getPending(): number;
+  getID(): number;
+  getMax(): number | undefined;
+}
+```
 
 Most importantly, subscriptions are `AsyncIterable<Msg>` - to process your messages:
 ```
 for await(const m of sub) {
- // process the message. When the subscription
- // completes the loop ends.
+ // process the message. When the subscription completes the loop ends.
 }
 ```
 
-Messages have all the fields you expect:
+If you want to use callbacks you can specify them as a subscription option. The use of callbacks is discouraged.
 
-- `subject`
-- `reply`
-- `sid`
-- `headers`
-- `data`
-- `respond(data?:Uint8Array, headers?:MsgHeaders)`
+Messages have the following interface:
 
-Again, payloads are Uint8Arrays.
+```
+{
+  subject: string;
+  sid: number;
+  reply?: string;
+  data: Uint8Array;
+  headers?: MsgHdrs;
+  respond(data?: Uint8Array, opts?: PublishOptions): boolean;
+}
+```
+
+The respond method of the message returns true if the message had a reply subject.
+
 
 ## Changes to `request`
 - The previous request signature was: `request(subject: string, msg: any, options: RequestOptions, callback: Function): number;`
@@ -69,11 +94,13 @@ Again, payloads are Uint8Arrays.
 The `RequestOptions` interface has the following interface and defaults:
 ```
 {
-    timeout: 1000,
-    noMux: false
+    timeout: number; // defaults to `1000`
+    noMux: boolean; // defaults to `false`
+    headers?: MsgHeaders;
+    reply?: string
 }
 ```
-In all cases a request will either succeed and resolve to a message or fail with a timeout or some other error.
+A request will either succeed and resolve to a message or fail with a timeout or some other error. If specifying the connection options `headers` and `noResponder`, requests sent to subjects that have no interest will immediately fail with a `ErrorCode.NO_RESPONDER`.
    
 
 
@@ -84,7 +111,7 @@ All error codes are now exported under `ErrorCode`.
 ## Error Handling
 
 Previous versions of NATS.js typically emitted errors and had numerous handlers you needed to specify.
-The new version simply provides an async iterator `status()` which you can iterate to pull the latest notification.
+The new version provides an async iterator `status()`. You can iterate to pull the latest notification.
 The notifications have the interface: `{type: string, data?: string|ServersChanged}`. Available types are available under:
 `Events`, which has available properties for `DISCONNECT`, `RECONNECT`, `UPDATE`, and `LDM`.
 
@@ -105,8 +132,7 @@ export interface Codec<T> {
 }
 ```
 
-For StringCodec, encode coverts a string to UintArray and decodes an UintArray into a string. JSONCodec does the same
-between objects and Uint8Arrays.
+For StringCodec, encode coverts a string to UintArray and decodes an UintArray into a string. JSONCodec does the same between objects and Uint8Arrays.
 
 
 ## Changed Configuration Properties
@@ -138,3 +164,4 @@ between objects and Uint8Arrays.
 | `user`                  | string specifying the user name |
 | `verbose`               | If `true` the server will emit verbose responses. Only useful for developing the client | 
 | `waitOnFirstConnect`    | If `true` the client will keep attempting to connect if it has never connected |
+| `ignoreClusterUpdates`  | If `true` the client will ignore any cluster updates provided by the server. |
