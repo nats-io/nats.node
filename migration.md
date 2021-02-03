@@ -6,7 +6,7 @@ The new library is also `async` / `await`, while still supporting `callbacks` fo
 
 ## General Changes:
 
-- All API signatures are greatly simplified, with required arguments listed first. Optional arguments follow. In the case that the API takes two optional arguments, an empty required.
+- All API signatures are greatly simplified, with required arguments listed first. Optional arguments follow. In the case that the API takes two optional arguments, an empty value is required.
 - Subscriptions and notifications are async iterators, but subscriptions can specify a `callback` if desired.
 - Message payloads are always Uint8Arrays. Simple `Codec`s are provided to encode/decode strings, JSON, or custom data.
     
@@ -119,8 +119,8 @@ The notifications have the interface: `{type: string, data?: string|ServersChang
 
 ## Payloads
 
-Previous versions of nats.js created an encoded connection that required all messages to be either binary,
-strings, or JSON. Version 2, simplifies the API, by making all payloads Uint8Arrays. User code that is
+Previous versions of NATS.js created an encoded connection that required all messages to be either binary,
+strings, or JSON. Version 2 simplifies the API by making all payloads Uint8Arrays. User code that is
 interested in a different format, can simply encode/decode as necessary.
 
 The `StringCodec()` and `JSONCodec()` functions return an encoder interface:
