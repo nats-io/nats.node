@@ -11,13 +11,13 @@ A Node.js client for the [NATS messaging system](https://nats.io).
 
 # Installation
 
-** :warning: NATS.js v2 beta is a preview** you can get the current development version by:
+** :warning: NATS.js v2 is a release candidate** you can get the current version by:
 
 ```bash
-npm install nats@beta'
+npm install nats@rc'
 ```
 
-The nats.js v2 client is not API compatible with previous versions of nats.js.
+The nats.js **v2 client is not API compatible** with previous versions of nats.js.
 For a migration guide, please see [the migration guide](migration.md).
 
 ## Basics
@@ -693,7 +693,7 @@ initiate a new connection to a different server in the cluster.
 
 The `ERROR` event notifies you of async errors that couldn't be routed
 in a more precise way to your client. For example, permission errors for
-subscription or request will properly be reported by the subscription
+a subscription or request, will properly be reported by the subscription
 or request. However, permission errors on publish will be reported via
 the status mechanism.
 
