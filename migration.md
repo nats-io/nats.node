@@ -113,8 +113,11 @@ All error codes are now exported under `ErrorCode`.
 Previous versions of NATS.js typically emitted errors and had numerous handlers you needed to specify.
 The new version provides an async iterator `status()`. You can iterate to pull the latest notification.
 The notifications have the interface: `{type: string, data?: string|ServersChanged}`. Available types are available under:
-`Events`, which has available properties for `DISCONNECT`, `RECONNECT`, `UPDATE`, and `LDM`.
+`Events`, which has available properties for `DISCONNECT`, `RECONNECT`, `UPDATE`, `LDM` and `ERROR`.
 
+The `ERROR` event will notify any runtime error returned by the server that could not properly be dispatched
+to your client in a more direct way. For example, if there's a problem publishing to a subject because
+the client doesn't have permissions.
 
 
 ## Payloads
