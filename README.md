@@ -787,6 +787,7 @@ The following is the list of connection options and default values.
 ### TlsOptions
 
 | Option       | Default | Description
+|--------      |-------- |------------
 |  `caFile`    |         | CA certificate filepath
 |  `certFile`  |         | Client certificate file path.
 |  `keyFile`   |         | Client key file path .
