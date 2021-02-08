@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { connect, StringCodec, headers } = require("../");
+const { connect, StringCodec, headers, credsAuthenticator } = require("../");
 const { delay } = require("./util");
+const fs = require("fs");
 
 const argv = parse(
   process.argv.slice(2),
@@ -11,6 +12,7 @@ const argv = parse(
       "s": ["server"],
       "c": ["count"],
       "i": ["interval"],
+      "f": ["creds"],
     },
     default: {
       s: "127.0.0.1:4222",
@@ -18,7 +20,7 @@ const argv = parse(
       i: 0,
     },
     boolean: true,
-    string: ["server", "count", "interval", "headers"],
+    string: ["server", "count", "interval", "headers", "creds"],
   },
 );
 
@@ -36,9 +38,14 @@ if (argv.debug) {
   opts.debug = true;
 }
 
+if (argv.creds) {
+  const data = fs.readFileSync(argv.creds);
+  opts.authenticator = credsAuthenticator(data);
+}
+
 if (argv.h || argv.help || !subject) {
   console.log(
-    "Usage: nats-pub [-s server] [-c <count>=1] [-i <interval>=0] [--headers='k=v;k2=v2'] subject [msg]",
+    "Usage: nats-pub [-s server] [--creds=/path/file.creds] [-c <count>=1] [-i <interval>=0] [--headers='k=v;k2=v2'] subject [msg]",
   );
   console.log("to publish forever, specify -c=-1 or --count=-1");
   process.exit(1);

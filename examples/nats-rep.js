@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { connect, StringCodec, headers } = require("../");
+const { connect, StringCodec, headers, credsAuthenticator } = require("../");
+const fs = require("fs");
 
 const argv = parse(
   process.argv.slice(2),
@@ -10,13 +11,14 @@ const argv = parse(
       "s": ["server"],
       "q": ["queue"],
       "e": ["echo"],
+      "f": ["creds"],
     },
     default: {
       s: "127.0.0.1:4222",
       q: "",
     },
     boolean: ["echo", "headers", "debug"],
-    string: ["server", "queue"],
+    string: ["server", "queue", "creds"],
   },
 );
 
@@ -32,9 +34,14 @@ if (argv.debug) {
   opts.debug = true;
 }
 
+if (argv.creds) {
+  const data = fs.readFileSync(argv.creds);
+  opts.authenticator = credsAuthenticator(data);
+}
+
 if (argv.h || argv.help || !subject || (argv._[1] && argv.q)) {
   console.log(
-    "Usage: nats-rep [-s server] [-q queue] [--headers='k=v;k2=v2'] [-e echo_payload] subject [payload]",
+    "Usage: nats-rep [-s server] [--creds=/path/file.creds] [-q queue] [--headers='k=v;k2=v2'] [-e echo_payload] subject [payload]",
   );
   process.exit(1);
 }

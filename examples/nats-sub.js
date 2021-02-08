@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { connect, StringCodec } = require("../");
+const { connect, StringCodec, credsAuthenticator } = require("../");
+const fs = require("fs");
 
 const argv = parse(
   process.argv.slice(2),
@@ -9,13 +10,14 @@ const argv = parse(
     alias: {
       "s": ["server"],
       "q": ["queue"],
+      "f": ["creds"],
     },
     default: {
       s: "127.0.0.1:4222",
       q: "",
     },
     boolean: ["headers", "debug"],
-    string: ["server", "queue"],
+    string: ["server", "queue", "creds"],
   },
 );
 
@@ -26,12 +28,19 @@ if (argv.debug) {
   opts.debug = true;
 }
 
+if (argv.creds) {
+  const data = fs.readFileSync(argv.creds);
+  opts.authenticator = credsAuthenticator(data);
+}
+
 if (argv.headers) {
   opts.headers = true;
 }
 
 if (argv.h || argv.help || !subject) {
-  console.log("Usage: nats-sub [-s server] [-q queue] [--headers] subject");
+  console.log(
+    "Usage: nats-sub [-s server] [--creds=/path/file.creds] [-q queue] [--headers] subject",
+  );
   process.exit(1);
 }
 (async () => {
