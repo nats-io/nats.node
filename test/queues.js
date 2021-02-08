@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 The NATS Authors
+ * Copyright 2018-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,169 +12,84 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const test = require("ava");
+const { connect, createInbox } = require(
+  "../",
+);
 
-/* jslint node: true */
-'use strict'
+const u = "demo.nats.io:4222";
 
-const NATS = require('../')
-const nsc = require('./support/nats_server_control')
-const should = require('should')
-const after = require('mocha').after
-const before = require('mocha').before
-const describe = require('mocha').describe
-const it = require('mocha').it
+test("queues - deliver to single queue", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const subs = [];
+  for (let i = 0; i < 5; i++) {
+    const s = nc.subscribe(subj, { queue: "a" });
+    subs.push(s);
+  }
+  nc.publish(subj);
+  await nc.flush();
+  const received = subs.map((s) => s.getReceived());
+  const sum = received.reduce((p, c) => p + c);
+  t.is(sum, 1);
+  await nc.close();
+});
 
-describe('Queues', () => {
-  const PORT = 1425
-  let server
+test("queues - deliver to multiple queues", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
 
-  // Start up our own nats-server
-  before(done => {
-    server = nsc.startServer(PORT, done)
-  })
-
-  // Shutdown our server
-  after(done => {
-    nsc.stopServer(server, done)
-  })
-
-  it('should deliver a message to single member of a queue group', done => {
-    const nc = NATS.connect(PORT)
-    let received = 0
-    nc.subscribe('foo', {
-      queue: 'myqueue'
-    }, () => {
-      received += 1
-    })
-    nc.publish('foo', () => {
-      should.exists(received)
-      received.should.equal(1)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should deliver a message to only one member of a queue group', done => {
-    const nc = NATS.connect(PORT)
-    let received = 0
-    const cb = () => {
-      received += 1
-    }
+  const fn = (queue) => {
+    const subs = [];
     for (let i = 0; i < 5; i++) {
-      nc.subscribe('foo', {
-        queue: 'myqueue'
-      }, cb)
+      const s = nc.subscribe(subj, { queue: queue });
+      subs.push(s);
     }
-    nc.publish('foo', () => {
-      received.should.equal(1)
-      nc.close()
-      done()
-    })
-  })
+    return subs;
+  };
 
-  it('should allow queue subscribers and normal subscribers to work together', done => {
-    const nc = NATS.connect(PORT)
-    const expected = 4
-    let received = 0
-    const recv = () => {
-      received += 1
-      if (received === expected) {
-        nc.close()
-        done()
-      }
-    }
+  const subsa = fn("a");
+  const subsb = fn("b");
 
-    nc.subscribe('foo', {
-      queue: 'myqueue'
-    }, recv)
-    nc.subscribe('foo', recv)
-    nc.publish('foo')
-    nc.publish('foo')
-    nc.flush()
-  })
+  nc.publish(subj);
+  await nc.flush();
 
-  it('should spread messages out equally (given random)', done => {
-    /* jshint loopfunc: true */
-    const nc = NATS.connect(PORT)
-    const total = 5000
-    const numSubscribers = 10
-    const avg = total / numSubscribers
-    const allowedVariance = total * 0.05
-    const received = new Array(numSubscribers)
+  const mc = (subs) => {
+    const received = subs.map((s) => s.getReceived());
+    return received.reduce((p, c) => p + c);
+  };
 
-    for (var i = 0; i < numSubscribers; i++) {
-      received[i] = 0
-      nc.subscribe('foo.bar', {
-        queue: 'spreadtest'
-      }, ((index => () => {
-        received[index] += 1
-      })(i)))
-    }
+  t.is(mc(subsa), 1);
+  t.is(mc(subsb), 1);
+  await nc.close();
+});
 
-    for (i = 0; i < total; i++) {
-      nc.publish('foo.bar', 'ok')
-    }
+test("queues - queues and subs independent", async (t) => {
+  const nc = await connect({ servers: u });
+  const subj = createInbox();
+  const subs = [];
+  let queueCount = 0;
+  for (let i = 0; i < 5; i++) {
+    let s = nc.subscribe(subj, {
+      callback: () => {
+        queueCount++;
+      },
+      queue: "a",
+    });
+    subs.push(s);
+  }
 
-    nc.flush(() => {
-      for (let i = 0; i < numSubscribers; i++) {
-        Math.abs(received[i] - avg).should.be.below(allowedVariance)
-      }
-      nc.close()
-      done()
-    })
-  })
+  let count = 0;
+  subs.push(nc.subscribe(subj, {
+    callback: () => {
+      count++;
+    },
+  }));
+  await Promise.all(subs);
 
-  it('should deliver only one mesage to queue subscriber regardless of wildcards', done => {
-    const nc = NATS.connect(PORT)
-    let received = 0
-    nc.subscribe('foo.bar', {
-      queue: 'wcqueue'
-    }, () => {
-      received += 1
-    })
-    nc.subscribe('foo.*', {
-      queue: 'wcqueue'
-    }, () => {
-      received += 1
-    })
-    nc.subscribe('foo.>', {
-      queue: 'wcqueue'
-    }, () => {
-      received += 1
-    })
-    nc.publish('foo.bar', () => {
-      received.should.equal(1)
-      nc.close()
-      done()
-    })
-  })
-
-  it('should deliver to multiple queue groups', done => {
-    const nc = NATS.connect(PORT)
-    let received1 = 0
-    let received2 = 0
-    const num = 10
-
-    nc.subscribe('foo.bar', {
-      queue: 'r1'
-    }, () => {
-      received1 += 1
-    })
-    nc.subscribe('foo.bar', {
-      queue: 'r2'
-    }, () => {
-      received2 += 1
-    })
-
-    for (let i = 0; i < num; i++) {
-      nc.publish('foo.bar')
-    }
-
-    nc.flush(() => {
-      received1.should.equal(num)
-      received2.should.equal(num)
-      nc.close()
-      done()
-    })
-  })
-})
+  nc.publish(subj);
+  await nc.flush();
+  t.is(queueCount, 1);
+  t.is(count, 1);
+  await nc.close();
+});

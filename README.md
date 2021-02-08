@@ -1,549 +1,811 @@
-# NATS.js - Node.js Client
+# NATS.js - A [NATS](http://nats.io) client for [Node.Js](https://nodejs.org/en/)
 
-A [Node.js](http://nodejs.org/) client for the [NATS messaging system](https://nats.io).
 
-[![license](https://img.shields.io/github/license/nats-io/node-nats.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+A Node.js client for the [NATS messaging system](https://nats.io).
+
+[![License](https://img.shields.io/badge/Licence-Apache%202.0-blue.svg)](./LICENSE)
 ![NATS.js CI](https://github.com/nats-io/nats.js/workflows/NATS.js%20CI/badge.svg)
 [![npm](https://img.shields.io/npm/v/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dt/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dm/nats.svg)](https://www.npmjs.com/package/nats)
-[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
+# Installation
 
-## Installation
+** :warning: NATS.js v2 is a release candidate** you can get the current version by:
 
 ```bash
-npm install nats
-
-# to install current dev version:
-npm install nats@next
+npm install nats@rc'
 ```
 
-## NATS.js 2.0 Preview
+The nats.js **v2 client is not API compatible** with previous versions of nats.js.
+For a migration guide, please see [the migration guide](migration.md).
 
-> :warning: We have a preview for nats.js 2.0 available. The preview is currently hosted in the [nd branch](https://github.com/nats-io/nats.js/tree/nd).
->
-> NATS.js 2.0 is a complete re-write of the client and uses a shared client implementation supporting all our JavaScript environments (Node.js, Browser, Deno). This means that code that you write for one platform will run on the other platforms with minimal changes; such as changing `require` statements for `imports`, and server specification in the case the websocket (browser) compatible library.
->
-> NATS.js 2.0 changes existing APIs, the library embraces `async`/`await`, and while porting is easy, it will require careful changes on existing code bases. A description of the changes and migration can be found [here](https://github.com/nats-io/nats.js/blob/nd/migration.md).
->
-> To play with NATS.js 2.0, `npm install nats@beta`.
+## Basics
 
-## Basic Usage
 
-```javascript
-const NATS = require('nats')
-const nc = NATS.connect()
+### Connecting to a nats-server
 
-// Simple Publisher
-nc.publish('foo', 'Hello World!')
+To connect to a server you use the `connect()` function. It returns
+a connection that you can use to interact with the server. You can customize
+the behavior of the client by specifying many [`ConnectionOptions`](#Connection_Options).
 
-// Simple Subscriber
-nc.subscribe('foo', function (msg) {
-  console.log('Received a message: ' + msg)
-})
+By default, a connection will attempt a connection on`127.0.0.1:4222`.
+If the connection is dropped, the client will attempt to reconnect.
+You can customize the server you want to connect to by specifying `port`
+(for local connections), or full host port on the `servers` option.
+Note that the `servers` option can be a single hostport (a string) or
+an array of hostports.
 
-// Unsubscribing
-const sid = nc.subscribe('foo', function (msg) {})
-nc.unsubscribe(sid)
-
-// Subscription/Request callbacks are given multiple arguments:
-// - msg is the payload for the message
-// - reply is an optional reply subject set by the sender (could be undefined)
-// - subject is the subject the message was sent (which may be more specific
-//   than the subscription subject - see "Wildcard Subscriptions".
-// - finally the subscription id is the local id for the subscription
-//   this is the same value returned by the subscribe call.
-nc.subscribe('foo', (msg, reply, subject, sid) => {
-  if (reply) {
-    nc.publish(reply, 'got ' + msg + ' on ' + subject + ' in subscription id ' + sid)
-    return
-  }
-  console.log('Received a message: ' + msg + " it wasn't a request.")
-})
-
-// Request, creates a subscription to handle any replies to the request
-// subject, and publishes the request with an optional payload. This usage
-// allows you to collect responses from multiple services
-nc.request('request', (msg) => {
-  console.log('Got a response in msg stream: ' + msg)
-})
-
-// Request with a max option will unsubscribe after
-// the first max messages are received. You can also specify the number
-// of milliseconds you are willing to wait for the response - when a timeout
-// is specified, you can receive an error
-nc.request('help', null, { max: 1, timeout: 1000 }, (msg) => {
-  if (msg instanceof NATS.NatsError && msg.code === NATS.REQ_TIMEOUT) {
-    console.log('request timed out')
-  } else {
-    console.log('Got a response for help: ' + msg)
-  }
-})
-
-// Replies
-nc.subscribe('help', function (request, replyTo) {
-  nc.publish(replyTo, 'I can help!')
-})
-
-// Close connection
-nc.close()
-```
-
-## JSON
-
-The `json` connect property makes it easier to exchange JSON data with other
-clients.
+The example below will attempt to connect to different servers by specifying
+different `ConnectionOptions`. At least two of them should work if your
+internet is working.
 
 ```javascript
-const nc = NATS.connect({ json: true })
-nc.on('connect', () => {
-  nc.on('error', (err) => {
-    console.log(err)
-  })
+const { connect } = require("nats");
+const servers = [
+  {},
+  { servers: ["demo.nats.io:4442", "demo.nats.io:4222"] },
+  { servers: "demo.nats.io:4443" },
+  { port: 4222 },
+  { servers: "localhost" },
+];
+await servers.forEach(async (v) => {
+  try {
+    const nc = await connect(v);
+    console.log(`connected to ${nc.getServer()}`);
+    // this promise indicates the client closed
+    const done = nc.closed();
+    // do something with the connection
 
-  nc.subscribe('greeting', (msg, reply) => {
-    // msg is a parsed JSON object object
-    if (msg.name && msg.reply) {
-      nc.publish(reply, { greeting: 'hello ' + msg.name })
+    // close the connection
+    await nc.close();
+    // check if the close was OK
+    const err = await done;
+    if (err) {
+      console.log(`error closing:`, err);
     }
-  })
+  } catch (err) {
+    console.log(`error connecting to ${JSON.stringify(v)}`);
+  }
+});
+```
 
-  // As with all inputs from unknown sources, if you don't trust the data
-  // you should verify it prior to accessing it. While JSON is safe because
-  // it doesn't export functions, it is still possible for a client to
-  // cause issues to a downstream consumer that is not written carefully
-  nc.subscribe('unsafe', function (msg) {
-    // for example a client could inject a bogus `toString` property
-    // which could cause your client to crash should you try to
-    // concatenation with the `+` like this:
-    // console.log("received", msg + "here");
-    // `TypeError: Cannot convert object to primitive value`
-    // Note that simple `console.log(msg)` is fine.
-    if (Object.hasOwnProperty.call(msg, 'toString')) {
-      console.log('tricky - trying to crash me:', msg.toString)
-      return
+To disconnect from the nats-server, call `close()` on the connection.
+A connection can also be terminated when an unexpected error happens.
+For example, the server returns a run-time error. In those cases,
+the client will re-initiate a connection.
+
+By default, the client will always attempt to reconnect if the connection
+is closed for a reason other than calling `close()`. To get notified when
+the connection is closed for some reason, await the resolution of the Promise
+returned by `closed()`. If closed resolves to a value, the value is a `NatsError`
+indicating why the connection closed.
+
+
+### Publish and Subscribe
+
+The basic client operations are `publish` to send messages and
+`subscribe` to receive messages.
+
+Messages are published to a subject. A subject is like an URL with the
+exception that it doesn't specify an actual endpoint. All recipients that
+have expressed interest in a subject will receive messages addressed to that subject
+(provided they have access and permissions to get it). To express interest
+in a subject, you create a `subscription`.
+
+In JavaScript clients (websocket, Deno, or Node) subscriptions work as an
+async iterator - clients simply loop to process messages as they become available.
+
+NATS messages are payload agnostic. Payloads are `Uint8Arrays`. You can easily
+convert to and from JSON or strings by using  `JSONCodec` or `StringCodec`,
+or a custom `Codec`.
+
+To cancel a subscription and terminate your interest, you call `unsubscribe()`
+or `drain()` on a subscription. Unsubscribe will typically terminate regardless
+of whether there are messages in flight for the client. Drain ensures
+that all messages that are inflight are processed before canceling the
+subscription. Connections can also be drained as well. Draining a connection
+closes it, after all subscriptions have been drained and all outbound messages
+have been sent to the server.
+
+```javascript
+const { connect, StringCodec } = require("nats");
+
+// to create a connection to a nats-server:
+const nc = await connect({ servers: "demo.nats.io:4222" });
+
+// create a codec
+const sc = StringCodec();
+// create a simple subscriber and iterate over messages
+// matching the subscription
+const sub = nc.subscribe("hello");
+(async () => {
+  for await (const m of sub) {
+    console.log(`[${sub.getProcessed()}]: ${sc.decode(m.data)}`);
+  }
+  console.log("subscription closed");
+})();
+
+nc.publish("hello", sc.encode("world"));
+nc.publish("hello", sc.encode("again"));
+
+// we want to insure that messages that are in flight
+// get processed, so we are going to drain the
+// connection. Drain is the same as close, but makes
+// sure that all messages in flight get seen
+// by the iterator. After calling drain on the connection
+// the connection closes.
+await nc.drain();
+
+```
+
+### Wildcard Subscriptions
+
+Subjects can be used to organize messages into hierarchies.
+For example, a subject may contain additional information that
+can be useful in providing a context to the message, such as
+the ID of the client that sent the message, or the region where
+a message originated.
+
+Instead of subscribing to each specific subject, you can create
+subscriptions that have subjects with wildcards. Wildcards match
+one or more tokens in a subject. A token is a string following a
+period.
+
+All subscriptions are independent. If two different subscriptions
+match a subject, both will get to process the message:
+
+```javascript
+const { connect, StringCodec } = require("nats");
+
+const nc = await connect({ servers: "demo.nats.io:4222" });
+const sc = StringCodec();
+
+// subscriptions can have wildcard subjects
+// the '*' matches any string in the specified token position
+const s1 = nc.subscribe("help.*.system");
+const s2 = nc.subscribe("help.me.*");
+// the '>' matches any tokens in that position or following
+// '>' can only be specified at the end of the subject
+const s3 = nc.subscribe("help.>");
+
+async function printMsgs(s) {
+  let subj = s.getSubject();
+  console.log(`listening for ${subj}`);
+  const c = (13 - subj.length);
+  const pad = "".padEnd(c);
+  for await (const m of s) {
+    console.log(
+      `[${subj}]${pad} #${s.getProcessed()} - ${m.subject} ${
+        m.data ? " " + sc.decode(m.data) : ""
+      }`,
+    );
+  }
+}
+
+printMsgs(s1);
+printMsgs(s2);
+printMsgs(s3);
+
+// don't exit until the client closes
+await nc.closed();
+
+```
+
+### Services: Request/Reply
+
+Request/Reply is NATS equivalent to an HTTP request. To make requests
+you publish messages as you did before, but also specify a `reply`
+subject. The `reply` subject is where a service will publish your response.
+
+NATS provides syntactic sugar, for publishing requests. The `request()` API
+will generate a reply subject and manage the creation of a subscription
+under the covers. It will also start a timer to ensure that if a response
+is not received within your alloted time, the request fails. The example
+also illustrates a graceful shutdown.
+
+#### Services
+
+Here's an example of a service. It is a bit more complicated than expected
+simply to illustrate not only how to create responses, but how
+the subject itself is used to dispatch different behaviors.
+
+
+```javascript
+const { connect, StringCodec, Subscription } = require("nats");
+
+
+// create a connection
+const nc = await connect({ servers: "demo.nats.io" });
+
+// create a codec
+const sc = StringCodec();
+
+// this subscription listens for `time` requests and returns the current time
+const sub = nc.subscribe("time");
+(async (sub: Subscription) => {
+  console.log(`listening for ${sub.getSubject()} requests...`);
+  for await (const m of sub) {
+    if (m.respond(sc.encode(new Date().toISOString()))) {
+      console.info(`[time] handled #${sub.getProcessed()}`);
+    } else {
+      console.log(`[time] #${sub.getProcessed()} ignored - no reply subject`);
     }
+  }
+  console.log(`subscription ${sub.getSubject()} drained.`);
+})(sub);
 
-    // of course this is no different than using a value that is
-    // expected in one format (say a number), but the client provides
-    // a string:
-    if (isNaN(msg.amount) === false) {
-      // do something with the number
+// this subscription listens for admin.uptime and admin.stop
+// requests to admin.uptime returns how long the service has been running
+// requests to admin.stop gracefully stop the client by draining
+// the connection
+const started = Date.now();
+const msub = nc.subscribe("admin.*");
+(async (sub) => {
+  console.log(`listening for ${sub.getSubject()} requests [uptime | stop]`);
+  // it would be very good to verify the origin of the request
+  // before implementing something that allows your service to be managed.
+  // NATS can limit which client can send or receive on what subjects.
+  for await (const m of sub) {
+    const chunks = m.subject.split(".");
+    console.info(`[admin] #${sub.getProcessed()} handling ${chunks[1]}`);
+    switch (chunks[1]) {
+      case "uptime":
+        // send the number of millis since up
+        m.respond(sc.encode(`${Date.now() - started}`));
+        break;
+      case "stop": {
+        m.respond(sc.encode(`[admin] #${sub.getProcessed()} stopping....`));
+        // gracefully shutdown
+        nc.drain()
+          .catch((err) => {
+            console.log("error draining", err);
+          });
+        break;
+      }
+      default:
+        console.log(
+          `[admin] #${sub.getProcessed()} ignoring request for ${m.subject}`,
+        );
     }
-    // ...
-  })
-
-  // the bad guy
-  nc.publish('unsafe', { toString: 'no good' })
-
-  nc.flush(function () {
-    nc.close()
-  })
-})
-```
-
-## Wildcard Subscriptions
-
-```javascript
-  // "*" matches any token, at any level of the subject.
-  nc.subscribe('foo.*.baz', (msg, reply, subject) => {
-    console.log('Msg received on [' + subject + '] : ' + msg)
-  })
-
-  nc.subscribe('foo.bar.*', (msg, reply, subject) => {
-    console.log('Msg received on [' + subject + '] : ' + msg)
-  })
-
-  // ">" matches any length of the tail of a subject, and can only be
-  // the last token E.g. 'foo.>' will match 'foo.bar', 'foo.bar.baz',
-  // 'foo.foo.bar.bax.22'
-  nc.subscribe('foo.>', (msg, reply, subject) => {
-    console.log('Msg received on [' + subject + '] : ' + msg)
-  })
-```
-
-## Queue Groups
-
-```javascript
-  // All subscriptions with the same queue name will form a queue group.
-  // Each message will be delivered to only one subscriber per queue group,
-  // queuing semantics. You can have as many queue groups as you wish.
-  // Normal subscribers will continue to work as expected.
-  nc.subscribe('foo', { queue: 'job.workers' }, function () {
-    received += 1
-  })
-```
-## Clustered Usage
-
-```javascript
-const servers = ['nats://nats.io:4222', 'nats://nats.io:5222', 'nats://nats.io:6222']
-
-// Randomly connect to a server in the cluster group.
-// Note that because `url` is not specified, the default connection is called first
-// (nats://localhost:4222). If you don't want default connection, specify one of
-// the above the above servers as `url`: `nats.connect(servers[0], {'servers': servers});`
-let nc = NATS.connect({ servers: servers })
-
-// currentServer is the URL of the connected server.
-nc.on('connect', () => {
-  console.log('Connected to ' + nc.currentServer.url.host)
-})
-
-// Preserve order when connecting to servers.
-nc = NATS.connect({ noRandomize: true, servers: servers })
-```
-
-## Draining Connections and Subscriptions
-
-```javascript
-// Unsubscribing removes the subscription handler for a subscription
-// and cancels the subscription. Any pending messages on the client's
-// buffer are discarded.
-//
-// Draining is similar to unsubscribe, but the client instead
-// sends the unsubscribe request followed by a flush. When the flush
-// returns, the subscription handler is removed. Thus the client is
-// able to process all messages sent by the server before the subscription
-// handler is removed.
-//
-// Draining is particularly valuable with queue subscriptions preventing
-// messages from being lost.
-
-let c1 = 0
-const sid1 = nc.subscribe('foo', { queue: 'q1' }, () => {
-  c1++
-  if (c1 === 1) {
-    nc.drainSubscription(sid1, () => {
-      // subscription drained - possible arguments are an error or
-      // the sid (number) and subject identifying the drained
-      // subscription
-    })
   }
-})
+  console.log(`subscription ${sub.getSubject()} drained.`);
+})(msub);
 
-// It is possible to drain a connection, draining a connection:
-// - drains all subscriptions
-// - after calling drain it is impossible to make subscriptions or requests
-// - when all subscriptions are drained, it is impossible to publish
-// messages and drained connection is closed.
-// - finally, the callback handler is called (with possibly an error).
-
-let c2 = 0
-nc.subscribe('foo', { queue: 'q1' }, () => {
-  c2++
-  if (c2 === 1) {
-    nc.drain(() => {
-      // connection drained - possible arguments is an error
-      // connection is closed by the time this function is
-      // called.
-    })
+// wait for the client to close here.
+await nc.closed().then((err) => {
+  let m = `connection to ${nc.getServer()} closed`;
+  if (err) {
+    m = `${m} with an error: ${err.message}`;
   }
-})
+  console.log(m);
+});
 
 ```
 
-## TLS
+#### Making Requests
+
+Here's a simple example of a client making a simple request
+from the service above:
 
 ```javascript
-const NATS = require('nats')
-const fs = require('fs')
+const { connect, StringCodec } = require("nats");
 
-// Simple TLS connect
-let nc = NATS.connect({ tls: true })
+// create a connection
+const nc = await connect({ servers: "demo.nats.io:4222" });
 
-// Overriding and not verifying the server
-let tlsOptions = {
-  rejectUnauthorized: false
+// create an encoder
+const sc = StringCodec();
+
+// the client makes a request and receives a promise for a message
+// by default the request times out after 1s (1000 millis) and has
+// no payload.
+await nc.request("time", Empty, { timeout: 1000 })
+  .then((m) => {
+    console.log(`got response: ${sc.decode(m.data)}`);
+  })
+  .catch((err) => {
+    console.log(`problem with request: ${err.message}`);
+  });
+
+await nc.close();
+```
+
+### Queue Groups
+Queue groups allow scaling of services horizontally. Subscriptions for members of a
+queue group are treated as a single service. When you send a message to a queue group
+subscription, only a single client in a queue group will receive it.
+
+There can be any number of queue groups. Each group is treated as its own independent
+unit. Note that non-queue subscriptions are also independent of subscriptions in a queue
+group.
+
+```javascript
+const {
+  connect,
+  NatsConnection,
+  StringCodec,
+} = require("nats");
+
+
+async function createService(
+  name,
+  count = 1,
+  queue = ""
+): Promise {
+  const conns = [];
+  for (let i = 1; i <= count; i++) {
+    const n = queue ? `${name}-${i}` : name;
+    const nc = await connect(
+      { servers: "demo.nats.io:4222", name: `${n}` },
+    );
+    nc.closed()
+      .then((err) => {
+        if (err) {
+          console.error(
+            `service ${n} exited because of error: ${err.message}`,
+          );
+        }
+      });
+    // create a subscription - note the option for a queue, if set
+    // any client with the same queue will be a member of the group.
+    const sub = nc.subscribe("echo", { queue: queue });
+    const _ = handleRequest(n, sub);
+    console.log(`${nc.options.name} is listening for 'echo' requests...`);
+    conns.push(nc);
+  }
+  return conns;
 }
-nc = NATS.connect({ tls: tlsOptions })
-// nc.stream.authorized will be false
 
-// Use a specified CA for self-signed server certificates
-tlsOptions = {
-  ca: [fs.readFileSync('./test/certs/ca.pem')]
+const sc = StringCodec();
+
+// simple handler for service requests
+async function handleRequest(name, s) {
+  const p = 12 - name.length;
+  const pad = "".padEnd(p);
+  for await (const m of s) {
+    // respond returns true if the message had a reply subject, thus it could respond
+    if (m.respond(m.data)) {
+      console.log(
+        `[${name}]:${pad} #${s.getProcessed()} echoed ${sc.decode(m.data)}`,
+      );
+    } else {
+      console.log(
+        `[${name}]:${pad} #${s.getProcessed()} ignoring request - no reply subject`,
+      );
+    }
+  }
 }
-nc = NATS.connect({ tls: tlsOptions })
-// nc.stream.authorized should be true
 
-// Use a client certificate if the server requires
-tlsOptions = {
-  key: fs.readFileSync('./test/certs/client-key.pem'),
-  cert: fs.readFileSync('./test/certs/client-cert.pem'),
-  ca: [fs.readFileSync('./test/certs/ca.pem')]
-}
-nc = NATS.connect({ tls: tlsOptions })
+// let's create two queue groups and a standalone subscriber
+const conns = [];
+conns.push(...await createService("echo", 3, "echo"));
+conns.push(...await createService("other-echo", 2, "other-echo"));
+conns.push(...await createService("standalone"));
+
+const a: Promise<void | Error>[] = [];
+conns.forEach((c) => {
+  a.push(c.closed());
+});
+await Promise.all(a);
+
 ```
+Run it and publish a request to the subject `echo` to see what happens.
 
-## Basic Authentication
-```javascript
-// Connect with username and password in the url
-let nc = NATS.connect('nats://foo:bar@localhost:4222')
-
-// Connect with username and password inside object
-nc = NATS.connect({ url: 'nats://localhost:4222', user: 'foo', pass: 'bar' })
-
-// Connect with token in url
-nc = NATS.connect('nats://mytoken@localhost:4222')
-
-// Connect with token inside object
-nc = NATS.connect({ url: 'nats://localhost:4222', token: 'mytoken' })
-```
-
-## New Authentication (Nkeys and User Credentials)
-See examples for more usage.
-```javascript
-const nkeys = require('ts-nkeys')
-
-// Simple connect using credentials file. This loads JWT and signing key
-// each time that NATS connects.
-let nc = NATS.connect('connect.ngs.global', NATS.creds('./myid.creds'))
-
-// Manually, you need to specify the JWT, and seed and sign the challenge
-const jwt = 'eyJ0eXAiOiLN1...'
-const nkeySeed = 'SUAIBDPBAUTWCWBKIO6XHQNINK5FWJW4OHLXC3HQ2KFE4PEJUA44CNHTC4'
-const sk = nkeys.fromSeed(Buffer.from(nkeySeed))
-
-// Setting nkey and signing callback directly.
-nc = NATS.connect('nats://localhost:4222', {
-  nkey: 'UAH42UG6PV552P5SWLWTBP3H3S5BHAVCO2IEKEXUANJXR75J63RQ5WM6',
-  nonceSigner: function (nonce) {
-    return sk.sign(nonce)
-  }
-})
-
-// Setting user JWT statically.
-nc = NATS.connect({
-  userJWT: jwt,
-  nonceSigner: function (nonce) {
-    return sk.sign(nonce)
-  }
-})
-
-// Having user JWT be a function that returns the JWT. Can be useful for
-// loading a new JWT.
-nc = NATS.connect({
-  userJWT: function () {
-    return jwt
-  },
-  nonceSigner: function (nonce) {
-    return sk.sign(nonce)
-  }
-})
-```
 
 ## Advanced Usage
 
-```javascript
-// Publish with callback, callback fires when server has processed the message
-nc.publish('foo', 'You done?', () => {
-  console.log('msg processed!')
-})
+### Headers
 
-// Flush connection to server, callback fires when all messages have
-// been processed.
-nc.flush(() => {
-  console.log('round trip to the server done')
-})
-
-// If you want to make sure NATS yields during the processing
-// of messages, you can use an option to specify a yieldTime in ms.
-// During the processing of the inbound stream, NATS will yield if it
-// spends more than yieldTime milliseconds processing.
-nc = NATS.connect({ port: 4222, yieldTime: 10 })
-
-// Timeouts for subscriptions
-let sid = NATS.subscribe('foo', () => {
-  // do something
-})
-
-// Timeout unless a certain number of messages have been received
-// the callback for the timeout. The callback for the timeout
-// provides one argument, the subscription id (sid) for the
-// subscription. This allows a generic callback to identify
-// where the timeout triggered.
-nc.timeout(sid, 1000, 1, () => {
-  // do something
-})
-
-// Auto-unsubscribe after max messages received
-sid = nc.subscribe('foo', { max: 100 })
-nc.unsubscribe(sid, 100)
-
-// Multiple connections
-const nc1 = NATS.connect()
-const nc2 = NATS.connect()
-
-nc1.subscribe('foo', () => {
-  // do something
-})
-nc1.flush()
-nc2.flush()
-nc2.publish('foo')
-
-// Encodings
-
-// By default messages received will be decoded using UTF8. To change that,
-// set the encoding option on the connection.
-
-nc = NATS.connect({ encoding: 'ascii' })
-
-// PreserveBuffers
-
-// To prevent payload conversion from a Buffer to a string, set the
-// preserveBuffers option to true. Message payload return will be a Buffer.
-
-nc = NATS.connect({ preserveBuffers: true })
-
-// Reconnect Attempts and Time between reconnects
-
-// By default a NATS connection will try to reconnect to a server 10 times
-// waiting 2 seconds between reconnect attempts. If the maximum number of
-// retries is reached, the client will close the connection.
-// To change the default behaviour specify the max number of connection
-// attempts in `maxReconnectAttempts` (set to -1 to retry forever), and the
-// time in milliseconds between reconnects in `reconnectTimeWait`.
-
-nc = NATS.connect({ maxReconnectAttempts: -1, reconnectTimeWait: 250 })
-```
-
-# Events
-
-The nats client is an event emitter, you can listen to several kinds of events.
+NATS headers are similar to HTTP headers. Headers are enabled automatically\
+if the server supports them. Note that if you publish a message using headers
+but the server doesn't support them, an Error is thrown. Also note that
+even if you are publishing a message with a header, it is possible for the
+recipient to not support them.
 
 ```javascript
-// emitted whenever there's an error. if you don't implement at least
-// the error handler, your program will crash if an error is emitted.
-nc.on('error', (err) => {
-  console.log(err)
-})
+const { connect, createInbox, Empty, headers } = require("nats");
 
-// connect callback provides a reference to the connection as an argument
-nc.on('connect', (nc) => {
-  console.log(`connect to ${nc.currentServer.url.host}`)
-})
+const nc = await connect(
+  {
+    servers: `demo.nats.io`,
+  },
+);
 
-// emitted whenever the client disconnects from a server
-nc.on('disconnect', () => {
-  console.log('disconnect')
-})
+const subj = createInbox();
+const sub = nc.subscribe(subj);
+(async () => {
+  for await (const m of sub) {
+    if (m.headers) {
+      for (const [key, value] of m.headers) {
+        console.log(`${key}=${value}`);
+      }
+      // reading/setting a header is not case sensitive
+      console.log("id", m.headers.get("id"));
+    }
+  }
+})().then();
 
-// emitted whenever the client is attempting to reconnect
-nc.on('reconnecting', () => {
-  console.log('reconnecting')
-})
+// headers always have their names turned into a canonical mime header key
+// header names can be any printable ASCII character with the  exception of `:`.
+// header values can be any ASCII character except `\r` or `\n`.
+// see https://www.ietf.org/rfc/rfc822.txt
+const h = headers();
+h.append("id", "123456");
+h.append("unix_time", Date.now().toString());
+nc.publish(subj, Empty, { headers: h });
 
-// emitted whenever the client reconnects
-// reconnect callback provides a reference to the connection as an argument
-nc.on('reconnect', (nc) => {
-  console.log(`reconnect to ${nc.currentServer.url.host}`)
-})
+await nc.flush();
+await nc.close();
 
-// emitted when the connection is closed - once a connection is closed
-// the client has to create a new connection.
-nc.on('close', function () {
-  console.log('close')
-})
-
-// emitted whenever the client unsubscribes
-nc.on('unsubscribe', function (sid, subject) {
-  console.log('unsubscribed subscription', sid, 'for subject', subject)
-})
-
-// emitted whenever the server returns a permission error for
-// a publish/subscription for the current user. This sort of error
-// means that the client cannot subscribe and/or publish/request
-// on the specific subject
-nc.on('permission_error', function (err) {
-  console.error('got a permissions error', err.message)
-})
 ```
 
-See examples and benchmarks for more information.
 
-## Connect Options
+### No Responders
+
+Requests can fail for many reasons. A common reason for a failure is the
+lack of interest in the subject. Typically these surface as a
+timeout error. If the server is enabled to use headers, it will also
+enable a `no responders` feature. If you send a request for which there's
+no interest, the request will be immediately rejected:
+
+```javascript
+const nc = await connect({
+    servers: `demo.nats.io` },
+);
+
+try {
+  const m = await nc.request('hello.world');
+  console.log(m.data);
+} catch(err) {
+  switch (err.code) {
+    case ErrorCode.NO_RESPONDERS:
+      console.log("no one is listening to 'hello.world'")
+      break;
+    case ErrorCode.TIMEOUT:
+      console.log("someone is listening but didn't respond")
+      break;
+    default:
+      console.log("request failed", err)
+  }
+}
+
+await nc.close();
+
+```
+
+### Authentication
+
+NATS supports many different forms of credentials:
+
+- username/password
+- token
+- NKEYS
+- client certificates
+- JWTs
+
+For user/password and token authentication, you can simply provide them
+as `ConnectionOptions` - see `user`, `pass`, `token`. Internally these
+mechanisms are implemented as an `Authenticator`. An `Authenticator` is
+simply a function that handles the type of authentication specified.
+
+Setting the `user`/`pass` or `token` options, simply initializes an `Authenticator`
+and sets the username/password.
+
+
+```typescript
+// if the connection requires authentication, provide `user` and `pass` or 
+// `token` options in the NatsConnectionOptions
+const { connect } = require("nats");
+
+const nc1 = await connect({servers: "127.0.0.1:4222", user: "jenny", pass: "867-5309"});
+const nc2 = await connect({port: 4222, token: "t0pS3cret!"});
+```
+
+
+#### Authenticators
+
+NKEYs and JWT authentication are more complex, as they cryptographically
+respond to a server challenge.
+
+Because NKEY and JWT authentication may require reading data from a file or
+an HTTP cookie, these forms of authentication will require a bit more from
+the developer to activate them. However, the work is related to accessing
+these resources varies depending on the platform.
+
+After the credential artifacts are read, you can use one of these functions to
+create the authenticator. You then simply assign it to the `authenticator` property of
+the `ConnectionOptions`:
+
+- `nkeyAuthenticator(seed?: Uint8Array | (() => Uint8Array)): Authenticator`
+- `jwtAuthenticator(jwt: string | (() => string), seed?: Uint8Array | (()=> Uint8Array)): Authenticator`
+- `credsAuthenticator(creds: Uint8Array): Authenticator`
+
+The first two options provide the ability to specify functions that return
+the desired value. This enables dynamic environments such as a browser where
+values accessed by fetching a value from a cookie.
+
+
+Here's an example:
+
+```javascript
+  // read the creds file as necessary, in the case it
+  // is part of the code for illustration purposes
+  const creds = `-----BEGIN NATS USER JWT-----
+    eyJ0eXAiOiJqdSDJB....
+  ------END NATS USER JWT------
+
+************************* IMPORTANT *************************
+  NKEY Seed printed below can be used sign and prove identity.
+  NKEYs are sensitive and should be treated as secrets.
+
+  -----BEGIN USER NKEY SEED-----
+    SUAIBDPBAUTW....
+  ------END USER NKEY SEED------
+`;
+
+  const nc = await connect(
+    {
+      port: 4222,
+      authenticator: credsAuthenticator(new TextEncoder().encode(creds)),
+    },
+  );
+```
+
+
+The node client supports the ability to verify the tls connection if client certificates are
+specified as ConnectionOptions:
+
+```javascript
+tlsOptions = {
+  keyFile: fs.readFileSync('./test/certs/client-key.pem'),
+  certFile: fs.readFileSync('./test/certs/client-cert.pem'),
+  caFile: [fs.readFileSync('./test/certs/ca.pem')]
+}
+nc = await connect({ tls: tlsOptions });
+```
+
+### Flush
+
+Flush sends a PING to the server. When the server responds with PONG
+you are guaranteed that all pending data was sent and received by the server.
+Note `ping()` effectively adds a server round-trip. All NATS clients
+handle their buffering optimally, so `ping(): Promise<void>` shouldn't
+be used except in cases where you are writing some sort of test.
+
+```javascript
+nc.publish('foo');
+nc.publish('bar');
+await nc.flush();
+```
+
+### `PublishOptions`
+
+When you publish a message you can specify some options:
+
+- `reply` - this is a subject to receive a reply (you must setup a subscription) before you publish.
+- `headers` - a set of headers to decorate the message.
+
+### `SubscriptionOptions`
+
+You can specify several options when creating a subscription:
+- `max`: maximum number of messages to receive - auto unsubscribe
+- `timeout`: how long to wait for the first message
+- `queue`: the [queue group](#Queue-Groups) name the subscriber belongs to
+- `callback`: a function with the signature `(err: NatsError|null, msg: Msg) => void;` that should be used for handling the message. Subscriptions with callbacks are NOT iterators.
+
+#### Auto Unsubscribe
+```javascript
+// subscriptions can auto unsubscribe after a certain number of messages
+nc.subscribe('foo', { max: 10 });
+```
+
+
+#### Timeout Subscriptions
+```javascript
+// create subscription with a timeout, if no message arrives
+// within the timeout, the function running the iterator with
+// reject - depending on how you code it, you may need a
+// try/catch block.
+const sub = nc.subscribe("hello", { timeout: 1000 });
+(async () => {
+  for await (const m of sub) {
+  }
+})().catch((err) => {
+  if (err.code === ErrorCode.TIMEOUT) {
+    console.log(`sub timed out!`);
+  } else {
+    console.log(`sub iterator got an error!`);
+  }
+});
+```
+
+### `RequestOptions`
+
+When making a request, there are several options you can pass:
+
+- `timeout`: how long to wait for the response
+- `headers`: optional headers to include with the message
+- `noMux`: create a new subscription to handle the request. Normally a shared subscription is used to receive response messages.
+- `reply`: optional subject where the reply should be sent.
+
+#### `noMux` and `reply`
+
+Under the hood, the request API simply uses a wildcard subscription
+to handle all requests you send.
+
+In some cases, the default subscription strategy doesn't work correctly.
+For example, a client may be constrained by the subjects where it can
+receive replies.
+
+When `noMux` is set to `true`, the client will create a normal subscription for
+receiving the response to a generated inbox subject before the request is published.
+The `reply` option can be used to override the generated inbox subject with an application
+provided one. Note that setting `reply` requires `noMux` to be `true`:
+
+```typescript
+  const m = await nc.request(
+    "q",
+    Empty,
+    { reply: "bar", noMux: true, timeout: 1000 },
+  );
+```
+
+### Draining Connections and Subscriptions
+
+Draining provides for a graceful way to unsubscribe or
+close a connection without losing messages that have
+already been dispatched to the client.
+
+You can drain a subscription or all subscriptions in a connection.
+
+When you drain a subscription, the client sends an `unsubscribe`
+protocol message to the server followed by a `flush`. The
+subscription handler is only removed after the server responds.
+Thus all pending messages for the subscription have been processed.
+
+Draining a connection, drains all subscriptions. However
+when you drain the connection it becomes impossible to make
+new subscriptions or send new requests. After the last
+subscription is drained it also becomes impossible to publish
+a message. These restrictions do not exist when just draining
+a subscription.
+
+### Lifecycle/Informational Events
+Clients can get notification on various event types:
+- `Events.DISCONNECT`
+- `Events.RECONNECT`
+- `Events.UPDATE`
+- `Events.LDM`
+- `Events.ERROR`
+
+The first two fire when a client disconnects and reconnects respectively.
+The payload will be the server where the event took place.
+
+The `UPDATE` event notifies whenever the client receives a cluster configuration
+update. The `ServersChanged` interface provides two arrays: `added` and `deleted`
+listing the servers that were added or removed. 
+
+The `LDM` event notifies that the current server has signaled that it
+is running in _Lame Duck Mode_ and will evict clients. Depending on the server
+configuration policy, the client may want to initiate an ordered shutdown, and
+initiate a new connection to a different server in the cluster.
+
+The `ERROR` event notifies you of async errors that couldn't be routed
+in a more precise way to your client. For example, permission errors for
+a subscription or request, will properly be reported by the subscription
+or request. However, permission errors on publish will be reported via
+the status mechanism.
+
+```javascript
+  const nc = await connect();
+  (async () => {
+    console.info(`connected ${nc.getServer()}`);
+    for await (const s of nc.status()) {
+      console.info(`${s.type}: ${s.data}`);
+    }
+  })().then();
+
+  nc.closed()
+    .then((err) => {
+      console.log(
+        `connection closed ${err ? " with error: " + err.message : ""}`,
+      );
+    });
+```
+
+To be aware of when a client closes, wait for the `closed()` promise to resolve.
+When it resolves, the client has finished and won't reconnect.
+
+
+### Async vs. Callbacks
+
+Previous versions of the JavaScript NATS clients specified callbacks
+for message processing. This required complex handling logic when a
+service required coordination of operations. Callbacks are an
+inversion of control anti-pattern.
+
+The async APIs trivialize complex coordination and makes your code
+easier to maintain. With that said, there are some implications:
+
+- Async subscriptions buffer inbound messages.
+- Subscription processing delays until the runtime executes the promise related
+  microtasks at the end of an event loop.
+
+In a traditional callback-based library, I/O happens after all data yielded by
+a read in the current event loop completes processing. This means that
+callbacks are invoked as part of processing. With async, the processing is queued
+in a microtask queue. At the end of the event loop, the runtime processes
+the microtasks, which in turn resumes your functions. As expected, this
+increases latency, but also provides additional liveliness.
+
+To reduce async latency, the NATS client allows processing a subscription
+in the same event loop that dispatched the message. Simply specify a `callback`
+in the subscription options. The signature for a callback is
+`(err: (NatsError|null), msg: Msg) => void`. When specified, the subscription
+iterator will never yield a message, as the callback will intercept all messages.
+
+Note that `callback` likely shouldn't even be documented,  as likely it
+is a workaround to an underlying application problem where you should be
+considering a different strategy to horizontally scale your application,
+or reduce pressure on the clients, such as using queue workers,
+or more explicitly targeting messages. With that said, there are many situations
+where using callbacks can be more performant or appropriate.
+
+## Connection Options
 
 The following is the list of connection options and default values.
 
 | Option                 | Default                   | Description
 |--------                |---------                  |------------
-| `encoding`             | `"utf8"`                  | Encoding specified by the client to encode/decode data
-| `json`                 | `false`                   | If true, message payloads are converted to/from JSON
-| `maxPingOut`           | `2`                       | Max number of pings the client will allow unanswered before raising a stale connection error
-| `maxReconnectAttempts` | `10`                      | Sets the maximum number of reconnect attempts. The value of `-1` specifies no limit
-| `name`                 |                           | Optional client name
-| `nkey`                 | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials)
+| `authenticator`        | none                      | Specifies the authenticator function that sets the client credentials.
+| `debug`                | `false`                   | If `true`, the client prints protocol interactions to the console. Useful for debugging.
+| `maxPingOut`           | `2`                       | Max number of pings the client will allow unanswered before raising a stale connection error.
+| `maxReconnectAttempts` | `10`                      | Sets the maximum number of reconnect attempts. The value of `-1` specifies no limit.
+| `name`                 |                           | Optional client name - recommended to be set to a unique client name.
 | `noEcho`               | `false`                   | Subscriptions receive messages published by the client. Requires server support (1.2.0). If set to true, and the server does not support the feature, an error with code `NO_ECHO_NOT_SUPPORTED` is emitted, and the connection is aborted. Note that it is possible for this error to be emitted on reconnect when the server reconnects to a server that does not support the feature.
 | `noRandomize`          | `false`                   | If set, the order of user-specified servers is randomized.
-| `nonceSigner`          | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). A function that takes a `Buffer` and returns a nkey signed signature.
-| `pass`                 |                           | Sets the password for a connection
-| `pedantic`             | `false`                   | Turns on strict subject format checks
-| `pingInterval`         | `120000`                  | Number of milliseconds between client-sent pings
-| `preserveBuffers`      | `false`                   | If true, data for a message is returned as Buffer
-| `reconnectTimeWait`    | `2000`                    | If disconnected, the client will wait the specified number of milliseconds between reconnect attempts. See [jitter](#jitter).
-| `reconnectJitter`      | `100`                     | Number of millis to randomize after `reconnectTimeWait`. See [jitter](#jitter).
-| `reconnectJitterTLS`   | `1000`                    | Number of millis to randomize after `reconnectTimeWait` when TLS options are specified. See [jitter](#jitter).
-| `reconnectDelayHandler`| Generated function        | A function that returns the number of millis to wait before the next connection to a server it connected to. See [jitter](#jitter).
-| `reconnect`            | `true`                    | If false server will not attempt reconnecting
-| `servers`              |                           | Array of connection `url`s
-| `timeout`              | node default - no timeout | Number of milliseconds the client will wait for a connection to be established. If it fails it will emit a `connection_timeout` event with a NatsError that provides the hostport of the server where the connection was attempted.
-| `tls`                  | `false`                   | This property can be a boolean or an Object. If true the client requires a TLS connection. If false a non-tls connection is required.  The value can also be an object specifying TLS certificate data. The properties `ca`, `key`, `cert` should contain the certificate file data. `ca` should be provided for self-signed certificates. `key` and `cert` are required for client provided certificates. `rejectUnauthorized` if `true` validates server's credentials
-| `token`                |                           | Sets a authorization token for a connection
-| `tokenHandler`         |                           | A function returning a `token` used for authentication.
-| `url`                  | `"nats://localhost:4222"` | Connection url
-| `useOldRequestStyle`   | `false`                   | If set to `true` calls to `request()` and `requestOne()` will create an inbox subscription per call.
-| `user`                 |                           | Sets the username for a connection
-| `userCreds`            | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). Set with `NATS.creds()`.
-| `userJWT`              | ``                        | See [NKeys/User Credentials](https://github.com/nats-io/nats.js#new-authentication-nkeys-and-user-credentials). The property can be a JWT or a function that returns a JWT.
-| `verbose`              | `false`                   | Turns on `+OK` protocol acknowledgements
-| `waitOnFirstConnect`   | `false`                   | If `true` the server will fall back to a reconnect mode if it fails its first connection attempt.
-| `yieldTime`            |                           | If set, processing will yield at least the specified number of milliseconds to IO callbacks before processing inbound messages
+| `pass`                 |                           | Sets the password for a connection.
+| `pedantic`             | `false`                   | Turns on strict subject format checks.
+| `pingInterval`         | `120000`                  | Number of milliseconds between client-sent pings.
+| `port`                 | `4222`                    | Port to connect to (only used if `servers` is not specified).
+| `reconnectTimeWait`    | `2000`                    | If disconnected, the client will wait the specified number of milliseconds between reconnect attempts.
+| `reconnectJitter`      | `100`                     | Number of millis to randomize after `reconnectTimeWait`.
+| `reconnectJitterTLS`   | `1000`                    | Number of millis to randomize after `reconnectTimeWait` when TLS options are specified.
+| `reconnectDelayHandler`| Generated function        | A function that returns the number of millis to wait before the next connection to a server it connected to `()=>number`.
+| `reconnect`            | `true`                    | If false, client will not attempt reconnecting.
+| `servers`              | `"localhost:4222"`        | String or Array of hostport for servers.
+| `timeout`              | 20000                     | Number of milliseconds the client will wait for a connection to be established. If it fails it will emit a `connection_timeout` event with a NatsError that provides the hostport of the server where the connection was attempted.
+| `tls`                  | TlsOptions                | A configuration object for requiring a TLS connection (not applicable to nats.ws).
+| `token`                |                           | Sets a authorization token for a connection.
+| `user`                 |                           | Sets the username for a connection.
+| `verbose`              | `false`                   | Turns on `+OK` protocol acknowledgements.
+| `waitOnFirstConnect`   | `false`                   | If `true` the client will fall back to a reconnect mode if it fails its first connection attempt.
+| `ignoreClusterUpdates` | `false`                   | If `true` the client will ignore any cluster updates provided by the server.
 
 
-### Jitter 
+### TlsOptions
+
+| Option       | Default | Description
+|--------      |-------- |------------
+|  `caFile`    |         | CA certificate filepath
+|  `certFile`  |         | Client certificate file path.
+|  `keyFile`   |         | Client key file path .
+
+In some Node and Deno clients, having the option set to an empty option, requires the client have a secured connection.
+
+
+### Jitter
 
 The settings `reconnectTimeWait`, `reconnectJitter`, `reconnectJitterTLS`, `reconnectDelayHandler` are all related.
 They control how long before the NATS client attempts to reconnect to a server it has previously connected.
 
-The intention of the settings is to spread out the number of clients attempting to reconnect to a server over a period of time, 
+The intention of the settings is to spread out the number of clients attempting to reconnect to a server over a period of time,
 and thus preventing a ["Thundering Herd"](https://docs.nats.io/developing-with-nats/reconnect/random).
 
 The relationship between these is:
 
 - If `reconnectDelayHandler` is specified, the client will wait the value returned by this function. No other value will be taken into account.
 - If the client specified TLS options, the client will generate a number between 0 and `reconnectJitterTLS` and add it to
-`reconnectTimeWait`.
+  `reconnectTimeWait`.
 - If the client didn't specify TLS options, the client will generate a number between 0 and `reconnectJitter` and add it to `reconnectTimeWait`.
-
-
-## Tools
-
-The examples, `node-pub`, `node-sub`, `node-req`, `node-reply` are now bound to `bin` entries on the npm package.
-You can use these while developing your own tools. After you install the `nats` npm package, you'll need to add
-a dependency on `minimist` before you can use the tools:
-
-```bash
-npm install nats
-npm install minimist
-...
-% npx node-sub hello &
-[1] 9208
-% Listening on [hello]
-% npx node-pub hello world
-Received "world"
-Published [hello] : "world"
-```
-
-## Supported Node Versions
-
-Our support policy for Nodejs versions follows [Nodejs release support]( https://github.com/nodejs/Release).
-We will support and build node-nats on even-numbered Nodejs versions that are current or in LTS.
-
-
-## Running Tests
-
-To run the tests, you need to have a `nats-server` executable in your path. Refer to the [server installation guide](https://nats-io.github.io/docs/nats_server/installation.html) in the NATS.io documentation. With that in place, you can run `npm test` to run all tests.
-
-## License
-
-Unless otherwise noted, the NATS source files are distributed under the Apache Version 2.0 license found in the LICENSE file.

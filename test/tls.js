@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 The NATS Authors
+ * Copyright 2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,265 +12,184 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const test = require("ava");
+const {
+  connect,
+  ErrorCode,
+} = require(
+  "../",
+);
+const { resolve, join } = require("path");
+const { Lock } = require("./helpers/lock");
+const { NatsServer } = require("./helpers/launcher");
+const { buildAuthenticator } = require("../lib/nats-base-client/authenticator");
+const { extend } = require("../lib/nats-base-client/util");
+const { Connect } = require("../lib/nats-base-client/protocol");
 
-/* jslint node: true */
-'use strict'
+const dir = process.cwd();
+const tlsConfig = {
+  host: "0.0.0.0",
+  tls: {
+    cert_file: resolve(join(dir, "./test/certs/localhost.crt")),
+    key_file: resolve(join(dir, "./test/certs/localhost.key")),
+    ca_file: resolve(join(dir, "./test/certs/ca.crt")),
+  },
+};
 
-const NATS = require('../')
-const nsc = require('./support/nats_server_control')
-const should = require('should')
-const fs = require('fs')
-const after = require('mocha').after
-const before = require('mocha').before
-const describe = require('mocha').describe
-const it = require('mocha').it
+test("tls - fail if server doesn't support TLS", async (t) => {
+  t.plan(1);
+  const lock = Lock();
+  await connect({ servers: "demo.nats.io:4222", tls: {} })
+    .then(() => {
+      t.fail("shouldn't have connected");
+    })
+    .catch((err) => {
+      t.is(err.code, ErrorCode.SERVER_OPTION_NA);
+      lock.unlock();
+    });
+  await lock;
+});
 
-describe('TLS', () => {
-  const PORT = 1442
-  const TLSPORT = 1443
-  const TLSVERIFYPORT = 1444
+test("tls - connects to tls without option", async (t) => {
+  const nc = await connect({ servers: "demo.nats.io:4443" });
+  await nc.flush();
+  await nc.close();
+  t.pass();
+});
 
-  let server
-  let tlsServer
-  let tlsVerifyServer
+test("tls - custom ca fails without proper ca", async (t) => {
+  t.plan(1);
+  const ns = await NatsServer.start(tlsConfig);
+  const lock = Lock();
+  await connect({ servers: `localhost:${ns.port}`, maxReconnectAttempts: 4 })
+    .then(() => {
+      t.fail("shouldn't have connected without client ca");
+    })
+    .catch(() => {
+      // this throws a totally un-useful connection reset.
+      t.pass();
+      lock.unlock();
+    });
 
-  // Start up our own nats-server for each test
-  // We will start a plain, a no client cert, and a client cert required.
-  before(done => {
-    server = nsc.startServer(PORT, () => {
-      const flags = ['--tls', '--tlscert', './test/certs/server.pem',
-        '--tlskey', './test/certs/key.pem'
-      ]
-      tlsServer = nsc.startServer(TLSPORT, flags, () => {
-        const flags = ['--tlsverify', '--tlscert', './test/certs/server.pem',
-          '--tlskey', './test/certs/key.pem',
-          '--tlscacert', './test/certs/ca.pem'
-        ]
-        tlsVerifyServer = nsc.startServer(TLSVERIFYPORT, flags, done)
-      })
-    })
-  })
+  await lock;
+  await ns.stop();
+});
 
-  // Shutdown our server after each test.
-  after(done => {
-    nsc.stopCluster([server, tlsServer, tlsVerifyServer], done)
-  })
+test("tls - connects with proper ca", async (t) => {
+  const ns = await NatsServer.start(tlsConfig);
+  const nc = await connect({
+    servers: `localhost:${ns.port}`,
+    tls: {
+      caFile: tlsConfig.tls.ca_file,
+    },
+  });
+  await nc.flush();
+  t.true(nc.protocol.transport.socket.authorized);
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
 
-  it('should error if server does not support TLS', done => {
-    const nc = NATS.connect({
-      port: PORT,
-      tls: true
-    })
-    nc.on('error', err => {
-      should.exist(err)
-      should.exist((/Server does not support a secure/).exec(err))
-      nc.close()
-      done()
-    })
-  })
+test("tls - client auth", async (t) => {
+  const ns = await NatsServer.start(tlsConfig);
 
-  it('should reject without proper CA', done => {
-    const nc = NATS.connect({
-      port: TLSPORT,
-      tls: true
-    })
-    nc.on('error', err => {
-      should.exist(err)
-      should.exist((/unable to verify the first certificate/).exec(err))
-      nc.close()
-      done()
-    })
-  })
+  const certs = {
+    keyFile: resolve(join(dir, "./test/certs/client.key")),
+    certFile: resolve(join(dir, "./test/certs/client.crt")),
+    caFile: resolve(join(dir, "./test/certs/ca.crt")),
+  };
+  const nc = await connect({
+    port: ns.port,
+    tls: certs,
+  });
 
-  it('should keep rejecting without proper CA', done => {
-    const nc = NATS.connect({
-      port: TLSPORT,
-      tls: true,
-      maxReconnectAttempts: 5,
-      reconnectTimeWait: 100,
-      reconnectDelayHandler: () => { return 0 },
-      waitOnFirstConnect: true
-    })
-    let tries = 0
-    nc.on('reconnecting', () => {
-      tries++
-    })
-    nc.on('close', () => {
-      tries.should.equal(nc.options.maxReconnectAttempts)
-      done()
-    })
-  })
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
 
-  it('should connect if authorized is overridden', done => {
-    const tlsOptions = {
-      rejectUnauthorized: false
-    }
-    const nc = NATS.connect({
-      port: TLSPORT,
-      tls: tlsOptions
-    })
-    should.exist(nc)
-    nc.on('connect', client => {
-      client.should.equal(nc)
-      nc.stream.authorized.should.equal(false)
-      nc.close()
-      done()
-    })
-  })
+test("tls - shouldn't leak tls config", (t) => {
+  const tlsOptions = {
+    keyFile: resolve(join(dir, "./test/certs/client.key")),
+    certFile: resolve(join(dir, "./test/certs/client.crt")),
+    caFile: resolve(join(dir, "./test/certs/ca.crt")),
+  };
 
-  it('should connect with proper ca and be authorized', done => {
-    const tlsOptions = {
-      ca: [fs.readFileSync('./test/certs/ca.pem')]
-    }
-    const nc = NATS.connect({
-      port: TLSPORT,
-      tls: tlsOptions
-    })
-    should.exist(nc)
-    nc.on('connect', client => {
-      client.should.equal(nc)
-      nc.stream.authorized.should.equal(true)
-      nc.close()
-      done()
-    })
-  })
+  let opts = { tls: tlsOptions, cert: "another" };
+  const auth = buildAuthenticator(opts);
+  opts = extend(opts, auth);
 
-  it('should not timeout when it tls connects', done => {
-    const tlsOptions = {
-      ca: [fs.readFileSync('./test/certs/ca.pem')]
-    }
-    const nc = NATS.connect({
-      port: TLSPORT,
-      tls: tlsOptions,
-      timeout: 1000
-    })
-    let alive = false
-    nc.on('connect', () => {
-      setTimeout(() => {
-        nc.flush((err) => {
-          if (err) {
-            done(err)
-            return
-          }
-          alive = true
-          nc.stream.destroy()
-        })
-      }, 1100)
-    })
-    nc.on('reconnect', () => {
-      alive.should.be.true()
-      nc.close()
-      done()
-    })
-    nc.on('error', (err) => {
-      done(err)
-    })
-  })
+  const c = new Connect({ version: "1.2.3", lang: "test" }, opts);
+  const cc = JSON.parse(JSON.stringify(c));
+  t.is(cc.tls_required, true);
+  t.is(cc.cert, undefined);
+  t.is(cc.keyFile, undefined);
+  t.is(cc.certFile, undefined);
+  t.is(cc.caFile, undefined);
+  t.is(cc.tls, undefined);
+});
 
-  it('should not timeout on multiple connection attempts', done => {
-    const tlsOptions = {
-      ca: [fs.readFileSync('./test/certs/ca.pem')]
-    }
-    const nc = NATS.connect({
-      url: 'nats://localhost:1234',
-      servers: ['nats://localhost:2345', `nats://localhost:${TLSPORT}`],
-      noRandomize: true,
-      tls: tlsOptions,
-      timeout: 500
-    })
-    let alive = false
-    nc.on('connect', () => {
-      setTimeout(() => {
-        nc.flush((err) => {
-          if (err) {
-            done(err)
-            return
-          }
-          alive = true
-          nc.stream.destroy()
-        })
-      }, 1100)
-    })
-    nc.on('reconnect', () => {
-      alive.should.be.true()
-      nc.close()
-      done()
-    })
-    nc.on('error', (err) => {
-      done(err)
-    })
-  }).timeout(5000)
+async function tlsInvalidCertMacro(t, conf, tlsCode, re) {
+  t.plan(3);
+  const ns = await NatsServer.start(tlsConfig);
+  try {
+    await connect({ servers: `localhost:${ns.port}`, tls: conf });
+    t.fail("shouldn't have connected");
+  } catch (err) {
+    t.is(err.code, ErrorCode.TLS);
+    t.truthy(err.chainedError);
+    t.truthy(re.exec(err.chainedError.message));
+  }
+  await ns.stop();
+}
 
-  it('should reject without proper cert if required by server', done => {
-    const nc = NATS.connect({
-      port: TLSVERIFYPORT,
-      tls: true
-    })
-    nc.on('error', err => {
-      should.exist(err)
-      should.exist((/Server requires a client certificate/).exec(err))
-      nc.close()
-      done()
-    })
-  })
+test(
+  "tls - invalid cert",
+  tlsInvalidCertMacro,
+  {
+    keyFile: resolve(join(dir, "./test/certs/client.key")),
+    certFile: resolve(join(dir, "./test/certs/ca.crt")),
+    caFile: resolve(join(dir, "./test/certs/localhost.crt")),
+  },
+  "ERR_OSSL_X509_KEY_VALUES_MISMATCH",
+  /key values mismatch/i,
+);
 
-  it('should be authorized with proper cert', done => {
-    const tlsOptions = {
-      key: fs.readFileSync('./test/certs/client-key.pem'),
-      cert: fs.readFileSync('./test/certs/client-cert.pem'),
-      ca: [fs.readFileSync('./test/certs/ca.pem')]
-    }
-    const nc = NATS.connect({
-      port: TLSPORT,
-      tls: tlsOptions
-    })
-    nc.on('connect', client => {
-      client.should.equal(nc)
-      nc.stream.authorized.should.equal(true)
-      nc.close()
-      done()
-    })
-  })
+test(
+  "tls - invalid pem no start",
+  tlsInvalidCertMacro,
+  {
+    keyFile: resolve(join(dir, "./test/certs/client.crt")),
+    certFile: resolve(join(dir, "./test/certs/client.key")),
+    caFile: resolve(join(dir, "./test/certs/ca.crt")),
+  },
+  "ERR_OSSL_PEM_NO_START_LINE",
+  /no start line/i,
+);
 
-  describe('OpenSSL preflight verification errors', () => {
-    const testTable = [
-      {
-        errorCode: 'ERR_OSSL_X509_KEY_VALUES_MISMATCH',
-        regex: /key values mismatch/i,
-        tls: {
-          key: fs.readFileSync('./test/certs/client-key.pem'),
-          cert: fs.readFileSync('./test/certs/ca.pem'),
-          ca: [fs.readFileSync('./test/certs/server.pem')]
-        }
-      },
-      {
-        errorCode: 'ERR_OSSL_PEM_NO_START_LINE',
-        regex: /no start line/i,
-        tls: {
-          key: fs.readFileSync('./test/certs/client-cert.pem'),
-          cert: fs.readFileSync('./test/certs/client-key.pem'),
-          ca: [fs.readFileSync('./test/certs/ca.pem')]
-        }
-      }
-    ]
+async function tlsInvalidArgPathMacro(t, conf, arg) {
+  t.plan(2);
+  const ns = await NatsServer.start(tlsConfig);
+  try {
+    await connect({ servers: `localhost:${ns.port}`, tls: conf });
+    t.fail("shouldn't have connected");
+  } catch (err) {
+    t.is(err.code, ErrorCode.TLS);
+    const v = conf[arg];
+    t.is(err.message, `${v} doesn't exist`);
+  }
+  await ns.stop();
+}
 
-    testTable.forEach(({ errorCode, regex, tls }) => {
-      it(`should handle ${errorCode}`, done => {
-        const nc = NATS.connect({
-          port: TLSPORT,
-          tls
-        })
-        nc.once('connect', done => {
-          done(new Error(`was expecting a ${errorCode} OpenSSL error`))
-        })
-        nc.once('error', error => {
-          should.exist(error)
-          should(error.code).equal('OPENSSL_ERR')
-          should.exist(regex.exec(error.chainedError.message))
-          nc.close()
-          done()
-        })
-      })
-    })
-  })
-})
+test("tls - invalid key file", tlsInvalidArgPathMacro, {
+  keyFile: resolve(join(dir, "./test/certs/client.ky")),
+}, "keyFile");
+
+test("tls - invalid cert file", tlsInvalidArgPathMacro, {
+  certFile: resolve(join(dir, "./test/certs/client.cert")),
+}, "certFile");
+
+test("tls - invalid ca file", tlsInvalidArgPathMacro, {
+  caFile: resolve(join(dir, "./test/certs/ca.cert")),
+}, "caFile");

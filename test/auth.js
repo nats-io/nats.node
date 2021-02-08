@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 The NATS Authors
+ * Copyright 2018-2020 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,301 +12,284 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const test = require("ava");
+const {
+  connect,
+  ErrorCode,
+  jwtAuthenticator,
+  nkeyAuthenticator,
+  credsAuthenticator,
+} = require(
+  "../",
+);
+const { nkeys } = require("../lib/nats-base-client/internal_mod");
+const { Lock } = require("./helpers/lock");
+const { NatsServer } = require("./helpers/launcher");
 
-/* jslint node: true */
-'use strict'
+const conf = {
+  authorization: {
+    PERM: {
+      subscribe: "bar",
+      publish: "foo",
+    },
+    users: [{
+      user: "derek",
+      password: "foobar",
+      permission: "$PERM",
+    }],
+  },
+};
 
-const NATS = require('../')
-const nsc = require('./support/nats_server_control')
-const should = require('should')
-const after = require('mocha').after
-const before = require('mocha').before
-const describe = require('mocha').describe
-const it = require('mocha').it
+test("auth - none", async (t) => {
+  t.plan(1);
+  const ns = await NatsServer.start(conf);
+  try {
+    const nc = await connect(
+      { port: ns.port },
+    );
+    await nc.close();
+    t.fail("shouldnt have been able to connect");
+  } catch (ex) {
+    t.is(ex.code, ErrorCode.AUTHORIZATION_VIOLATION);
+  }
+  await ns.stop();
+});
 
-describe('Authorization', () => {
-  const PORT = 1421
-  const flags = ['--user', 'derek', '--pass', 'foobar']
-  const authUrl = 'nats://derek:foobar@localhost:' + PORT
-  const noAuthUrl = 'nats://localhost:' + PORT
-  let server
+test("auth - bad", async (t) => {
+  t.plan(1);
+  const ns = await NatsServer.start(conf);
+  try {
+    const nc = await connect(
+      { port: ns.port, user: "me", pass: "hello" },
+    );
+    await nc.close();
+    t.fail("shouldnt have been able to connect");
+  } catch (ex) {
+    t.is(ex.code, ErrorCode.AUTHORIZATION_VIOLATION);
+  }
+  await ns.stop();
+});
 
-  // Start up our own nats-server
-  before(done => {
-    server = nsc.startServer(PORT, flags, done)
-  })
+test("auth - un/pw", async (t) => {
+  t.plan(1);
+  const ns = await NatsServer.start(conf);
+  const nc = await connect(
+    { port: ns.port, user: "derek", pass: "foobar" },
+  );
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
 
-  // Shutdown our server after we are done
-  after(done => {
-    nsc.stopServer(server, done)
-  })
+test("auth - sub permissions", async (t) => {
+  t.plan(2);
+  const ns = await NatsServer.start(conf);
+  const lock = Lock(2);
+  const nc = await connect(
+    { port: ns.port, user: "derek", pass: "foobar" },
+  );
+  nc.closed().then((err) => {
+    t.is(err.code, ErrorCode.PERMISSIONS_VIOLATION);
+    lock.unlock();
+  });
 
-  it('should fail to connect with no credentials ', done => {
-    const nc = NATS.connect(PORT)
-    nc.on('error', err => {
-      should.exist(err)
-      should.exist((/Authorization/).exec(err))
-      nc.close()
-      done()
-    })
-  })
+  const sub = nc.subscribe("foo");
+  (async (t) => {
+    for await (const m of sub) {}
+  })().catch((err) => {
+    lock.unlock();
+    t.is(err.code, ErrorCode.PERMISSIONS_VIOLATION);
+  });
 
-  it('should connect with proper credentials in url', done => {
-    const nc = NATS.connect(authUrl)
-    nc.on('connect', nc => {
-      setTimeout(() => {
-        nc.close()
-        done()
-      }, 100)
-    })
-  })
+  nc.publish("foo");
 
-  it('should connect with proper credentials as options', done => {
-    const nc = NATS.connect({
-      url: noAuthUrl,
-      user: 'derek',
-      pass: 'foobar'
-    })
-    nc.on('connect', nc => {
-      setTimeout(() => {
-        nc.close()
-        done()
-      }, 100)
-    })
-  })
+  await lock;
+  await ns.stop();
+});
 
-  it('should connect with proper credentials as server url', done => {
-    const nc = NATS.connect({
-      servers: [authUrl]
-    })
-    nc.on('connect', nc => {
-      nc.close()
-      setTimeout(done, 100)
-    })
-  })
-})
+test("auth - pub perm", async (t) => {
+  t.plan(1);
+  const ns = await NatsServer.start(conf);
+  const lock = Lock();
+  const nc = await connect(
+    { port: ns.port, user: "derek", pass: "foobar" },
+  );
+  nc.closed().then((err) => {
+    t.is(err.code, ErrorCode.PERMISSIONS_VIOLATION);
+    lock.unlock();
+  });
 
-describe('Token Authorization', () => {
-  const PORT = 1421
-  const flags = ['--auth', 'token1']
-  const authUrl = 'nats://token1@localhost:' + PORT
-  const noAuthUrl = 'nats://localhost:' + PORT
-  let server
-
-  // Start up our own nats-server
-  before(done => {
-    server = nsc.startServer(PORT, flags, done)
-  })
-
-  // Shutdown our server after we are done
-  after(done => {
-    nsc.stopServer(server, done)
-  })
-
-  it('should fail to connect with no credentials ', done => {
-    const nc = NATS.connect(PORT)
-    nc.on('error', err => {
-      should.exist(err)
-      should.exist((/Authorization/).exec(err))
-      nc.close()
-      done()
-    })
-  })
-
-  it('should connect with proper credentials in url', done => {
-    const nc = NATS.connect(authUrl)
-    nc.on('connect', nc => {
-      setTimeout(() => {
-        nc.close()
-        done()
-      }, 100)
-    })
-  })
-
-  it('should connect with proper credentials as options', done => {
-    const nc = NATS.connect({
-      url: noAuthUrl,
-      token: 'token1'
-    })
-    nc.on('connect', nc => {
-      setTimeout(() => {
-        nc.close()
-        done()
-      }, 100)
-    })
-  })
-
-  it('should connect with proper credentials as server url', done => {
-    const nc = NATS.connect({
-      servers: [authUrl]
-    })
-    nc.on('connect', nc => {
-      nc.close()
-      setTimeout(done, 100)
-    })
-  })
-})
-
-describe('tokenHandler Authorization', () => {
-  const PORT = 1421
-  const flags = ['--auth', 'token1']
-  const noAuthUrl = 'nats://localhost:' + PORT
-  let server
-
-  // Start up our own nats-server
-  before(done => {
-    server = nsc.startServer(PORT, flags, done)
-  })
-
-  // Shutdown our server after we are done
-  after(done => {
-    nsc.stopServer(server, done)
-  })
-
-  it('should connect using tokenHandler instead of plain old token', done => {
-    const nc = NATS.connect({
-      url: noAuthUrl,
-      tokenHandler: () => 'token1'
-    })
-    nc.on('connect', (nc) => {
-      setTimeout(() => {
-        nc.close()
-        done()
-      }, 100)
-    })
-  })
-
-  it('should fail to connect if tokenHandler is not a function', done => {
-    (() => {
-      NATS.connect({
-        url: noAuthUrl,
-        tokenHandler: 'token1'
-      })
-    }).should.throw(/tokenHandler must be a function returning a token/)
-    done()
-  })
-
-  it('should fail to connect if both token and tokenHandler are provided', done => {
-    (() => {
-      NATS.connect({
-        url: noAuthUrl,
-        token: 'token1',
-        tokenHandler: () => 'token1'
-      })
-    }).should.throw(/token and tokenHandler cannot both be provided/)
-    done()
-  })
-
-  it('should NOT connect if tokenHandler fails to return a token', done => {
-    const nc = NATS.connect({
-      url: noAuthUrl,
-      tokenHandler: () => {
-        throw new Error('no token for you!')
-      }
-    })
-
-    let totalErrorCount = 0
-    let tokenHandlerErrorCount = 0
-    let authorizationViolationErrorCount = 0
-    let disconnectCount = 0
-    nc.on('error', (err) => {
-      totalErrorCount++
-      if ((/^NatsError: tokenHandler call failed: .+$/).test(err.toString())) {
-        tokenHandlerErrorCount++
-      }
-      if ((/^NatsError: 'Authorization Violation'$/).test(err.toString())) {
-        authorizationViolationErrorCount++
-      }
-    })
-    nc.on('disconnect', () => {
-      disconnectCount++
-    })
-    nc.on('close', () => {
-      tokenHandlerErrorCount.should.be.greaterThan(0)
-      authorizationViolationErrorCount.should.equal(tokenHandlerErrorCount)
-      totalErrorCount.should.be.greaterThanOrEqual(2 * tokenHandlerErrorCount)
-
-      disconnectCount.should.equal(tokenHandlerErrorCount)
-      done()
-    })
-  })
-
-  it('tokenHandler errors can be recovered from', function (done) {
-    this.timeout(10 * 1000)
-
-    const RECONNECT_DELAY = 500
-    const TOKEN_TTL = 2 * 1000
-    const TOKEN_TTL_SAFETY_MARGIN = 500
-
-    let token = 'token1'
-    let tokenTimestamp = new Date().getTime()
-    const getTokenAge = () => {
-      const now = new Date().getTime()
-      return now - tokenTimestamp
+  const sub = nc.subscribe("bar");
+  const iter = (async (t) => {
+    for await (const m of sub) {
+      t.fail("should not have been called");
     }
+  })();
 
-    let tokenHandlerCallCount = 0
-    const nc = NATS.connect({
-      url: noAuthUrl,
-      tokenHandler: () => {
-        tokenHandlerCallCount++
-        if (!token) {
-          throw new Error('no token for you!')
-        } else {
-          return token
-        }
-      },
-      reconnect: true,
-      reconnectTimeWait: RECONNECT_DELAY
-    })
-    let refreshingToken = false
-    nc.on('disconnect', () => {
-      // refresh token if it might be too old before it's used again:
-      if (!refreshingToken && (getTokenAge() + RECONNECT_DELAY + TOKEN_TTL_SAFETY_MARGIN > TOKEN_TTL)) {
-        refreshingToken = true
-        token = ''
-        setTimeout(() => {
-          token = 'token1'
-          tokenTimestamp = new Date().getTime()
-          refreshingToken = false
-        }, 3 * RECONNECT_DELAY)
-      }
-    })
+  nc.publish("bar");
 
-    let totalErrorCount = 0
-    let tokenHandlerErrorCount = 0
-    let authorizationViolationErrorCount = 0
-    nc.on('error', (err) => {
-      totalErrorCount++
-      if ((/^NatsError: tokenHandler call failed: .+$/).test(err.toString())) {
-        tokenHandlerErrorCount++
-      }
-      if ((/^NatsError: 'Authorization Violation'$/).test(err.toString())) {
-        authorizationViolationErrorCount++
-      }
-    })
-    nc.on('connect', () => {
-      // restart server to initiate reconnects after the token has expired:
-      setTimeout(() => {
-        nsc.stopServer(server, () => {
-          server = nsc.startServer(PORT, flags)
-        })
-      }, TOKEN_TTL)
-    })
-    nc.on('reconnect', (nc) => {
-      setTimeout(() => {
-        nc.close()
-        tokenHandlerCallCount.should.be.greaterThanOrEqual(4)
-        tokenHandlerCallCount.should.be.lessThanOrEqual(5)
+  await lock;
+  await iter;
+  await ns.stop();
+});
 
-        tokenHandlerErrorCount.should.greaterThanOrEqual(2)
-        tokenHandlerErrorCount.should.lessThanOrEqual(3)
-
-        authorizationViolationErrorCount.should.equal(tokenHandlerErrorCount)
-        totalErrorCount.should.equal(tokenHandlerErrorCount + authorizationViolationErrorCount)
-
-        done()
-      }, 100)
+test("auth - user and token is rejected", async (t) => {
+  connect({ servers: "127.0.0.1:4222", user: "derek", token: "foobar" })
+    .then(async (nc) => {
+      await nc.close();
+      t.fail("should not have connected");
     })
-  })
-})
+    .catch((err) => {
+      t.is(err.code, ErrorCode.BAD_AUTHENTICATION);
+    });
+});
+
+test("auth - token", async (t) => {
+  const ns = await NatsServer.start({ authorization: { token: "foo" } });
+  const nc = await connect({ port: ns.port, token: "foo" });
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
+
+test("auth - nkey", async (t) => {
+  t.plan(1);
+  const kp = nkeys.createUser();
+  const pk = kp.getPublicKey();
+  const seed = kp.getSeed();
+  const conf = {
+    authorization: {
+      users: [
+        { nkey: pk },
+      ],
+    },
+  };
+  const ns = await NatsServer.start(conf);
+  const nc = await connect(
+    { port: ns.port, authenticator: nkeyAuthenticator(seed) },
+  );
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
+
+test("auth - creds", async (t) => {
+  const creds = `-----BEGIN NATS USER JWT-----
+    eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJqdGkiOiJFU1VQS1NSNFhGR0pLN0FHUk5ZRjc0STVQNTZHMkFGWERYQ01CUUdHSklKUEVNUVhMSDJBIiwiaWF0IjoxNTQ0MjE3NzU3LCJpc3MiOiJBQ1pTV0JKNFNZSUxLN1FWREVMTzY0VlgzRUZXQjZDWENQTUVCVUtBMzZNSkpRUlBYR0VFUTJXSiIsInN1YiI6IlVBSDQyVUc2UFY1NTJQNVNXTFdUQlAzSDNTNUJIQVZDTzJJRUtFWFVBTkpYUjc1SjYzUlE1V002IiwidHlwZSI6InVzZXIiLCJuYXRzIjp7InB1YiI6e30sInN1YiI6e319fQ.kCR9Erm9zzux4G6M-V2bp7wKMKgnSNqMBACX05nwePRWQa37aO_yObbhcJWFGYjo1Ix-oepOkoyVLxOJeuD8Bw
+  ------END NATS USER JWT------
+
+************************* IMPORTANT *************************
+  NKEY Seed printed below can be used sign and prove identity.
+    NKEYs are sensitive and should be treated as secrets.
+
+  -----BEGIN USER NKEY SEED-----
+    SUAIBDPBAUTWCWBKIO6XHQNINK5FWJW4OHLXC3HQ2KFE4PEJUA44CNHTC4
+  ------END USER NKEY SEED------
+`;
+
+  const conf = {
+    operator:
+      "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJhdWQiOiJURVNUUyIsImV4cCI6MTg1OTEyMTI3NSwianRpIjoiWE5MWjZYWVBIVE1ESlFSTlFPSFVPSlFHV0NVN01JNVc1SlhDWk5YQllVS0VRVzY3STI1USIsImlhdCI6MTU0Mzc2MTI3NSwiaXNzIjoiT0NBVDMzTVRWVTJWVU9JTUdOR1VOWEo2NkFIMlJMU0RBRjNNVUJDWUFZNVFNSUw2NU5RTTZYUUciLCJuYW1lIjoiU3luYWRpYSBDb21tdW5pY2F0aW9ucyBJbmMuIiwibmJmIjoxNTQzNzYxMjc1LCJzdWIiOiJPQ0FUMzNNVFZVMlZVT0lNR05HVU5YSjY2QUgyUkxTREFGM01VQkNZQVk1UU1JTDY1TlFNNlhRRyIsInR5cGUiOiJvcGVyYXRvciIsIm5hdHMiOnsic2lnbmluZ19rZXlzIjpbIk9EU0tSN01ZRlFaNU1NQUo2RlBNRUVUQ1RFM1JJSE9GTFRZUEpSTUFWVk40T0xWMllZQU1IQ0FDIiwiT0RTS0FDU1JCV1A1MzdEWkRSVko2NTdKT0lHT1BPUTZLRzdUNEhONk9LNEY2SUVDR1hEQUhOUDIiLCJPRFNLSTM2TFpCNDRPWTVJVkNSNlA1MkZaSlpZTVlXWlZXTlVEVExFWjVUSzJQTjNPRU1SVEFCUiJdfX0.hyfz6E39BMUh0GLzovFfk3wT4OfualftjdJ_eYkLfPvu5tZubYQ_Pn9oFYGCV_6yKy3KMGhWGUCyCdHaPhalBw",
+    resolver: "MEMORY",
+    resolver_preload: {
+      ACZSWBJ4SYILK7QVDELO64VX3EFWB6CXCPMEBUKA36MJJQRPXGEEQ2WJ:
+        "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJqdGkiOiJXVFdYVDNCT1JWSFNLQkc2T0pIVVdFQ01QRVdBNldZVEhNRzVEWkJBUUo1TUtGU1dHM1FRIiwiaWF0IjoxNTQ0MjE3NzU3LCJpc3MiOiJPQ0FUMzNNVFZVMlZVT0lNR05HVU5YSjY2QUgyUkxTREFGM01VQkNZQVk1UU1JTDY1TlFNNlhRRyIsInN1YiI6IkFDWlNXQko0U1lJTEs3UVZERUxPNjRWWDNFRldCNkNYQ1BNRUJVS0EzNk1KSlFSUFhHRUVRMldKIiwidHlwZSI6ImFjY291bnQiLCJuYXRzIjp7ImxpbWl0cyI6eyJzdWJzIjotMSwiY29ubiI6LTEsImltcG9ydHMiOi0xLCJleHBvcnRzIjotMSwiZGF0YSI6LTEsInBheWxvYWQiOi0xLCJ3aWxkY2FyZHMiOnRydWV9fX0.q-E7bBGTU0uoTmM9Vn7WaEHDzCUrqvPDb9mPMQbry_PNzVAjf0RG9vd15lGxW5lu7CuGVqpj4CYKhNDHluIJAg",
+    },
+  };
+  const ns = await NatsServer.start(conf);
+  const nc = await connect(
+    {
+      port: ns.port,
+      authenticator: credsAuthenticator(new TextEncoder().encode(creds)),
+    },
+  );
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
+
+test("auth - custom", async (t) => {
+  const jwt =
+    "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJqdGkiOiJFU1VQS1NSNFhGR0pLN0FHUk5ZRjc0STVQNTZHMkFGWERYQ01CUUdHSklKUEVNUVhMSDJBIiwiaWF0IjoxNTQ0MjE3NzU3LCJpc3MiOiJBQ1pTV0JKNFNZSUxLN1FWREVMTzY0VlgzRUZXQjZDWENQTUVCVUtBMzZNSkpRUlBYR0VFUTJXSiIsInN1YiI6IlVBSDQyVUc2UFY1NTJQNVNXTFdUQlAzSDNTNUJIQVZDTzJJRUtFWFVBTkpYUjc1SjYzUlE1V002IiwidHlwZSI6InVzZXIiLCJuYXRzIjp7InB1YiI6e30sInN1YiI6e319fQ.kCR9Erm9zzux4G6M-V2bp7wKMKgnSNqMBACX05nwePRWQa37aO_yObbhcJWFGYjo1Ix-oepOkoyVLxOJeuD8Bw";
+  const useed = "SUAIBDPBAUTWCWBKIO6XHQNINK5FWJW4OHLXC3HQ2KFE4PEJUA44CNHTC4";
+
+  const conf = {
+    operator:
+      "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJhdWQiOiJURVNUUyIsImV4cCI6MTg1OTEyMTI3NSwianRpIjoiWE5MWjZYWVBIVE1ESlFSTlFPSFVPSlFHV0NVN01JNVc1SlhDWk5YQllVS0VRVzY3STI1USIsImlhdCI6MTU0Mzc2MTI3NSwiaXNzIjoiT0NBVDMzTVRWVTJWVU9JTUdOR1VOWEo2NkFIMlJMU0RBRjNNVUJDWUFZNVFNSUw2NU5RTTZYUUciLCJuYW1lIjoiU3luYWRpYSBDb21tdW5pY2F0aW9ucyBJbmMuIiwibmJmIjoxNTQzNzYxMjc1LCJzdWIiOiJPQ0FUMzNNVFZVMlZVT0lNR05HVU5YSjY2QUgyUkxTREFGM01VQkNZQVk1UU1JTDY1TlFNNlhRRyIsInR5cGUiOiJvcGVyYXRvciIsIm5hdHMiOnsic2lnbmluZ19rZXlzIjpbIk9EU0tSN01ZRlFaNU1NQUo2RlBNRUVUQ1RFM1JJSE9GTFRZUEpSTUFWVk40T0xWMllZQU1IQ0FDIiwiT0RTS0FDU1JCV1A1MzdEWkRSVko2NTdKT0lHT1BPUTZLRzdUNEhONk9LNEY2SUVDR1hEQUhOUDIiLCJPRFNLSTM2TFpCNDRPWTVJVkNSNlA1MkZaSlpZTVlXWlZXTlVEVExFWjVUSzJQTjNPRU1SVEFCUiJdfX0.hyfz6E39BMUh0GLzovFfk3wT4OfualftjdJ_eYkLfPvu5tZubYQ_Pn9oFYGCV_6yKy3KMGhWGUCyCdHaPhalBw",
+    resolver: "MEMORY",
+    resolver_preload: {
+      ACZSWBJ4SYILK7QVDELO64VX3EFWB6CXCPMEBUKA36MJJQRPXGEEQ2WJ:
+        "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJqdGkiOiJXVFdYVDNCT1JWSFNLQkc2T0pIVVdFQ01QRVdBNldZVEhNRzVEWkJBUUo1TUtGU1dHM1FRIiwiaWF0IjoxNTQ0MjE3NzU3LCJpc3MiOiJPQ0FUMzNNVFZVMlZVT0lNR05HVU5YSjY2QUgyUkxTREFGM01VQkNZQVk1UU1JTDY1TlFNNlhRRyIsInN1YiI6IkFDWlNXQko0U1lJTEs3UVZERUxPNjRWWDNFRldCNkNYQ1BNRUJVS0EzNk1KSlFSUFhHRUVRMldKIiwidHlwZSI6ImFjY291bnQiLCJuYXRzIjp7ImxpbWl0cyI6eyJzdWJzIjotMSwiY29ubiI6LTEsImltcG9ydHMiOi0xLCJleHBvcnRzIjotMSwiZGF0YSI6LTEsInBheWxvYWQiOi0xLCJ3aWxkY2FyZHMiOnRydWV9fX0.q-E7bBGTU0uoTmM9Vn7WaEHDzCUrqvPDb9mPMQbry_PNzVAjf0RG9vd15lGxW5lu7CuGVqpj4CYKhNDHluIJAg",
+    },
+  };
+  const ns = await NatsServer.start(conf);
+  const authenticator = (nonce) => {
+    const seed = nkeys.fromSeed(new TextEncoder().encode(useed));
+    const nkey = seed.getPublicKey();
+    const hash = seed.sign(new TextEncoder().encode(nonce));
+    const sig = nkeys.encode(hash);
+
+    return { nkey, sig, jwt };
+  };
+  const nc = await connect(
+    {
+      port: ns.port,
+      authenticator: authenticator,
+    },
+  );
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
+
+test("auth - jwt", async (t) => {
+  const jwt =
+    "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJqdGkiOiJFU1VQS1NSNFhGR0pLN0FHUk5ZRjc0STVQNTZHMkFGWERYQ01CUUdHSklKUEVNUVhMSDJBIiwiaWF0IjoxNTQ0MjE3NzU3LCJpc3MiOiJBQ1pTV0JKNFNZSUxLN1FWREVMTzY0VlgzRUZXQjZDWENQTUVCVUtBMzZNSkpRUlBYR0VFUTJXSiIsInN1YiI6IlVBSDQyVUc2UFY1NTJQNVNXTFdUQlAzSDNTNUJIQVZDTzJJRUtFWFVBTkpYUjc1SjYzUlE1V002IiwidHlwZSI6InVzZXIiLCJuYXRzIjp7InB1YiI6e30sInN1YiI6e319fQ.kCR9Erm9zzux4G6M-V2bp7wKMKgnSNqMBACX05nwePRWQa37aO_yObbhcJWFGYjo1Ix-oepOkoyVLxOJeuD8Bw";
+  const useed = "SUAIBDPBAUTWCWBKIO6XHQNINK5FWJW4OHLXC3HQ2KFE4PEJUA44CNHTC4";
+
+  const conf = {
+    operator:
+      "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJhdWQiOiJURVNUUyIsImV4cCI6MTg1OTEyMTI3NSwianRpIjoiWE5MWjZYWVBIVE1ESlFSTlFPSFVPSlFHV0NVN01JNVc1SlhDWk5YQllVS0VRVzY3STI1USIsImlhdCI6MTU0Mzc2MTI3NSwiaXNzIjoiT0NBVDMzTVRWVTJWVU9JTUdOR1VOWEo2NkFIMlJMU0RBRjNNVUJDWUFZNVFNSUw2NU5RTTZYUUciLCJuYW1lIjoiU3luYWRpYSBDb21tdW5pY2F0aW9ucyBJbmMuIiwibmJmIjoxNTQzNzYxMjc1LCJzdWIiOiJPQ0FUMzNNVFZVMlZVT0lNR05HVU5YSjY2QUgyUkxTREFGM01VQkNZQVk1UU1JTDY1TlFNNlhRRyIsInR5cGUiOiJvcGVyYXRvciIsIm5hdHMiOnsic2lnbmluZ19rZXlzIjpbIk9EU0tSN01ZRlFaNU1NQUo2RlBNRUVUQ1RFM1JJSE9GTFRZUEpSTUFWVk40T0xWMllZQU1IQ0FDIiwiT0RTS0FDU1JCV1A1MzdEWkRSVko2NTdKT0lHT1BPUTZLRzdUNEhONk9LNEY2SUVDR1hEQUhOUDIiLCJPRFNLSTM2TFpCNDRPWTVJVkNSNlA1MkZaSlpZTVlXWlZXTlVEVExFWjVUSzJQTjNPRU1SVEFCUiJdfX0.hyfz6E39BMUh0GLzovFfk3wT4OfualftjdJ_eYkLfPvu5tZubYQ_Pn9oFYGCV_6yKy3KMGhWGUCyCdHaPhalBw",
+    resolver: "MEMORY",
+    resolver_preload: {
+      ACZSWBJ4SYILK7QVDELO64VX3EFWB6CXCPMEBUKA36MJJQRPXGEEQ2WJ:
+        "eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJqdGkiOiJXVFdYVDNCT1JWSFNLQkc2T0pIVVdFQ01QRVdBNldZVEhNRzVEWkJBUUo1TUtGU1dHM1FRIiwiaWF0IjoxNTQ0MjE3NzU3LCJpc3MiOiJPQ0FUMzNNVFZVMlZVT0lNR05HVU5YSjY2QUgyUkxTREFGM01VQkNZQVk1UU1JTDY1TlFNNlhRRyIsInN1YiI6IkFDWlNXQko0U1lJTEs3UVZERUxPNjRWWDNFRldCNkNYQ1BNRUJVS0EzNk1KSlFSUFhHRUVRMldKIiwidHlwZSI6ImFjY291bnQiLCJuYXRzIjp7ImxpbWl0cyI6eyJzdWJzIjotMSwiY29ubiI6LTEsImltcG9ydHMiOi0xLCJleHBvcnRzIjotMSwiZGF0YSI6LTEsInBheWxvYWQiOi0xLCJ3aWxkY2FyZHMiOnRydWV9fX0.q-E7bBGTU0uoTmM9Vn7WaEHDzCUrqvPDb9mPMQbry_PNzVAjf0RG9vd15lGxW5lu7CuGVqpj4CYKhNDHluIJAg",
+    },
+  };
+  const ns = await NatsServer.start(conf);
+  const nc = await connect(
+    {
+      port: ns.port,
+      authenticator: jwtAuthenticator(jwt, new TextEncoder().encode(useed)),
+    },
+  );
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
+
+test("auth - custom error", async (t) => {
+  t.plan(1);
+  const ns = await NatsServer.start(conf);
+  const authenticator = () => {
+    throw new Error("user code exploded");
+  };
+  await connect(
+    {
+      port: ns.port,
+      maxReconnectAttempts: 1,
+      authenticator: authenticator,
+    },
+  ).then(() => {
+    t.fail("shouldn't have connected");
+  }).catch((err) => {
+    t.is(err.code, ErrorCode.BAD_AUTHENTICATION);
+  });
+  await ns.stop();
+});
