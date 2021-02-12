@@ -14,7 +14,7 @@ A Node.js client for the [NATS messaging system](https://nats.io).
 ** :warning: NATS.js v2 is a release candidate** you can get the current version by:
 
 ```bash
-npm install nats@rc'
+npm install nats@rc
 ```
 
 The nats.js **v2 client is not API compatible** with previous versions of nats.js.
