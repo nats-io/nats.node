@@ -19,12 +19,14 @@ import {
   NatsConnectionImpl,
   setTransportFactory,
   Transport,
+  TransportFactory,
 } from "./nats-base-client";
 
 export function connect(opts: ConnectionOptions = {}): Promise<NatsConnection> {
-  setTransportFactory((): Transport => {
-    return new NodeTransport();
-  });
-
+  setTransportFactory({
+    factory: (): Transport => {
+      return new NodeTransport();
+    },
+  } as TransportFactory);
   return NatsConnectionImpl.connect(opts);
 }
