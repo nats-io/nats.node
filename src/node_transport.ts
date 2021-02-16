@@ -82,9 +82,9 @@ export class NodeTransport implements Transport {
         ? NatsError.errorForCode(ErrorCode.CONNECTION_REFUSED, err)
         : err;
       if (this.socket) {
-        this.socket.destroy()
+        this.socket.destroy();
       }
-      throw perr
+      throw perr;
     }
   }
 

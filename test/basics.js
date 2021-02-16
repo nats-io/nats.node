@@ -366,7 +366,9 @@ test("basics - request timeout", async (t) => {
       fail();
     })
     .catch((err) => {
-      t.true(err.code === ErrorCode.TIMEOUT || err.code === ErrorCode.NO_RESPONDERS)
+      t.true(
+        err.code === ErrorCode.TIMEOUT || err.code === ErrorCode.NO_RESPONDERS,
+      );
       lock.unlock();
     });
 
@@ -504,7 +506,9 @@ test("basics - no mux requests timeout", async (t) => {
   const lock = Lock();
   nc.request(createInbox(), Empty, { timeout: 250, noMux: true })
     .catch((err) => {
-      t.true(err.code === ErrorCode.TIMEOUT || err.code === ErrorCode.NO_RESPONDERS)
+      t.true(
+        err.code === ErrorCode.TIMEOUT || err.code === ErrorCode.NO_RESPONDERS,
+      );
       lock.unlock();
     });
   await lock;

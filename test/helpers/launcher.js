@@ -427,7 +427,7 @@ function toConf(o = {}, indent = "") {
           if (
             typeof v === "string" && v.charAt(0) >= "0" && v.charAt(0) <= "9"
           ) {
-            buf.push(pad + k + ': \"' + v + '\"');
+            buf.push(pad + k + ': "' + v + '"');
           } else {
             buf.push(pad + k + ": " + v);
           }
