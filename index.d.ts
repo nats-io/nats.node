@@ -61,8 +61,11 @@ export interface ConnectionOptions {
 
 export interface TlsOptions {
   certFile?: string;
+  cert?: string;
   caFile?: string;
+  ca?: string;
   keyFile?: string;
+  key?: string;
 }
 
 export enum Events {

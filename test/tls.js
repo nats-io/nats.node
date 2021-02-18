@@ -20,6 +20,7 @@ const {
   "../",
 );
 const { resolve, join } = require("path");
+const { readFileSync } = require("fs");
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
 const { buildAuthenticator } = require("../lib/nats-base-client/authenticator");
@@ -97,6 +98,25 @@ test("tls - client auth", async (t) => {
     keyFile: resolve(join(dir, "./test/certs/client.key")),
     certFile: resolve(join(dir, "./test/certs/client.crt")),
     caFile: resolve(join(dir, "./test/certs/ca.crt")),
+  };
+  const nc = await connect({
+    port: ns.port,
+    tls: certs,
+  });
+
+  await nc.flush();
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
+
+test("tls - client auth direct", async (t) => {
+  const ns = await NatsServer.start(tlsConfig);
+
+  const certs = {
+    key: readFileSync(resolve(join(dir, "./test/certs/client.key"))),
+    cert: readFileSync(resolve(join(dir, "./test/certs/client.crt"))),
+    ca: readFileSync(resolve(join(dir, "./test/certs/ca.crt"))),
   };
   const nc = await connect({
     port: ns.port,
