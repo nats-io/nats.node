@@ -33,7 +33,7 @@ import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
-const VERSION = "2.0.0-219";
+const VERSION = "2.0.0-220";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -171,25 +171,31 @@ export class NodeTransport implements Transport {
 
   async loadClientCerts(): Promise<TlsOptions | void> {
     const tlsOpts = {} as TlsOptions;
-    const { certFile, caFile, keyFile } = this.options.tls;
+    const { certFile, cert, caFile, ca, keyFile, key } = this.options.tls;
     try {
       if (certFile) {
         const data = await this.loadFile(certFile);
         if (data) {
           tlsOpts.cert = data;
         }
+      } else if (cert) {
+        tlsOpts.cert = cert;
       }
       if (keyFile) {
         const data = await this.loadFile(keyFile);
         if (data) {
           tlsOpts.key = data;
         }
+      } else if (key) {
+        tlsOpts.key = key;
       }
       if (caFile) {
         const data = await this.loadFile(caFile);
         if (data) {
           tlsOpts.ca = [data];
         }
+      } else if (ca) {
+        tlsOpts.ca = ca;
       }
       return Promise.resolve(tlsOpts);
     } catch (err) {
