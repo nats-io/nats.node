@@ -35,6 +35,8 @@ export declare const Empty: Uint8Array;
 export interface ConnectionOptions {
   authenticator?: Authenticator;
   debug?: boolean;
+  ignoreClusterUpdates?: boolean;
+  inboxPrefix?: string;
   maxPingOut?: number;
   maxReconnectAttempts?: number;
   name?: string;
@@ -56,7 +58,6 @@ export interface ConnectionOptions {
   user?: string;
   verbose?: boolean;
   waitOnFirstConnect?: boolean;
-  ignoreClusterUpdates?: boolean;
 }
 
 export interface TlsOptions {
@@ -261,4 +262,4 @@ export interface Codec<T> {
   decode(a: Uint8Array): T;
 }
 export declare function StringCodec(): Codec<string>;
-export declare function JSONCodec(): Codec<unknown>;
+export declare function JSONCodec<T = unknown>(): Codec<T>;
