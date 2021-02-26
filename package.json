@@ -48,6 +48,7 @@
     "test": "npm run build && npm run ava",
     "debug-test": "node node_modules/.bin/ava --verbose -T 6500000 --match",
     "setup": "curl -fsSL https://deno.land/x/install/install.sh | sh",
+    "setup_win": "choco install deno",
     "stage": "npm run clean && npm run clone-nbc && npm run cjs && shx rm -Rf ./deps/ && npm run build",
     "cover:html": "nyc report --reporter=html && open coverage/index.html"
   },
