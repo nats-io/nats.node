@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The NATS Authors
+ * Copyright 2020-2021 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,8 +19,6 @@ const {
 } = require(
   "../",
 );
-
-const { delay } = require("../lib/nats-base-client/internal_mod");
 
 const { resolve, join } = require("path");
 const { Lock } = require("./helpers/lock");
@@ -58,7 +56,7 @@ test("tls - reconnect via tls by ip", async (t) => {
   const iter = nc.status();
   (async () => {
     for await (const e of iter) {
-      if (e.type === Events.RECONNECT) {
+      if (e.type === Events.Reconnect) {
         lock.unlock();
       }
     }

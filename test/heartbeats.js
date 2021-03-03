@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The NATS Authors
+ * Copyright 2020-2021 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -60,7 +60,7 @@ test("heartbeat - timers fire", async (t) => {
   hb.cancel();
   t.is(hb.timer, undefined);
   t.true(status.length >= 3);
-  t.is(status[0].type, DebugEvents.PING_TIMER);
+  t.is(status[0].type, DebugEvents.PingTimer);
 });
 
 test("heartbeat - errors fire on missed maxOut", async (t) => {
@@ -78,7 +78,7 @@ test("heartbeat - errors fire on missed maxOut", async (t) => {
   await disconnect;
   t.is(hb.timer, undefined);
   t.true(status.length >= 7, `${status.length} >= 7`);
-  t.is(status[0].type, DebugEvents.PING_TIMER);
+  t.is(status[0].type, DebugEvents.PingTimer);
 });
 
 test("heartbeat - recovers from missed", async (t) => {

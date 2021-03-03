@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The NATS Authors
+ * Copyright 2020-2021 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,7 +45,7 @@ test("tls - fail if server doesn't support TLS", async (t) => {
       t.fail("shouldn't have connected");
     })
     .catch((err) => {
-      t.is(err.code, ErrorCode.SERVER_OPTION_NA);
+      t.is(err.code, ErrorCode.ServerOptionNotAvailable);
       lock.unlock();
     });
   await lock;
@@ -157,7 +157,7 @@ async function tlsInvalidCertMacro(t, conf, tlsCode, re) {
     await connect({ servers: `localhost:${ns.port}`, tls: conf });
     t.fail("shouldn't have connected");
   } catch (err) {
-    t.is(err.code, ErrorCode.TLS);
+    t.is(err.code, ErrorCode.Tls);
     t.truthy(err.chainedError);
     t.truthy(re.exec(err.chainedError.message));
   }
@@ -195,7 +195,7 @@ async function tlsInvalidArgPathMacro(t, conf, arg) {
     await connect({ servers: `localhost:${ns.port}`, tls: conf });
     t.fail("shouldn't have connected");
   } catch (err) {
-    t.is(err.code, ErrorCode.TLS);
+    t.is(err.code, ErrorCode.Tls);
     const v = conf[arg];
     t.is(err.message, `${v} doesn't exist`);
   }

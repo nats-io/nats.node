@@ -69,18 +69,18 @@ export interface TlsOptions {
   key?: string;
 }
 
-export enum Events {
-  DISCONNECT = "disconnect",
-  RECONNECT = "reconnect",
-  UPDATE = "update",
+export declare enum Events {
+  Disconnect = "disconnect",
+  Reconnect = "reconnect",
+  Update = "update",
   LDM = "ldm",
-  ERROR = "error",
+  Error = "error"
 }
 
-export enum DebugEvents {
-  RECONNECTING = "reconnecting",
-  PING_TIMER = "pingTimer",
-  STALE_CONNECTION = "staleConnection",
+export declare enum DebugEvents {
+  Reconnecting = "reconnecting",
+  PingTimer = "pingTimer",
+  StaleConnection = "staleConnection"
 }
 
 export interface Status {
@@ -133,7 +133,7 @@ export interface Msg {
 export interface MsgHdrs extends Iterable<[string, string[]]> {
   hasError: boolean;
   status: string;
-  code?: number;
+  code: number;
   get(k: string): string;
   set(k: string, v: string): void;
   append(k: string, v: string): void;
@@ -184,40 +184,37 @@ export declare function jwtAuthenticator(
 
 export declare function credsAuthenticator(creds: Uint8Array): Authenticator;
 
-export enum ErrorCode {
-  // emitted by the client
-  API_ERROR = "BAD API",
-  BAD_AUTHENTICATION = "BAD_AUTHENTICATION",
-  BAD_CREDS = "BAD_CREDS",
-  BAD_HEADER = "BAD_HEADER",
-  BAD_JSON = "BAD_JSON",
-  BAD_PAYLOAD = "BAD_PAYLOAD",
-  BAD_SUBJECT = "BAD_SUBJECT",
-  CANCELLED = "CANCELLED",
-  CONNECTION_CLOSED = "CONNECTION_CLOSED",
-  CONNECTION_DRAINING = "CONNECTION_DRAINING",
-  CONNECTION_REFUSED = "CONNECTION_REFUSED",
-  CONNECTION_TIMEOUT = "CONNECTION_TIMEOUT",
-  DISCONNECT = "DISCONNECT",
-  INVALID_OPTION = "INVALID_OPTION",
-  INVALID_PAYLOAD_TYPE = "INVALID_PAYLOAD",
-  MAX_PAYLOAD_EXCEEDED = "MAX_PAYLOAD_EXCEEDED",
-  NO_RESPONDERS = "NO_RESPONDERS",
-  NOT_FUNC = "NOT_FUNC",
-  REQUEST_ERROR = "REQUEST_ERROR",
-  SERVER_OPTION_NA = "SERVER_OPT_NA",
-  SUB_CLOSED = "SUB_CLOSED",
-  SUB_DRAINING = "SUB_DRAINING",
-  TIMEOUT = "TIMEOUT",
-  TLS = "TLS",
-  UNKNOWN = "UNKNOWN_ERROR",
-  WSS_REQUIRED = "WSS_REQUIRED",
-
-  // emitted by the server
-  AUTHORIZATION_VIOLATION = "AUTHORIZATION_VIOLATION",
-  AUTHENTICATION_EXPIRED = "AUTHENTICATION_EXPIRED",
-  NATS_PROTOCOL_ERR = "NATS_PROTOCOL_ERR",
-  PERMISSIONS_VIOLATION = "PERMISSIONS_VIOLATION",
+export declare enum ErrorCode {
+  ApiError = "BAD API",
+  BadAuthentication = "BAD_AUTHENTICATION",
+  BadCreds = "BAD_CREDS",
+  BadHeader = "BAD_HEADER",
+  BadJson = "BAD_JSON",
+  BadPayload = "BAD_PAYLOAD",
+  BadSubject = "BAD_SUBJECT",
+  Cancelled = "CANCELLED",
+  ConnectionClosed = "CONNECTION_CLOSED",
+  ConnectionDraining = "CONNECTION_DRAINING",
+  ConnectionRefused = "CONNECTION_REFUSED",
+  ConnectionTimeout = "CONNECTION_TIMEOUT",
+  Disconnect = "DISCONNECT",
+  InvalidOption = "INVALID_OPTION",
+  InvalidPayload = "INVALID_PAYLOAD",
+  MaxPayloadExceeded = "MAX_PAYLOAD_EXCEEDED",
+  NoResponders = "NO_RESPONDERS",
+  NotFunction = "NOT_FUNC",
+  RequestError = "REQUEST_ERROR",
+  ServerOptionNotAvailable = "SERVER_OPT_NA",
+  SubClosed = "SUB_CLOSED",
+  SubDraining = "SUB_DRAINING",
+  Timeout = "TIMEOUT",
+  Tls = "TLS",
+  Unknown = "UNKNOWN_ERROR",
+  WssRequired = "WSS_REQUIRED",
+  AuthorizationViolation = "AUTHORIZATION_VIOLATION",
+  AuthenticationExpired = "AUTHENTICATION_EXPIRED",
+  ProtocolError = "NATS_PROTOCOL_ERR",
+  PermissionsViolation = "PERMISSIONS_VIOLATION"
 }
 
 export declare interface NatsError extends Error {
