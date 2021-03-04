@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 The NATS Authors
+ * Copyright 2018-2021 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 const test = require("ava");
-const { connect, ErrorCode, createInbox, StringCodec, Empty, Events } = require(
+const { connect, ErrorCode, createInbox, StringCodec, Empty } = require(
   "../",
 );
 const { deferred, delay } = require("../lib/nats-base-client/internal_mod");
@@ -66,7 +66,7 @@ test("basics - fail connect", async (t) => {
       t.fail("should have not connected");
     })
     .catch((err) => {
-      t.is(err.code, ErrorCode.CONNECTION_REFUSED);
+      t.is(err.code, ErrorCode.ConnectionRefused);
     });
 });
 
@@ -85,7 +85,7 @@ test("basics - no publish without subject", async (t) => {
     nc.publish("");
     fail("should not be able to publish without a subject");
   } catch (err) {
-    t.is(err.code, ErrorCode.BAD_SUBJECT);
+    t.is(err.code, ErrorCode.BadSubject);
   } finally {
     await nc.close();
   }
@@ -367,7 +367,7 @@ test("basics - request timeout", async (t) => {
     })
     .catch((err) => {
       t.true(
-        err.code === ErrorCode.TIMEOUT || err.code === ErrorCode.NO_RESPONDERS,
+        err.code === ErrorCode.Timeout || err.code === ErrorCode.NoResponders,
       );
       lock.unlock();
     });
@@ -386,7 +386,7 @@ test("basics - request cancel rejects", async (t) => {
       t.fail();
     })
     .catch((err) => {
-      t.is(err.code, ErrorCode.CANCELLED);
+      t.is(err.code, ErrorCode.Cancelled);
       lock.unlock();
     });
 
@@ -443,7 +443,7 @@ test("basics - subscription with timeout", async (t) => {
   (async () => {
     for await (const m of sub) {}
   })().catch((err) => {
-    t.is(err.code, ErrorCode.TIMEOUT);
+    t.is(err.code, ErrorCode.Timeout);
     lock.unlock();
   });
   await lock;
@@ -507,7 +507,7 @@ test("basics - no mux requests timeout", async (t) => {
   nc.request(createInbox(), Empty, { timeout: 250, noMux: true })
     .catch((err) => {
       t.true(
-        err.code === ErrorCode.TIMEOUT || err.code === ErrorCode.NO_RESPONDERS,
+        err.code === ErrorCode.Timeout || err.code === ErrorCode.NoResponders,
       );
       lock.unlock();
     });
@@ -541,14 +541,14 @@ test("basics - no max_payload messages", async (t) => {
     nc.publish(subj, big);
     t.fail();
   } catch (err) {
-    t.is(err.code, ErrorCode.MAX_PAYLOAD_EXCEEDED);
+    t.is(err.code, ErrorCode.MaxPayloadExceeded);
   }
 
   try {
     const _ = await nc.request(subj, big);
     t.fail();
   } catch (err) {
-    t.is(err.code, ErrorCode.MAX_PAYLOAD_EXCEEDED);
+    t.is(err.code, ErrorCode.MaxPayloadExceeded);
   }
 
   const sub = nc.subscribe(subj);
@@ -558,13 +558,13 @@ test("basics - no max_payload messages", async (t) => {
       t.fail();
     }
   })().catch((err) => {
-    t.is(err.code, ErrorCode.MAX_PAYLOAD_EXCEEDED);
+    t.is(err.code, ErrorCode.MaxPayloadExceeded);
   });
 
   await nc.request(subj).then(() => {
     t.fail();
   }).catch((err) => {
-    t.is(err.code, ErrorCode.TIMEOUT);
+    t.is(err.code, ErrorCode.Timeout);
   });
 
   await nc.close();
@@ -594,10 +594,10 @@ test("basics - subject is required", async (t) => {
   const nc = await connect({ servers: u });
   t.throws(() => {
     nc.publish();
-  }, { code: ErrorCode.BAD_SUBJECT });
+  }, { code: ErrorCode.BadSubject });
 
   await nc.request().catch((err) => {
-    t.is(err.code, ErrorCode.BAD_SUBJECT);
+    t.is(err.code, ErrorCode.BadSubject);
   });
 
   await nc.close();
@@ -607,7 +607,7 @@ test("basics - payload is only Uint8Array", async (t) => {
   const nc = await connect({ servers: u });
   t.throws(() => {
     nc.publish(createInbox(), "s");
-  }, { code: ErrorCode.BAD_PAYLOAD });
+  }, { code: ErrorCode.BadPayload });
 
   await nc.close();
 });

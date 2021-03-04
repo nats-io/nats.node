@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The NATS Authors
+ * Copyright 2020-2021 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -69,7 +69,7 @@ export class NodeTransport implements Transport {
       }
       //@ts-ignore: this is possibly a TlsSocket
       if (tlsRequired && this.socket.encrypted !== true) {
-        throw new NatsError("tls", ErrorCode.SERVER_OPTION_NA);
+        throw new NatsError("tls", ErrorCode.ServerOptionNotAvailable);
       }
 
       this.connected = true;
@@ -79,7 +79,7 @@ export class NodeTransport implements Transport {
     } catch (err) {
       const { code } = err;
       const perr = code === "ECONNREFUSED"
-        ? NatsError.errorForCode(ErrorCode.CONNECTION_REFUSED, err)
+        ? NatsError.errorForCode(ErrorCode.ConnectionRefused, err)
         : err;
       if (this.socket) {
         this.socket.destroy();
@@ -211,7 +211,7 @@ export class NodeTransport implements Transport {
         const certOpts = await this.loadClientCerts() || {};
         tlsOpts = extend(tlsOpts, this.options.tls, certOpts);
       } catch (err) {
-        return Promise.reject(new NatsError(err.message, ErrorCode.TLS, err));
+        return Promise.reject(new NatsError(err.message, ErrorCode.Tls, err));
       }
     }
     const d = deferred<TLSSocket>();
@@ -234,7 +234,7 @@ export class NodeTransport implements Transport {
       });
     } catch (err) {
       // tls throws errors on bad certs see nats.js#310
-      d.reject(NatsError.errorForCode(ErrorCode.TLS, err));
+      d.reject(NatsError.errorForCode(ErrorCode.Tls, err));
     }
     return d;
   }

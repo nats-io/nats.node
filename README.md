@@ -446,10 +446,10 @@ try {
   console.log(m.data);
 } catch (err) {
   switch (err.code) {
-    case ErrorCode.NO_RESPONDERS:
+    case ErrorCode.NoResponders:
       console.log("no one is listening to 'hello.world'");
       break;
-    case ErrorCode.TIMEOUT:
+    case ErrorCode.Timeout:
       console.log("someone is listening but didn't respond");
       break;
     default:
@@ -603,7 +603,7 @@ const sub = nc.subscribe("hello", { timeout: 1000 });
   for await (const m of sub) {
   }
 })().catch((err) => {
-  if (err.code === ErrorCode.TIMEOUT) {
+  if (err.code === ErrorCode.Timeout) {
     console.log(`sub timed out!`);
   } else {
     console.log(`sub iterator got an error!`);
@@ -665,11 +665,11 @@ message. These restrictions do not exist when just draining a subscription.
 
 Clients can get notification on various event types:
 
-- `Events.DISCONNECT`
-- `Events.RECONNECT`
-- `Events.UPDATE`
+- `Events.Disconnect`
+- `Events.Reconnect`
+- `Events.Update`
 - `Events.LDM`
-- `Events.ERROR`
+- `Events.Error`
 
 The first two fire when a client disconnects and reconnects respectively. The
 payload will be the server where the event took place.

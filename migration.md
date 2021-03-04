@@ -100,7 +100,7 @@ The `RequestOptions` interface has the following interface and defaults:
     reply?: string
 }
 ```
-A request will either succeed and resolve to a message or fail with a timeout or some other error. If specifying the connection options `headers` and `noResponder`, requests sent to subjects that have no interest will immediately fail with a `ErrorCode.NO_RESPONDER`.
+A request will either succeed and resolve to a message or fail with a timeout or some other error. If specifying the connection options `headers` and `noResponder`, requests sent to subjects that have no interest will immediately fail with a `ErrorCode.NoResponders`.
    
 
 

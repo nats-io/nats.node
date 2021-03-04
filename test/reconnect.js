@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 The NATS Authors
+ * Copyright 2018-2021 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -78,7 +78,7 @@ test("reconnect - events", async (t) => {
   try {
     await nc.closed();
   } catch (err) {
-    t.is(err.code, ErrorCode.CONNECTION_REFUSED);
+    t.is(err.code, ErrorCode.ConnectionRefused);
   }
   t.is(disconnects, 1, "disconnects");
   t.is(reconnecting, 10, "reconnecting");
@@ -95,10 +95,10 @@ test("reconnect - reconnect not emitted if suppressed", async (t) => {
   (async () => {
     for await (const e of nc.status()) {
       switch (e.type) {
-        case Events.DISCONNECT:
+        case Events.Disconnect:
           disconnects++;
           break;
-        case DebugEvents.RECONNECTING:
+        case DebugEvents.Reconnecting:
           t.fail("shouldn't have emitted reconnecting");
           break;
       }
@@ -124,7 +124,7 @@ test("reconnect - reconnecting after proper delay", async (t) => {
   const _ = (async () => {
     for await (const e of nc.status()) {
       switch (e.type) {
-        case DebugEvents.RECONNECTING:
+        case DebugEvents.Reconnecting:
           const elapsed = Date.now() - serverLastConnect;
           dt.resolve(elapsed);
           break;
@@ -152,14 +152,14 @@ test("reconnect - indefinite reconnects", async (t) => {
   (async (t) => {
     for await (const e of nc.status()) {
       switch (e.type) {
-        case Events.DISCONNECT:
+        case Events.Disconnect:
           disconnects++;
           break;
-        case Events.RECONNECT:
+        case Events.Reconnect:
           reconnect = true;
           nc.close();
           break;
-        case DebugEvents.RECONNECTING:
+        case DebugEvents.Reconnecting:
           reconnects++;
           break;
       }
@@ -226,13 +226,13 @@ test("reconnect - internal disconnect forces reconnect", async (t) => {
   (async () => {
     for await (const e of nc.status()) {
       switch (e.type) {
-        case DebugEvents.STALE_CONNECTION:
+        case DebugEvents.StaleConnection:
           stale = true;
           break;
-        case Events.DISCONNECT:
+        case Events.Disconnect:
           disconnect = true;
           break;
-        case Events.RECONNECT:
+        case Events.Reconnect:
           lock.unlock();
           break;
       }
