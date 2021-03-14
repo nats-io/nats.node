@@ -264,7 +264,9 @@ exports.NatsServer = class NatsServer {
   }
 
   static async start(conf = {}, debug = undefined) {
-    const exe = process.env.CI ? "nats-server/nats-server" : "nats-server";
+    const exe = process.env.CI
+      ? "/home/runner/work/nats.js/nats.js/nats-server"
+      : "nats-server";
     const tmp = path.resolve(process.env.TMPDIR || ".");
 
     let srv;

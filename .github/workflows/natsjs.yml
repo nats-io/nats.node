@@ -29,7 +29,7 @@ jobs:
       - name: Use Deno Version ${{ matrix.deno-version }}
         uses: denolib/setup-deno@master
         with:
-          deno-version: 1.7.1
+          deno-version: 1.8.1
       - name: Setup Go
         uses: actions/setup-go@v1
         with:
