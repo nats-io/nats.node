@@ -336,7 +336,7 @@ exports.NatsServer = class NatsServer {
         );
         resolve(ns);
       } catch (err) {
-        if (srv) {
+        if (srv && debug) {
           try {
             debug.log(srv.stderrOutput);
           } catch (err) {

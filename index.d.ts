@@ -60,6 +60,8 @@ export interface NatsConnection {
 export interface ConnectionOptions {
   authenticator?: Authenticator;
   debug?: boolean;
+  ignoreClusterUpdates?: boolean;
+  inboxPrefix?: string;
   maxPingOut?: number;
   maxReconnectAttempts?: number;
   name?: string;
@@ -81,8 +83,6 @@ export interface ConnectionOptions {
   user?: string;
   verbose?: boolean;
   waitOnFirstConnect?: boolean;
-  ignoreClusterUpdates?: boolean;
-  inboxPrefix?: string;
 }
 export interface TlsOptions {
   certFile?: string;
