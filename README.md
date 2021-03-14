@@ -819,3 +819,8 @@ completely compatible API across all clients.
 Currently, the base client implementation is the deno implementation. You can
 take a look at it
 [here](https://github.com/nats-io/nats.deno/tree/main/nats-base-client).
+
+## Supported Node Versions
+
+Our support policy for Nodejs versions follows [Nodejs release support]( https://github.com/nodejs/Release).
+We will support and build node-nats on even-numbered Nodejs versions that are current or in LTS.
