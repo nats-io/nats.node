@@ -321,7 +321,7 @@ const {
 async function createService(
   name,
   count = 1,
-  queue = ""
+  queue = "",
 ): Promise {
   const conns = [];
   for (let i = 1; i <= count; i++) {
@@ -386,11 +386,11 @@ Run it and publish a request to the subject `echo` to see what happens.
 
 ### Headers
 
-NATS headers are similar to HTTP headers. Headers are enabled automatically
-if the server supports them. Note that if you publish a message using headers
-but the server doesn't support them, an Error is thrown. Also note that even if
-you are publishing a message with a header, it is possible for the recipient to
-not support them.
+NATS headers are similar to HTTP headers. Headers are enabled automatically if
+the server supports them. Note that if you publish a message using headers but
+the server doesn't support them, an Error is thrown. Also note that even if you
+are publishing a message with a header, it is possible for the recipient to not
+support them.
 
 ```javascript
 const { connect, createInbox, Empty, headers } = require("nats");
@@ -806,3 +806,21 @@ The relationship between these is:
   0 and `reconnectJitterTLS` and add it to `reconnectTimeWait`.
 - If the client didn't specify TLS options, the client will generate a number
   between 0 and `reconnectJitter` and add it to `reconnectTimeWait`.
+
+## Contributing
+
+The library shares client functionality with
+[NATS.deno](https://github.com/nats-io/nats.deno). This means that both the
+NATS.deno and NATS.js use the same exact code base, only differing on the
+implementation of the `Transport`. This strategy greatly reduces the amount of
+work required to develop and maintain the clients, as well as provide a
+completely compatible API across all clients.
+
+Currently, the base client implementation is the deno implementation. You can
+take a look at it
+[here](https://github.com/nats-io/nats.deno/tree/main/nats-base-client).
+
+## Supported Node Versions
+
+Our support policy for Nodejs versions follows [Nodejs release support]( https://github.com/nodejs/Release).
+We will support and build node-nats on even-numbered Nodejs versions that are current or in LTS.

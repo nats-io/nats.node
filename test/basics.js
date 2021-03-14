@@ -656,3 +656,7 @@ test("basics - drain connection publisher", async (t) => {
   await nc.close();
   t.pass();
 });
+
+test("basics - createinbox", (t) => {
+  t.truthy(createInbox());
+});
