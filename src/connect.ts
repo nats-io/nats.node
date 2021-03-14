@@ -12,12 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-if (typeof TextEncoder === "undefined") {
-  const { TextEncoder, TextDecoder } = require("util");
-  global.TextEncoder = TextEncoder;
-  global.TextDecoder = TextDecoder;
-}
-
 import { NodeTransport } from "./node_transport";
 import {
   ConnectionOptions,
@@ -27,6 +21,7 @@ import {
   Transport,
   TransportFactory,
 } from "./nats-base-client";
+
 export function connect(opts: ConnectionOptions = {}): Promise<NatsConnection> {
   setTransportFactory({
     factory: (): Transport => {

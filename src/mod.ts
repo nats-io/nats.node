@@ -12,5 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+if (typeof TextEncoder === "undefined") {
+  const { TextEncoder, TextDecoder } = require("util");
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
+
 export { connect } from "./connect";
 export * from "../nats-base-client/mod";

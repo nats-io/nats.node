@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 const test = require("ava");
-const { AckPolicy } = require("../lib/nats-base-client/types");
-const { consumerOpts } = require("../lib/nats-base-client/consumeropts");
-const { delay } = require("../lib/nats-base-client/internal_mod");
 const { connect, Empty } = require(
   "../",
 );
+const { AckPolicy } = require("../lib/nats-base-client/types");
+const { consumerOpts } = require("../lib/nats-base-client/consumeropts");
+const { delay } = require("../lib/nats-base-client/internal_mod");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil");
 
