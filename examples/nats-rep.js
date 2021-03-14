@@ -26,10 +26,6 @@ const opts = { servers: argv.s };
 const subject = argv._[0] ? String(argv._[0]) : "";
 const payload = argv._[1] || "";
 
-if (argv.headers) {
-  opts.headers = true;
-}
-
 if (argv.debug) {
   opts.debug = true;
 }

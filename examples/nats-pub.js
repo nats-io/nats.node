@@ -30,10 +30,6 @@ const payload = argv._[1] || "";
 const count = (argv.c === -1 ? Number.MAX_SAFE_INTEGER : argv.c) || 1;
 const interval = argv.i || 0;
 
-if (argv.headers) {
-  opts.headers = true;
-}
-
 if (argv.debug) {
   opts.debug = true;
 }
