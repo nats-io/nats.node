@@ -22,6 +22,11 @@ const { connect, Empty } = require(
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil");
 
+test("jestream - server start fail", async (t) => {
+  const ns = await NatsServer.start(jetstreamServerConf(), t);
+  await ns.stop();
+});
+
 test("jetstream - jsm", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   const nc = await connect({ port: ns.port });
