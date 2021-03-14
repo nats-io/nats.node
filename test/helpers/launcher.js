@@ -406,30 +406,34 @@ exports.NatsServer = class NatsServer {
 };
 
 function toConf(o = {}, indent = "") {
-  let pad = indent !== undefined ? indent + "  " : "";
-  let buf = [];
-  for (let k in o) {
-    if (o.hasOwnProperty(k)) {
-      //@ts-ignore
-      let v = o[k];
+  const pad = indent !== undefined ? indent + "  " : "";
+  const buf = [];
+  for (const k in o) {
+    if (Object.prototype.hasOwnProperty.call(o, k)) {
+      //@ts-ignore: tsc,
+      const v = o[k];
       if (Array.isArray(v)) {
-        buf.push(pad + k + " [");
+        buf.push(`${pad}${k} [`);
         buf.push(toConf(v, pad));
-        buf.push(pad + " ]");
+        buf.push(`${pad} ]`);
       } else if (typeof v === "object") {
         // don't print a key if it is an array and it is an index
-        let kn = Array.isArray(o) ? "" : k;
-        buf.push(pad + kn + " {");
+        const kn = Array.isArray(o) ? "" : k;
+        buf.push(`${pad}${kn} {`);
         buf.push(toConf(v, pad));
-        buf.push(pad + " }");
+        buf.push(`${pad} }`);
       } else {
         if (!Array.isArray(o)) {
           if (
+            typeof v === "string" && v.startsWith("$JS.")
+          ) {
+            buf.push(`${pad}${k}: "${v}"`);
+          } else if (
             typeof v === "string" && v.charAt(0) >= "0" && v.charAt(0) <= "9"
           ) {
-            buf.push(pad + k + ': "' + v + '"');
+            buf.push(`${pad}${k}: "${v}"`);
           } else {
-            buf.push(pad + k + ": " + v);
+            buf.push(`${pad}${k}: ${v}`);
           }
         } else {
           buf.push(pad + v);
