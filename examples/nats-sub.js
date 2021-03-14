@@ -33,10 +33,6 @@ if (argv.creds) {
   opts.authenticator = credsAuthenticator(data);
 }
 
-if (argv.headers) {
-  opts.headers = true;
-}
-
 if (argv.h || argv.help || !subject) {
   console.log(
     "Usage: nats-sub [-s server] [--creds=/path/file.creds] [-q queue] [--headers] subject",
