@@ -321,7 +321,7 @@ const {
 async function createService(
   name,
   count = 1,
-  queue = "",
+  queue = ""
 ): Promise {
   const conns = [];
   for (let i = 1; i <= count; i++) {
@@ -807,6 +807,13 @@ The relationship between these is:
 - If the client didn't specify TLS options, the client will generate a number
   between 0 and `reconnectJitter` and add it to `reconnectTimeWait`.
 
+## JetStream
+
+[Support for JetStream is built-in](https://github.com/nats-io/nats.deno/blob/main/jetstream.md).
+However, the JetStream API extensions are still in beta. Feel free to use them.
+The client will emit a console message when either `nc.jetstream()` or
+`nc.jetstreamManager()` apis are used to remind you they are in beta.
+
 ## Contributing
 
 The library shares client functionality with
@@ -822,5 +829,6 @@ take a look at it
 
 ## Supported Node Versions
 
-Our support policy for Nodejs versions follows [Nodejs release support]( https://github.com/nodejs/Release).
-We will support and build node-nats on even-numbered Nodejs versions that are current or in LTS.
+Our support policy for Nodejs versions follows
+[Nodejs release support](https://github.com/nodejs/Release). We will support and
+build node-nats on even-numbered Nodejs versions that are current or in LTS.

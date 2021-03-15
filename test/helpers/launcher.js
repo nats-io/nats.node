@@ -265,7 +265,7 @@ exports.NatsServer = class NatsServer {
 
   static async start(conf = {}, debug = undefined) {
     const exe = process.env.CI
-      ? "/home/runner/work/nats.js/nats.js/nats-server"
+      ? "/home/runner/work/nats.js/nats.js/nats-server/nats-server"
       : "nats-server";
     const tmp = path.resolve(process.env.TMPDIR || ".");
 
@@ -280,7 +280,7 @@ exports.NatsServer = class NatsServer {
 
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nats-"));
         const confFile = path.join(dir, "server.conf");
-        if(debug) {
+        if (debug) {
           debug.log(toConf(conf));
         }
         fs.writeFileSync(confFile, toConf(conf));
