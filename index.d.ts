@@ -51,6 +51,7 @@ export interface NatsConnection {
     jetstreamManager(opts?: JetStreamOptions): Promise<JetStreamManager>;
     jetstream(opts?: JetStreamOptions): JetStreamClient;
 }
+
 export interface ConnectionOptions {
     authenticator?: Authenticator;
     debug?: boolean;

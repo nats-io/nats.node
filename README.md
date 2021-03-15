@@ -321,7 +321,7 @@ const {
 async function createService(
   name,
   count = 1,
-  queue = ""
+  queue = "",
 ): Promise {
   const conns = [];
   for (let i = 1; i <= count; i++) {
@@ -832,3 +832,4 @@ take a look at it
 Our support policy for Nodejs versions follows
 [Nodejs release support](https://github.com/nodejs/Release). We will support and
 build node-nats on even-numbered Nodejs versions that are current or in LTS.
+

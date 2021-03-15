@@ -38,6 +38,7 @@ jobs:
           unzip tmp.zip
           mv nats-server-$NATS_VERSION-linux-amd64 nats-server
       - run: npm ci
+      - run: npm run install-ns
       - run: npm run prepack
       - run: npm test
         env:

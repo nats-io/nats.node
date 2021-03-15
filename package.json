@@ -52,6 +52,7 @@
     "stage": "npm run clean && npm run clone-nbc && npm run cjs && shx rm -Rf ./deps/ && npm run build",
     "cover:html": "nyc report --reporter=html && open coverage/index.html",
     "coveralls": "nyc report --reporter=text-lcov > coverage/lcov.info"
+    "install-ns": "shx mkdir -p ./.deps && cd ./.deps && git clone --branch=master https://github.com/nats-io/nats-server.git && cd nats-server && go build && shx mv nats-server ../../"
   },
   "engines": {
     "node": ">= 10.0.0"
