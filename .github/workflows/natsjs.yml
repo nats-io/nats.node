@@ -42,11 +42,12 @@ jobs:
       - run: npm test
         env:
           CI: true
-#      - name: Gather coverage
-#        if: matrix.node-version == '15.x'
-#        run: npm run coveralls
-#      - name: Coveralls
-#        uses: coverallsapp/github-action@master
-#        if: matrix.node-version == '15.x'
-#        with:
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Gather coverage
+        if: matrix.node-version == '15.x'
+        run: npm run coveralls
+      - name: Upload coverage
+        uses: coverallsapp/github-action@v1.1.2
+        if: matrix.node-version == '15.x'
+        with:
+          github-token: ${{ secrets.github_token }}
+          path-to-lcov: ./coverage/lcov.info

@@ -51,7 +51,7 @@
     "setup_win": "choco install deno",
     "stage": "npm run clean && npm run clone-nbc && npm run cjs && shx rm -Rf ./deps/ && npm run build",
     "cover:html": "nyc report --reporter=html && open coverage/index.html",
-    "coveralls": "nyc report --reporter=text-lcov > coverage/lcov.info"
+    "coveralls": "shx mkdir -p ./coverage && nyc report --reporter=text-lcov > ./coverage/lcov.info"
   },
   "engines": {
     "node": ">= 10.0.0"
