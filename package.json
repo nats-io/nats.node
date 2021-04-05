@@ -1,6 +1,6 @@
 {
   "name": "nats",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
     "nats",
@@ -41,7 +41,7 @@
     "build": "tsc",
     "cjs": "deno run --allow-all bin/cjs-fix-imports.ts -o nats-base-client/ ./.deps/nats.deno/nats-base-client/",
     "clean": "shx rm -Rf ./lib/* ./nats-base-client ./.deps",
-    "clone-nbc": "shx mkdir -p ./.deps && cd ./.deps && git clone --branch v1.0.1 https://github.com/nats-io/nats.deno.git",
+    "clone-nbc": "shx mkdir -p ./.deps && cd ./.deps && git clone --branch v1.0.2 https://github.com/nats-io/nats.deno.git",
     "fmt": "deno fmt ./src/ ./examples/ ./test/",
     "prepack": "npm run clone-nbc && npm run cjs && npm run build",
     "ava": "nyc ava --verbose -T 60000",

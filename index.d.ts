@@ -106,6 +106,7 @@ export interface ServerInfo {
     "auth_required"?: boolean;
     "client_id": number;
     "client_ip"?: string;
+    cluster?: string;
     "connect_urls"?: string[];
     "git_commit"?: string;
     go: string;
@@ -289,6 +290,7 @@ export interface JetStreamPublishOptions {
     msgID: string;
     timeout: number;
     ackWait: Nanos;
+    headers: MsgHdrs;
     expect: Partial<{
         lastMsgID: string;
         streamName: string;
@@ -464,7 +466,7 @@ export interface StreamConfig {
     "max_msgs": number;
     "max_bytes": number;
     discard?: DiscardPolicy;
-    "max_age": number;
+    "max_age": Nanos;
     "max_msg_size"?: number;
     storage: StorageType;
     "num_replicas": number;
