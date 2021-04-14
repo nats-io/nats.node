@@ -33,7 +33,7 @@ import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
-const VERSION = "2.0.3-2";
+const VERSION = "2.0.3-3";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -118,8 +118,9 @@ export class NodeTransport implements Transport {
     const d = deferred<ServerInfo>();
     let peekError: Error;
     this.socket.on("data", (frame: Buffer) => {
-      const count = frame.byteLength;
-      this.yields.push(frame.slice(0, count));
+      const buf = Buffer.allocUnsafe(frame.length);
+      frame.copy(buf);
+      this.yields.push(buf);
       const t = DataBuffer.concat(...this.yields);
       const pm = extractProtocolMessage(t);
       if (pm) {
@@ -242,9 +243,10 @@ export class NodeTransport implements Transport {
 
   setupHandlers() {
     let connError: Error;
-    this.socket.on("data", (frame: Buffer) => {
-      const count = frame.byteLength;
-      this.yields.push(frame.slice(0, count));
+    this.socket.on("data", (frame) => {
+      const buf = Buffer.allocUnsafe(frame.length);
+      frame.copy(buf);
+      this.yields.push(buf);
       return this.signal.resolve();
     });
     this.socket.on("error", (err) => {
