@@ -60,7 +60,7 @@
     "nkeys.js": "^1.0.0-9"
   },
   "devDependencies": {
-    "@types/node": "^14.14.25",
+    "@types/node": "^14.14.34",
     "ava": "^3.15.0",
     "minimist": "^1.2.5",
     "nyc": "^15.1.0",

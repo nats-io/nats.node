@@ -7,3 +7,4 @@ coverage/
 lib/
 nats-base-client/
 node_modules/
+debug/
