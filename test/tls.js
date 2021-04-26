@@ -91,6 +91,21 @@ test("tls - connects with proper ca", async (t) => {
   t.pass();
 });
 
+test("tls - connects with rejectUnauthorized is honored", async (t) => {
+  const ns = await NatsServer.start(tlsConfig);
+  const nc = await connect({
+    servers: `localhost:${ns.port}`,
+    tls: {
+      rejectUnauthorized: false,
+    },
+  });
+  await nc.flush();
+  t.false(nc.protocol.transport.socket.authorized);
+  await nc.close();
+  await ns.stop();
+  t.pass();
+});
+
 test("tls - client auth", async (t) => {
   const ns = await NatsServer.start(tlsConfig);
 
