@@ -207,7 +207,11 @@ export class NodeTransport implements Transport {
 
   async startTLS(): Promise<TLSSocket> {
     let tlsError: Error;
-    let tlsOpts = { socket: this.socket, servername: this.tlsName };
+    let tlsOpts = {
+      socket: this.socket,
+      servername: this.tlsName,
+      rejectUnauthorized: true,
+    };
     if (typeof this.options.tls === "object") {
       try {
         const certOpts = await this.loadClientCerts() || {};
@@ -226,6 +230,10 @@ export class NodeTransport implements Transport {
         tlsError = err;
       });
       tlsSocket.on("secureConnect", () => {
+        // socket won't be authorized, if the user disabled it
+        if (tlsOpts.rejectUnauthorized === false) {
+          return;
+        }
         if (!tlsSocket.authorized) {
           throw tlsSocket.authorizationError;
         }
