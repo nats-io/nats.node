@@ -54,8 +54,6 @@ export interface NatsConnection {
 export interface ConnectionOptions {
     authenticator?: Authenticator;
     debug?: boolean;
-    ignoreClusterUpdates?: boolean;
-    inboxPrefix?: string;
     maxPingOut?: number;
     maxReconnectAttempts?: number;
     name?: string;
@@ -77,6 +75,8 @@ export interface ConnectionOptions {
     user?: string;
     verbose?: boolean;
     waitOnFirstConnect?: boolean;
+    ignoreClusterUpdates?: boolean;
+    inboxPrefix?: string;
 }
 export interface TlsOptions {
     certFile?: string;
@@ -155,16 +155,23 @@ export interface PublishOptions {
     headers?: MsgHdrs;
 }
 
+export declare function canonicalMIMEHeaderKey(k: string): string;
+export declare enum Match {
+    Exact = 0,
+    CanonicalMIME = 1,
+    IgnoreCase = 2
+}
 export interface MsgHdrs extends Iterable<[string, string[]]> {
-  hasError: boolean;
-  status: string;
-  code: number;
-  get(k: string): string;
-  set(k: string, v: string): void;
-  append(k: string, v: string): void;
-  has(k: string): boolean;
-  values(k: string): string[];
-  delete(k: string): void;
+    hasError: boolean;
+    status: string;
+    code: number;
+    description: string;
+    get(k: string, match?: Match): string;
+    set(k: string, v: string, match?: Match): void;
+    append(k: string, v: string, match?: Match): void;
+    has(k: string, match?: Match): boolean;
+    values(k: string, match?: Match): string[];
+    delete(k: string, match?: Match): void;
 }
 export declare function headers(): MsgHdrs;
 
@@ -243,21 +250,18 @@ export declare enum ErrorCode {
   ProtocolError = "NATS_PROTOCOL_ERR",
   PermissionsViolation = "PERMISSIONS_VIOLATION",
 }
-
 export declare interface NatsError extends Error {
   name: string;
   message: string;
   code: string;
   chainedError?: Error;
 }
-
 export interface Stats {
     inBytes: number;
     outBytes: number;
     inMsgs: number;
     outMsgs: number;
 }
-
 export interface Codec<T> {
   encode(d: T): Uint8Array;
   decode(a: Uint8Array): T;
@@ -311,7 +315,6 @@ export interface Pullable {
 export interface Destroyable {
     destroy(): Promise<void>;
 }
-
 export interface Dispatcher<T> {
   push(v: T): void;
 }
@@ -322,7 +325,6 @@ export interface QueuedIterator<T> extends Dispatcher<T> {
   getPending(): number;
   getReceived(): number;
 }
-
 export declare type JetStreamPullSubscription = JetStreamSubscription & Pullable;
 export declare type JsMsgCallback = (err: NatsError | null, msg: JsMsg | null) => void;
 export interface JetStreamClient {
@@ -371,8 +373,11 @@ export interface ConsumerAPI {
     delete(stream: string, consumer: string): Promise<boolean>;
     list(stream: string): Lister<ConsumerInfo>;
 }
+export declare type StreamInfoRequestOptions = {
+    "deleted_details": boolean;
+};
 export interface StreamAPI {
-    info(stream: string): Promise<StreamInfo>;
+    info(stream: string, opts?: StreamInfoRequestOptions): Promise<StreamInfo>;
     add(cfg: Partial<StreamConfig>): Promise<StreamInfo>;
     update(cfg: StreamConfig): Promise<StreamInfo>;
     purge(stream: string): Promise<PurgeResponse>;
@@ -524,6 +529,7 @@ export interface StreamState {
     "first_ts": number;
     "last_seq": number;
     "last_ts": string;
+    "num_deleted": number;
     deleted: number[];
     lost: LostStreamData;
     "consumer_count": number;
