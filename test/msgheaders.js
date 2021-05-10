@@ -15,7 +15,7 @@
 const test = require("ava");
 // install globals
 require("../lib/src/mod");
-const { NatsError, MsgHdrsImpl } = require(
+const { NatsError, MsgHdrsImpl, canonicalMIMEHeaderKey } = require(
   "../lib/nats-base-client/internal_mod",
 );
 
@@ -27,31 +27,32 @@ test("msgheaders - basics", (t) => {
   h.append("foo", "bam");
   h.append("foo-bar", "baz");
 
-  t.is(h.size(), 3);
+  t.is(h.size(), 2);
   h.set("bar-foo", "foo");
-  t.is(h.size(), 4);
-  h.delete("bar-foo");
   t.is(h.size(), 3);
+  h.delete("bar-foo");
+  t.is(h.size(), 2);
 
-  let header = MsgHdrsImpl.canonicalMIMEHeaderKey("foo");
+  let header = canonicalMIMEHeaderKey("foo");
   t.is("Foo", header);
-  t.true(h.has("Foo"));
+  t.false(h.has("Foo"));
   t.true(h.has("foo"));
-  const foos = h.values(header);
-  t.is(2, foos.length);
+  // we are case sensitive
+  let foos = h.values(header);
+  t.is(foos.length, 0);
+
+  foos = h.values("foo");
+  t.is(foos.length, 2);
   t.true(foos.indexOf("bar") > -1);
   t.true(foos.indexOf("bam") > -1);
   t.is(foos.indexOf("baz"), -1);
 
-  header = MsgHdrsImpl.canonicalMIMEHeaderKey("foo-bar");
-  t.is("Foo-Bar", header);
-  const foobars = h.values(header);
-  t.is(1, foobars.length);
-  t.true(foobars.indexOf("baz") > -1);
-
   const a = h.encode();
   const hh = MsgHdrsImpl.decode(a);
   t.true(h.equals(hh));
+  t.is(hh.size(), 2);
+  t.true(hh.has("foo"));
+  t.false(hh.has("bar-foo"));
 
   hh.set("foo-bar-baz", "fbb");
   t.false(h.equals(hh));
