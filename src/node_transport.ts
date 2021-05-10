@@ -117,10 +117,8 @@ export class NodeTransport implements Transport {
   peekInfo(): Promise<ServerInfo> {
     const d = deferred<ServerInfo>();
     let peekError: Error;
-    this.socket.on("data", (frame: Buffer) => {
-      const buf = Buffer.allocUnsafe(frame.length);
-      frame.copy(buf);
-      this.yields.push(buf);
+    this.socket.on("data", (frame) => {
+      this.yields.push(frame);
       const t = DataBuffer.concat(...this.yields);
       const pm = extractProtocolMessage(t);
       if (pm) {
@@ -251,10 +249,8 @@ export class NodeTransport implements Transport {
 
   setupHandlers() {
     let connError: Error;
-    this.socket.on("data", (frame) => {
-      const buf = Buffer.allocUnsafe(frame.length);
-      frame.copy(buf);
-      this.yields.push(buf);
+    this.socket.on("data", (frame: Uint8Array) => {
+      this.yields.push(frame);
       return this.signal.resolve();
     });
     this.socket.on("error", (err) => {
