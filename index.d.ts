@@ -344,7 +344,7 @@ export interface ConsumerOpts {
     max?: number;
     debug?: boolean;
 }
-export declare function consumerOpts(): ConsumerOptsBuilder;
+export declare function consumerOpts(opts?: Partial<ConsumerConfig>): ConsumerOptsBuilder;
 
 export interface ConsumerOptsBuilder {
     deliverTo(subject: string): void;
