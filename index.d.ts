@@ -337,11 +337,11 @@ export interface JetStreamClient {
 export interface ConsumerOpts {
     config: Partial<ConsumerConfig>;
     mack: boolean;
-    subQueue: string;
     stream: string;
     callbackFn?: JsMsgCallback;
     name?: string;
     max?: number;
+    queue?: string;
     debug?: boolean;
 }
 export declare function consumerOpts(opts?: Partial<ConsumerConfig>): ConsumerOptsBuilder;
@@ -362,6 +362,7 @@ export interface ConsumerOptsBuilder {
     maxAckPending(max: number): void;
     maxWaiting(max: number): void;
     maxMessages(max: number): void;
+    queue(n: string): void;
     callback(fn: JsMsgCallback): void;
 }
 export interface Lister<T> {
