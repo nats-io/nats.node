@@ -33,7 +33,7 @@ import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 
-const VERSION = "2.1.0";
+const VERSION = "2.1.1-1";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -77,6 +77,15 @@ export class NodeTransport implements Transport {
       this.signal.resolve();
       return Promise.resolve();
     } catch (err) {
+      if (!err) {
+        // this seems to be possible in Kubernetes
+        // where an error is thrown, but it is undefined
+        // when something like istio-init is booting up
+        err = NatsError.errorForCode(
+          ErrorCode.ConnectionRefused,
+          new Error("node provided an undefined error!"),
+        );
+      }
       const { code } = err;
       const perr = code === "ECONNREFUSED"
         ? NatsError.errorForCode(ErrorCode.ConnectionRefused, err)
