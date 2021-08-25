@@ -288,6 +288,7 @@ export interface PullOptions {
 }
 export interface PubAck {
     stream: string;
+    domain?: string;
     seq: number;
     duplicate: boolean;
     ack(): void;
@@ -355,6 +356,7 @@ export interface ConsumerOptsBuilder {
     durable(name: string): void;
     deliverAll(): void;
     deliverLast(): void;
+    deliverLastPerSubject(): void;
     deliverNew(): void;
     startSequence(seq: number): void;
     startTime(time: Date | Nanos): void;
@@ -408,6 +410,8 @@ export interface JsMsg {
     ackAck(): Promise<boolean>;
 }
 export interface DeliveryInfo {
+    domain: string;
+    account_hash?: string;
     stream: string;
     consumer: string;
     redeliveryCount: number;
@@ -517,7 +521,8 @@ export declare enum DeliverPolicy {
     Last = "last",
     New = "new",
     StartSequence = "by_start_sequence",
-    StartTime = "by_start_time"
+    StartTime = "by_start_time",
+    LastPerSubject = "last_per_subject"
 }
 export declare enum AckPolicy {
     None = "none",
@@ -591,17 +596,18 @@ export interface StreamMsgResponse extends ApiResponse {
         time: string;
     };
 }
-export interface SequencePair {
+export interface SequenceInfo {
     "consumer_seq": number;
     "stream_seq": number;
+    "last_active": Nanos;
 }
 export interface ConsumerInfo {
     "stream_name": string;
     name: string;
     created: number;
     config: ConsumerConfig;
-    delivered: SequencePair;
-    "ack_floor": SequencePair;
+    delivered: SequenceInfo;
+    "ack_floor": SequenceInfo;
     "num_ack_pending": number;
     "num_redelivered": number;
     "num_waiting": number;
@@ -653,6 +659,7 @@ export interface ConsumerConfig {
     name: string;
     "durable_name"?: string;
     "deliver_subject"?: string;
+    "deliver_group"?: string;
     "deliver_policy": DeliverPolicy;
     "opt_start_seq"?: number;
     "opt_start_time"?: string;
@@ -667,6 +674,7 @@ export interface ConsumerConfig {
     "max_ack_pending"?: number;
     "idle_heartbeat"?: Nanos;
     "flow_control"?: boolean;
+    description?: string;
 }
 export interface Consumer {
     "stream_name": string;

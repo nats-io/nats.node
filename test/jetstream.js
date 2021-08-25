@@ -84,7 +84,7 @@ test("jetstream - jsm", async (t) => {
   consumers = await jsm.consumers.list("stream").next();
   t.is(consumers.length, 0);
 
-  const sm = await jsm.streams.getMessage("stream", 2);
+  const sm = await jsm.streams.getMessage("stream", { seq: 2 });
   t.is(sm.seq, 2);
   t.truthy(sm.header);
   t.is(sm.header.get("xxx"), "a");
