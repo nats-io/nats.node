@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 const test = require("ava");
-const { connect, Empty, headers } = require(
+const { connect, Empty, headers, nuid } = require(
   "../",
 );
 const { AckPolicy } = require("../lib/nats-base-client/types");
@@ -287,6 +287,46 @@ test("jetstream - jetstream pullsub", async (t) => {
   t.is(sub.getProcessed(), 3);
 
   await delay(1000);
+  await nc.close();
+  await ns.stop();
+});
+
+test("jetstream - qsub ackall", async (t) => {
+  const ns = await NatsServer.start(jetstreamServerConf());
+  let nc = await connect({ port: ns.port });
+  const jsm = await nc.jetstreamManager();
+  const stream = nuid.next();
+  const subj = nuid.next();
+  await jsm.streams.add({ name: stream, subjects: [subj] });
+
+  const js = nc.jetstream();
+
+  const opts = consumerOpts();
+  opts.queue("q");
+  opts.durable("n");
+  opts.deliverTo("here");
+  opts.ackAll();
+  opts.deliverAll();
+  opts.callback((_err, _m) => {});
+
+  const sub = await js.subscribe(subj, opts);
+  const sub2 = await js.subscribe(subj, opts);
+
+  for (let i = 0; i < 100; i++) {
+    await js.publish(subj, Empty);
+  }
+  await nc.flush();
+  await sub.drain();
+  await sub2.drain();
+
+  t.true(sub.getProcessed() > 0);
+  t.true(sub2.getProcessed() > 0);
+  t.is(sub.getProcessed() + sub2.getProcessed(), 100);
+
+  const ci = await jsm.consumers.info(stream, "n");
+  t.is(ci.num_pending, 0);
+  t.is(ci.num_ack_pending, 0);
+
   await nc.close();
   await ns.stop();
 });

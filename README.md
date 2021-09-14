@@ -541,9 +541,9 @@ certificates are specified as ConnectionOptions:
 
 ```javascript
 tlsOptions = {
-  keyFile: fs.readFileSync("./test/certs/client-key.pem"),
-  certFile: fs.readFileSync("./test/certs/client-cert.pem"),
-  caFile: [fs.readFileSync("./test/certs/ca.pem")],
+  keyFile: "./test/certs/client-key.pem",
+  certFile: "./test/certs/client-cert.pem",
+  caFile: "./test/certs/ca.pem"
 };
 nc = await connect({ tls: tlsOptions });
 ```

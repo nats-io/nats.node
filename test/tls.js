@@ -144,6 +144,27 @@ test("tls - client auth direct", async (t) => {
   t.pass();
 });
 
+test("tls - bad file paths", async (t) => {
+  const ns = await NatsServer.start(tlsConfig);
+  const certs = {
+    keyFile: "./test/certs/client.key",
+    certFile: "./x/certs/client.crt",
+    caFile: "./test/certs/ca.crt",
+  };
+  try {
+    await connect({
+      port: ns.port,
+      tls: certs,
+    });
+    t.fail("should have not connected");
+  } catch (err) {
+    t.true(err.message.indexOf("/x/certs/client.crt doesn't exist") > -1);
+  }
+
+  await ns.stop();
+  t.pass();
+});
+
 test("tls - shouldn't leak tls config", (t) => {
   const tlsOptions = {
     keyFile: resolve(join(dir, "./test/certs/client.key")),
