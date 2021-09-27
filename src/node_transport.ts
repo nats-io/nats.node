@@ -130,7 +130,7 @@ export class NodeTransport implements Transport {
       this.yields.push(frame);
       const t = DataBuffer.concat(...this.yields);
       const pm = extractProtocolMessage(t);
-      if (pm) {
+      if (pm !== "") {
         try {
           const m = INFO.exec(pm);
           if (!m) {
