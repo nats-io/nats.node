@@ -13,9 +13,17 @@
  * limitations under the License.
  */
 const test = require("ava");
-const { connect, ErrorCode, createInbox, StringCodec, Empty } = require(
-  "../",
+const {
+  connect,
+  ErrorCode,
+  createInbox,
+  StringCodec,
+  Empty,
+  jwtAuthenticator,
+} = require(
+  "../lib/src/mod",
 );
+
 const { deferred, delay } = require("../lib/nats-base-client/internal_mod");
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
@@ -659,4 +667,24 @@ test("basics - drain connection publisher", async (t) => {
 
 test("basics - createinbox", (t) => {
   t.truthy(createInbox());
+});
+
+test("basics - resolve", async (t) => {
+  t.plan(1);
+  const token = process.env.NGS_CI_USER || "";
+  if (token.length === 0) {
+    t.log("test skipped - no NGS_CI_USER defined in the environment");
+    t.pass();
+    return;
+  }
+  const nc = await connect({
+    servers: "connect.ngs.global",
+    authenticator: jwtAuthenticator(token),
+    resolve: true,
+  });
+
+  await nc.flush();
+  const srv = nc.protocol.servers.getCurrentServer();
+  t.true(srv.resolves && srv.resolves.length > 1);
+  await nc.close();
 });

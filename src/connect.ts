@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NodeTransport } from "./node_transport";
+import { nodeResolveHost, NodeTransport } from "./node_transport";
 import {
   ConnectionOptions,
   NatsConnection,
@@ -27,6 +27,7 @@ export function connect(opts: ConnectionOptions = {}): Promise<NatsConnection> {
     factory: (): Transport => {
       return new NodeTransport();
     },
+    dnsResolveFn: nodeResolveHost,
   } as TransportFactory);
   return NatsConnectionImpl.connect(opts);
 }
