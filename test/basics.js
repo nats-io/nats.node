@@ -680,7 +680,6 @@ test("basics - resolve", async (t) => {
   const nc = await connect({
     servers: "connect.ngs.global",
     authenticator: jwtAuthenticator(token),
-    resolve: true,
   });
 
   await nc.flush();
