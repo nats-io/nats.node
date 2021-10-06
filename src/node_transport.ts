@@ -398,13 +398,8 @@ export async function nodeResolveHost(s: string): Promise<string[]> {
   if (Array.isArray(daaaa)) {
     ips.push(...daaaa);
   }
-
-  if (ips.length === 0 && !Array.isArray(da)) {
-    throw da as Error;
+  if (ips.length === 0) {
+    ips.push(s);
   }
-  if (ips.length === 0 && !Array.isArray(daaaa)) {
-    throw daaaa as Error;
-  }
-
   return ips;
 }
