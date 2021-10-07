@@ -32,6 +32,7 @@ import { extend } from "../nats-base-client/util";
 import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
+const dns = require("dns");
 
 const VERSION = "2.2.0";
 const LANG = "nats.js";
@@ -366,4 +367,39 @@ export class NodeTransport implements Transport {
   closed(): Promise<void | Error> {
     return this.closedNotification;
   }
+}
+
+export async function nodeResolveHost(s: string): Promise<string[]> {
+  const a = deferred<string[] | Error>();
+  const aaaa = deferred<string[] | Error>();
+
+  dns.resolve4(s, (err: Error, records: string[]) => {
+    if (err) {
+      a.resolve(err);
+    } else {
+      a.resolve(records);
+    }
+  });
+
+  dns.resolve6(s, (err: Error, records: string[]) => {
+    if (err) {
+      aaaa.resolve(err);
+    } else {
+      aaaa.resolve(records);
+    }
+  });
+
+  const ips: string[] = [];
+  const da = await a;
+  if (Array.isArray(da)) {
+    ips.push(...da);
+  }
+  const daaaa = await aaaa;
+  if (Array.isArray(daaaa)) {
+    ips.push(...daaaa);
+  }
+  if (ips.length === 0) {
+    ips.push(s);
+  }
+  return ips;
 }
