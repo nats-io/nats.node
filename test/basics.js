@@ -152,8 +152,8 @@ test("basics - subscribe and unsubscribe", async (t) => {
 });
 
 test("basics - subscriptions iterate", async (t) => {
-  const lock = Lock();
   const nc = await connect({ servers: u });
+  const lock = Lock();
   const subj = createInbox();
   const sub = nc.subscribe(subj);
   const _ = (async () => {
@@ -445,8 +445,8 @@ test("basics - request cancel rejects", async (t) => {
 // });
 
 test("basics - subscription with timeout", async (t) => {
-  const lock = Lock(1);
   const nc = await connect({ servers: u });
+  const lock = Lock(1);
   const sub = nc.subscribe(createInbox(), { max: 1, timeout: 250 });
   (async () => {
     for await (const m of sub) {}
@@ -598,8 +598,9 @@ test("basics - empty message", async (t) => {
 });
 
 test("basics - subject is required", async (t) => {
+  const ns = await NatsServer.start();
   t.plan(2);
-  const nc = await connect({ servers: u });
+  const nc = await connect({ port: ns.port });
   t.throws(() => {
     nc.publish();
   }, { code: ErrorCode.BadSubject });
@@ -609,6 +610,7 @@ test("basics - subject is required", async (t) => {
   });
 
   await nc.close();
+  await ns.stop();
 });
 
 test("basics - payload is only Uint8Array", async (t) => {
@@ -621,9 +623,9 @@ test("basics - payload is only Uint8Array", async (t) => {
 });
 
 test("basics - disconnect reconnects", async (t) => {
-  const lock = new Lock();
-  const nc = await connect({ servers: u });
-
+  const ns = await NatsServer.start();
+  const nc = await connect({ port: ns.port });
+  const lock = new Lock(1);
   const status = nc.status();
   (async () => {
     for await (const s of status) {
@@ -640,6 +642,7 @@ test("basics - disconnect reconnects", async (t) => {
   await lock;
   await nc.close();
   t.pass();
+  await ns.stop();
 });
 
 test("basics - drain connection publisher", async (t) => {
