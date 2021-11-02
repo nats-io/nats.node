@@ -23,7 +23,7 @@ nats.js. For a migration guide, please see [the migration guide](migration.md).
 
 To connect to a server you use the `connect()` function. It returns a connection
 that you can use to interact with the server. You can customize the behavior of
-the client by specifying many [`ConnectionOptions`](#Connection_Options).
+the client by specifying many [`ConnectionOptions`](#Connection-Options).
 
 By default, a connection will attempt a connection on`127.0.0.1:4222`. If the
 connection is dropped, the client will attempt to reconnect. You can customize
