@@ -21,7 +21,7 @@ for subscription handling if desired.
 
 Previous versions of the `connect(url, opts)` function depended on notifications
 from an event listener, to know if the client connected, etc. The new version
-changes to `connect(opts: ConnectionOptions): Promise<NatsConnection>.
+changes to `connect(opts: ConnectionOptions): Promise<NatsConnection>`.
 
 If the connect resolves, you have a connection and you can use the client.
 Otherwise depending on the connection options, the connection will fail.
