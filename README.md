@@ -60,7 +60,7 @@ await servers.forEach(async (v) => {
       console.log(`error closing:`, err);
     }
   } catch (err) {
-    console.log(`error connecting to ${JSON.stringify(v)}`);
+    console.log(`error connecting to ${JSON.stringify(err)}`);
   }
 });
 ```
