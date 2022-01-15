@@ -475,7 +475,7 @@ that handles the type of authentication specified.
 Setting the `user`/`pass` or `token` options, simply initializes an
 `Authenticator` and sets the username/password.
 
-```typescript
+```javascript
 // if the connection requires authentication, provide `user` and `pass` or
 // `token` options in the NatsConnectionOptions
 import { connect } from "nats";
@@ -633,7 +633,7 @@ published. The `reply` option can be used to override the generated inbox
 subject with an application provided one. Note that setting `reply` requires
 `noMux` to be `true`:
 
-```typescript
+```javascript
 const m = await nc.request(
   "q",
   Empty,
