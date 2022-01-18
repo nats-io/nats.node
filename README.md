@@ -36,7 +36,7 @@ different `ConnectionOptions`. At least two of them should work if your internet
 is working.
 
 ```javascript
-const { connect } = require("nats");
+import { connect } from "nats";
 const servers = [
   {},
   { servers: ["demo.nats.io:4442", "demo.nats.io:4222"] },
@@ -103,7 +103,7 @@ all subscriptions have been drained and all outbound messages have been sent to
 the server.
 
 ```javascript
-const { connect, StringCodec } = require("nats");
+import { connect, StringCodec } from "nats";
 
 // to create a connection to a nats-server:
 const nc = await connect({ servers: "demo.nats.io:4222" });
@@ -147,7 +147,7 @@ All subscriptions are independent. If two different subscriptions match a
 subject, both will get to process the message:
 
 ```javascript
-const { connect, StringCodec } = require("nats");
+import { connect, StringCodec } from "nats";
 
 const nc = await connect({ servers: "demo.nats.io:4222" });
 const sc = StringCodec();
@@ -201,7 +201,7 @@ simply to illustrate not only how to create responses, but how the subject
 itself is used to dispatch different behaviors.
 
 ```javascript
-const { connect, StringCodec, Subscription } = require("nats");
+import { connect, StringCodec, Subscription } from "nats";
 
 // create a connection
 const nc = await connect({ servers: "demo.nats.io" });
@@ -276,7 +276,7 @@ Here's a simple example of a client making a simple request from the service
 above:
 
 ```javascript
-const { connect, StringCodec } = require("nats");
+import { connect, StringCodec } from "nats";
 
 // create a connection
 const nc = await connect({ servers: "demo.nats.io:4222" });
@@ -309,11 +309,11 @@ independent unit. Note that non-queue subscriptions are also independent of
 subscriptions in a queue group.
 
 ```javascript
-const {
+import {
   connect,
   NatsConnection,
   StringCodec,
-} = require("nats");
+} from "nats";
 
 async function createService(
   name,
@@ -390,7 +390,7 @@ are publishing a message with a header, it is possible for the recipient to not
 support them.
 
 ```javascript
-const { connect, createInbox, Empty, headers } = require("nats");
+import { connect, createInbox, Empty, headers } from "nats";
 
 const nc = await connect(
   {
@@ -475,10 +475,10 @@ that handles the type of authentication specified.
 Setting the `user`/`pass` or `token` options, simply initializes an
 `Authenticator` and sets the username/password.
 
-```typescript
+```javascript
 // if the connection requires authentication, provide `user` and `pass` or
 // `token` options in the NatsConnectionOptions
-const { connect } = require("nats");
+import { connect } from "nats";
 
 const nc1 = await connect({
   servers: "127.0.0.1:4222",
@@ -633,7 +633,7 @@ published. The `reply` option can be used to override the generated inbox
 subject with an application provided one. Note that setting `reply` requires
 `noMux` to be `true`:
 
-```typescript
+```javascript
 const m = await nc.request(
   "q",
   Empty,
