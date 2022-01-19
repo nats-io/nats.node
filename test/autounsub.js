@@ -89,9 +89,7 @@ test("autounsub - can change auto-unsub to a higher value", async (t) => {
   await nc.close();
 });
 
-test("autounsub - request receives expected count with multiple helpers", async (
-  t,
-) => {
+test("autounsub - request receives expected count with multiple helpers", async (t) => {
   const nc = await connect({ servers: u });
   const subj = createInbox();
 
@@ -116,9 +114,7 @@ test("autounsub - request receives expected count with multiple helpers", async 
   t.is(count, 5);
 });
 
-test("autounsub - manual request receives expected count with multiple helpers", async (
-  t,
-) => {
+test("autounsub - manual request receives expected count with multiple helpers", async (t) => {
   const nc = await connect({ servers: u });
   const subj = createInbox();
   const lock = Lock(5);
