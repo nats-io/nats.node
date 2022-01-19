@@ -55,7 +55,7 @@ test("jetstream - jsm", async (t) => {
 
   const conf = si.config;
   conf.subjects.push("goodbye.>");
-  await jsm.streams.update(conf);
+  await jsm.streams.update("stream", conf);
 
   const name = await jsm.streams.find("goodbye.>");
   t.is(name, "stream");

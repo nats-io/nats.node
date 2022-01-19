@@ -86,8 +86,8 @@ const metrics = [];
       a.version = m.version;
       a.async = m.async;
 
-      a.max = Math.max((a.max === undefined ? 0 : a.max), m.duration);
-      a.min = Math.min((a.min === undefined ? m.duration : a.max), m.duration);
+      a.max = Math.max(a.max === undefined ? 0 : a.max, m.duration);
+      a.min = Math.min(a.min === undefined ? m.duration : a.max, m.duration);
     }
     return a;
   };
