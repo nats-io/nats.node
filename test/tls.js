@@ -46,7 +46,6 @@ test("tls - fail if server doesn't support TLS", async (t) => {
       t.fail("shouldn't have connected");
     })
     .catch((err) => {
-      t.log(`failed trying to connect to localhost:${ns.port}`)
       t.is(err.code, ErrorCode.ServerOptionNotAvailable);
       lock.unlock();
     });
