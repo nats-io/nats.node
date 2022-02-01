@@ -99,7 +99,6 @@ export class NodeTransport implements Transport {
   }
 
   dial(hp: { hostname: string; port: number }): Promise<Socket> {
-    console.log(`dial >>>> ${hp.hostname}  ${hp.port}`)
     const d = deferred<Socket>();
     let dialError: Error;
     const socket = createConnection(hp.port, hp.hostname, () => {
