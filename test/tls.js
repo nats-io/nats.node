@@ -39,7 +39,7 @@ const tlsConfig = {
 
 test("tls - fail if server doesn't support TLS", async (t) => {
   t.plan(1);
-  const ns = await NatsServer.start({hot: "0.0.0.0"}, t);
+  const ns = await NatsServer.start({host: "0.0.0.0"}, t);
   const lock = Lock();
   await connect({ servers: `localhost:${ns.port}`, tls: {} })
     .then(() => {
