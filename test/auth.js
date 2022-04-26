@@ -19,6 +19,7 @@ const {
   jwtAuthenticator,
   nkeyAuthenticator,
   credsAuthenticator,
+  deferred,
 } = require(
   "../",
 );
@@ -83,54 +84,58 @@ test("auth - un/pw", async (t) => {
 });
 
 test("auth - sub permissions", async (t) => {
-  t.plan(2);
+  t.plan(4);
   const ns = await NatsServer.start(conf);
-  const lock = Lock(2);
   const nc = await connect(
     { port: ns.port, user: "derek", pass: "foobar" },
   );
-  nc.closed().then((err) => {
-    t.is(err.code, ErrorCode.PermissionsViolation);
-    lock.unlock();
-  });
+  const errStatus = deferred();
+  const _ = (async () => {
+    for await (const s of nc.status()) {
+      errStatus.resolve(s);
+    }
+  })();
 
+  const iterErr = deferred();
   const sub = nc.subscribe("foo");
-  (async (t) => {
-    for await (const m of sub) {}
+  (async () => {
+    for await (const m of sub) {
+    }
   })().catch((err) => {
-    lock.unlock();
-    t.is(err.code, ErrorCode.PermissionsViolation);
+    iterErr.resolve(err);
   });
 
-  nc.publish("foo");
+  const v = await Promise.all([errStatus, iterErr, sub.closed]);
+  t.is(v[0].data, ErrorCode.PermissionsViolation);
+  t.is(v[1].message, "'Permissions Violation for Subscription to \"foo\"'");
+  t.true(sub.isClosed());
+  t.false(nc.isClosed());
 
-  await lock;
+  await nc.close();
   await ns.stop();
 });
 
 test("auth - pub perm", async (t) => {
-  t.plan(1);
+  t.plan(2);
   const ns = await NatsServer.start(conf);
   const lock = Lock();
   const nc = await connect(
     { port: ns.port, user: "derek", pass: "foobar" },
   );
-  nc.closed().then((err) => {
-    t.is(err.code, ErrorCode.PermissionsViolation);
-    lock.unlock();
-  });
-
-  const sub = nc.subscribe("bar");
-  const iter = (async (t) => {
-    for await (const m of sub) {
-      t.fail("should not have been called");
+  const errStatus = deferred();
+  const _ = (async () => {
+    for await (const s of nc.status()) {
+      errStatus.resolve(s);
     }
   })();
 
   nc.publish("bar");
 
-  await lock;
-  await iter;
+  const v = await errStatus;
+  t.is(v.data, ErrorCode.PermissionsViolation);
+  t.false(nc.isClosed());
+
+  await nc.close();
   await ns.stop();
 });
 
