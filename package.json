@@ -60,8 +60,8 @@
     "nkeys.js": "^1.0.0-9"
   },
   "devDependencies": {
-    "@types/node": "^16.11.6",
-    "ava": "^3.15.0",
+    "@types/node": "^17.0.27",
+    "ava": "^4.2.0",
     "minimist": "^1.2.5",
     "nyc": "^15.1.0",
     "shx": "^0.3.3",

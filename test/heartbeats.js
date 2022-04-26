@@ -91,7 +91,7 @@ test("heartbeat - recovers from missed", async (t) => {
 
   const hb = new Heartbeat(ph, 100, 3);
   hb._schedule();
-  await delay(800);
+  await delay(1000);
   hb.cancel();
   t.is(hb.timer, undefined);
   t.true(status.length >= 7, `${status.length} >= 7`);
