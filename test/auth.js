@@ -25,7 +25,6 @@ const {
   "../",
 );
 const { nkeys } = require("../lib/nats-base-client/internal_mod");
-const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
 const {
   createOperator,
@@ -127,7 +126,6 @@ test("auth - sub permissions", async (t) => {
 test("auth - pub perm", async (t) => {
   t.plan(2);
   const ns = await NatsServer.start(conf);
-  const lock = Lock();
   const nc = await connect(
     { port: ns.port, user: "derek", pass: "foobar" },
   );
