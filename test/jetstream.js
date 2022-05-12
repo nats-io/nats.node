@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 The NATS Authors
+ * Copyright 2018-2022 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -128,7 +128,7 @@ test("jetstream - pull", async (t) => {
   const js = nc.jetstream();
   await t.throwsAsync(async () => {
     await js.pull("stream", "me");
-  }, { message: "no messages" });
+  }, { message: /no messages$/ });
 
   let pa = await js.publish("hello.world", Empty, {
     expect: { lastSequence: 0 },
@@ -145,7 +145,7 @@ test("jetstream - pull", async (t) => {
   m.ack();
   await t.throwsAsync(async () => {
     await js.pull("stream", "me");
-  }, { message: "no messages" });
+  }, { message: /no messages$/ });
 
   await nc.flush();
   await nc.close();
