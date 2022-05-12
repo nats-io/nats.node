@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 The NATS Authors
+ * Copyright 2018-2022 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,17 +15,25 @@
 const test = require("ava");
 const {
   connect,
-  ErrorCode,
-  jwtAuthenticator,
-  nkeyAuthenticator,
   credsAuthenticator,
   deferred,
+  ErrorCode,
+  Events,
+  jwtAuthenticator,
+  nkeyAuthenticator,
 } = require(
   "../",
 );
 const { nkeys } = require("../lib/nats-base-client/internal_mod");
-const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
+const {
+  createOperator,
+  createAccount,
+  encodeAccount,
+  encodeOperator,
+  createUser,
+  encodeUser,
+} = require("nats-jwt");
 
 const conf = {
   authorization: {
@@ -118,7 +126,6 @@ test("auth - sub permissions", async (t) => {
 test("auth - pub perm", async (t) => {
   t.plan(2);
   const ns = await NatsServer.start(conf);
-  const lock = Lock();
   const nc = await connect(
     { port: ns.port, user: "derek", pass: "foobar" },
   );
@@ -296,5 +303,52 @@ test("auth - custom error", async (t) => {
   }).catch((err) => {
     t.is(err.code, ErrorCode.BadAuthentication);
   });
+  await ns.stop();
+});
+
+test("auth - expiration notified", async (t) => {
+  const O = createOperator();
+  const A = createAccount();
+
+  const resolver = {};
+  resolver[A.getPublicKey()] = await encodeAccount("A", A, {
+    limits: {
+      conn: -1,
+      subs: -1,
+    },
+  }, { signer: O });
+  const conf = Object.assign({
+    operator: await encodeOperator("O", O),
+    resolver: "MEMORY",
+    "resolver_preload": resolver,
+  });
+
+  const ns = await NatsServer.start(conf);
+
+  const U = createUser();
+  const ujwt = await encodeUser("U", U, A, { bearer_token: true }, {
+    exp: Math.round(Date.now() / 1000) + 5,
+  });
+
+  const nc = await connect({
+    port: ns.port,
+    maxReconnectAttempts: -1,
+    authenticator: jwtAuthenticator(ujwt),
+  });
+
+  let authErrors = 0;
+  (async () => {
+    for await (const s of nc.status()) {
+      if (
+        s.type === Events.Error && s.data === ErrorCode.AuthenticationExpired
+      ) {
+        authErrors++;
+      }
+    }
+  })().then();
+
+  const err = await nc.closed();
+  t.true(authErrors >= 1);
+  t.is(err.code, ErrorCode.AuthenticationExpired);
   await ns.stop();
 });

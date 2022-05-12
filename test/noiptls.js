@@ -28,6 +28,7 @@ const dir = process.cwd();
 const tlsConfig = {
   trace: true,
   tls: {
+    ca_file: resolve(join(dir, "./test/certs/ca.crt")),
     cert_file: resolve(join(dir, "./test/certs/localhost_noip.crt")),
     key_file: resolve(join(dir, "./test/certs/localhost_noip.key")),
   },
