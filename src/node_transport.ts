@@ -327,18 +327,28 @@ export class NodeTransport implements Transport {
       console.info(`< ${render(frame)}`);
     }
     const d = deferred<void>();
-    this.socket.write(frame, (err) => {
-      if (err) {
-        return d.reject(err);
+    try {
+      this.socket.write(frame, (err: Error | undefined) => {
+        if (err) {
+          if (this.options.debug) {
+            console.error(`!!! ${render(frame)}: ${err}`);
+          }
+          return d.reject(err);
+        }
+        return d.resolve();
+      });
+    } catch (err) {
+      if (this.options.debug) {
+        console.error(`!!! ${render(frame)}: ${err}`);
       }
-      return d.resolve();
-    });
+      d.reject(err);
+    }
     return d;
   }
 
   send(frame: Uint8Array): void {
     const p = this._send(frame);
-    p.catch((err) => {
+    p.catch((_err) => {
       // we ignore write errors because client will
       // fail on a read or when the heartbeat timer
       // detects a stale connection
