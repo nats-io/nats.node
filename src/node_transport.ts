@@ -319,7 +319,7 @@ export class NodeTransport implements Transport {
     return this.socket instanceof TLSSocket;
   }
 
-  send(frame: Uint8Array): Promise<void> {
+  _send(frame: Uint8Array): Promise<void> {
     if (this.isClosed) {
       return Promise.resolve();
     }
@@ -336,6 +336,15 @@ export class NodeTransport implements Transport {
     return d;
   }
 
+  send(frame: Uint8Array): void {
+    const p = this._send(frame);
+    p.catch((err) => {
+      // we ignore write errors because client will
+      // fail on a read or when the heartbeat timer
+      // detects a stale connection
+    });
+  }
+
   private async _closed(err?: Error, internal = true): Promise<void> {
     // if this connection didn't succeed, then ignore it.
     if (!this.connected) return;
@@ -344,7 +353,7 @@ export class NodeTransport implements Transport {
       try {
         // this is a noop for the server, but gives us a place to hang
         // a close and ensure that we sent all before closing
-        await this.send(new TextEncoder().encode("+OK\r\n"));
+        await this._send(new TextEncoder().encode("+OK\r\n"));
       } catch (err) {
         if (this.options.debug) {
           console.log("transport close terminated with an error", err);

@@ -486,7 +486,7 @@ test("basics - subscription timeout auto cancels", async (t) => {
       c++;
     }
   })().catch((err) => {
-    t.fail(err);
+    t.fail(err.message);
   });
 
   nc.publish(subj);
