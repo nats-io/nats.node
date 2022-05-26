@@ -34,7 +34,7 @@ const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 const dns = require("dns");
 
-const VERSION = "2.7.0";
+const VERSION = "2.7.1";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -319,7 +319,7 @@ export class NodeTransport implements Transport {
     return this.socket instanceof TLSSocket;
   }
 
-  send(frame: Uint8Array): Promise<void> {
+  _send(frame: Uint8Array): Promise<void> {
     if (this.isClosed) {
       return Promise.resolve();
     }
@@ -327,13 +327,32 @@ export class NodeTransport implements Transport {
       console.info(`< ${render(frame)}`);
     }
     const d = deferred<void>();
-    this.socket.write(frame, (err) => {
-      if (err) {
-        return d.reject(err);
+    try {
+      this.socket.write(frame, (err: Error | undefined) => {
+        if (err) {
+          if (this.options.debug) {
+            console.error(`!!! ${render(frame)}: ${err}`);
+          }
+          return d.reject(err);
+        }
+        return d.resolve();
+      });
+    } catch (err) {
+      if (this.options.debug) {
+        console.error(`!!! ${render(frame)}: ${err}`);
       }
-      return d.resolve();
-    });
+      d.reject(err);
+    }
     return d;
+  }
+
+  send(frame: Uint8Array): void {
+    const p = this._send(frame);
+    p.catch((_err) => {
+      // we ignore write errors because client will
+      // fail on a read or when the heartbeat timer
+      // detects a stale connection
+    });
   }
 
   private async _closed(err?: Error, internal = true): Promise<void> {
@@ -344,7 +363,7 @@ export class NodeTransport implements Transport {
       try {
         // this is a noop for the server, but gives us a place to hang
         // a close and ensure that we sent all before closing
-        await this.send(new TextEncoder().encode("+OK\r\n"));
+        await this._send(new TextEncoder().encode("+OK\r\n"));
       } catch (err) {
         if (this.options.debug) {
           console.log("transport close terminated with an error", err);
