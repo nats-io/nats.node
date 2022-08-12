@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 const test = require("ava");
-const { connect, Empty, headers, nuid } = require(
+const { connect, Empty, headers, nuid, StringCodec } = require(
   "../",
 );
 const { AckPolicy } = require("../lib/nats-base-client/types");
@@ -21,6 +21,7 @@ const { consumerOpts } = require("../lib/nats-base-client/jsconsumeropts");
 const { delay } = require("../lib/nats-base-client/internal_mod");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil");
+const { DataBuffer } = require("../lib/nats-base-client/databuffer");
 
 test("jetstream - jsm", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
@@ -326,6 +327,76 @@ test("jetstream - qsub ackall", async (t) => {
   const ci = await jsm.consumers.info(stream, "n");
   t.is(ci.num_pending, 0);
   t.is(ci.num_ack_pending, 0);
+
+  await nc.close();
+  await ns.stop();
+});
+
+test("jetstream - kv basics", async (t) => {
+  const ns = await NatsServer.start(jetstreamServerConf());
+  const nc = await connect({ port: ns.port });
+  const js = nc.jetstream();
+
+  const kv = await js.views.kv("test");
+  const sc = StringCodec();
+  await kv.put("a", sc.encode("hello"));
+  const v = await kv.get("a");
+  t.truthy(v);
+  t.is(v.bucket, "test");
+  t.is(v.key, "a");
+  t.is(sc.decode(v.value), "hello");
+
+  await nc.close();
+  await ns.stop();
+});
+
+function readableStreamFrom(data) {
+  return new ReadableStream({
+    pull(controller) {
+      controller.enqueue(data);
+      controller.close();
+    },
+  });
+}
+
+async function fromReadableStream(
+  rs,
+) {
+  const buf = new DataBuffer();
+  const reader = rs.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      return buf.drain();
+    }
+    if (value && value.length) {
+      buf.fill(value);
+    }
+  }
+}
+
+test("jetstream - os basics", async (t) => {
+  if (process.version.startsWith("v14.")) {
+    t.log(
+      `node ${process.version} cannot run objectstore as webcrypto is not available`,
+    );
+    t.pass();
+    return;
+  }
+  const ns = await NatsServer.start(jetstreamServerConf());
+  const nc = await connect({ port: ns.port });
+  const js = nc.jetstream();
+
+  const os = await js.views.os("test");
+  const sc = StringCodec();
+
+  await os.put({ name: "a" }, readableStreamFrom(sc.encode("hello")));
+  const v = await os.get("a");
+  t.truthy(v);
+  t.is(v.info.bucket, "test");
+  t.is(v.info.name, "a");
+  t.is(v.info.chunks, 1);
+  t.is(sc.decode(await fromReadableStream(v.data)), "hello");
 
   await nc.close();
   await ns.stop();
