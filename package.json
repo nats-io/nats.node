@@ -57,7 +57,8 @@
     "node": ">= 10.0.0"
   },
   "dependencies": {
-    "nkeys.js": "1.0.3"
+    "nkeys.js": "1.0.3",
+    "web-streams-polyfill": "^3.2.1"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
