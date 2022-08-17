@@ -251,3 +251,42 @@ test("tls - invalid cert file", tlsInvalidArgPathMacro, {
 test("tls - invalid ca file", tlsInvalidArgPathMacro, {
   caFile: resolve(join(dir, "./test/certs/ca.cert")),
 }, "caFile");
+
+test("tls - available connects with or without", async (t) => {
+  t.plan(4);
+  const conf = Object.assign({}, { allow_non_tls: true }, tlsConfig);
+  const ns = await NatsServer.start(conf);
+
+  // test will fail to connect because the certificate is
+  // not trusted, but the upgrade process was attempted.
+  try {
+    await connect({
+      servers: `localhost:${ns.port}`,
+    });
+    t.fail("shouldn't have connected");
+  } catch (err) {
+    t.is(err.message, "unable to verify the first certificate");
+  }
+
+  // will upgrade to tls as tls is required
+  const a = connect({
+    servers: `localhost:${ns.port}`,
+    tls: {
+      caFile: resolve(join(dir, "./test/certs/ca.crt")),
+    },
+  });
+  // will NOT upgrade to tls
+  const b = connect({
+    servers: `localhost:${ns.port}`,
+    tls: null,
+  });
+  const conns = await Promise.all([a, b]);
+  await conns[0].flush();
+  await conns[1].flush();
+
+  t.is(conns[0].protocol.transport.isEncrypted(), true);
+  t.is(conns[1].protocol.transport.isEncrypted(), false);
+
+  await ns.stop();
+  t.pass();
+});

@@ -64,8 +64,9 @@ export class NodeTransport implements Transport {
       this.socket = await this.dial(hp);
       const info = await this.peekInfo();
       checkOptions(info, options);
-      const { tls_required: tlsRequired } = info;
-      if (tlsRequired) {
+      const { tls_required: tlsRequired, tls_available: tlsAvailable } = info;
+      const desired = tlsAvailable === true && options.tls !== null;
+      if (tlsRequired || desired) {
         this.socket = await this.startTLS();
       }
       //@ts-ignore: this is possibly a TlsSocket
