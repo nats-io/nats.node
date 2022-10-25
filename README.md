@@ -806,10 +806,9 @@ The relationship between these are:
 
 ## JetStream
 
+JetStream is the NATS persistence engine providing streaming, message, and worker queues with At-Least-Once semantics.
 [Support for JetStream is built-in](https://github.com/nats-io/nats.deno/blob/main/jetstream.md).
-However, the JetStream API extensions are still in beta. Feel free to use them.
-The client will emit a console message when either `nc.jetstream()` or
-`nc.jetstreamManager()` apis are used to remind you they are in beta.
+
 
 ## Contributing
 
