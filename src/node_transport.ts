@@ -34,7 +34,7 @@ const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 const dns = require("dns");
 
-const VERSION = "2.8.1-0";
+const VERSION = "2.8.1-1";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -48,6 +48,7 @@ export class NodeTransport implements Transport {
   connected = false;
   tlsName = "";
   done = false;
+  closedError?: Error;
 
   constructor() {
     this.lang = LANG;
@@ -277,7 +278,6 @@ export class NodeTransport implements Transport {
     this.socket.on("close", () => {
       this._closed(connError, false);
       this.socket = undefined;
-
     });
   }
 
@@ -361,6 +361,7 @@ export class NodeTransport implements Transport {
     // if this connection didn't succeed, then ignore it.
     if (!this.connected) return;
     if (this.done) return;
+    this.closedError = err;
     if (!err && this.socket) {
       try {
         // this is a noop for the server, but gives us a place to hang
