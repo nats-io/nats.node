@@ -48,7 +48,7 @@ export class NodeTransport implements Transport {
   connected = false;
   tlsName = "";
   done = false;
-  closedError?: Error;
+  closeError?: Error;
 
   constructor() {
     this.lang = LANG;
@@ -361,12 +361,12 @@ export class NodeTransport implements Transport {
     // if this connection didn't succeed, then ignore it.
     if (!this.connected) return;
     if (this.done) return;
-    this.closedError = err;
-    if (!err && this.socket) {
+    this.closeError = err;
+    // only try to flush the outbound buffer if we got no error and
+    // the close is internal, if the transport closed, we are done.
+    if (!err && this.socket && internal) {
       try {
-        // this is a noop for the server, but gives us a place to hang
-        // a close and ensure that we sent all before closing
-        await this._send(new TextEncoder().encode("+OK\r\n"));
+        await this._send(new TextEncoder().encode(""));
       } catch (err) {
         if (this.options.debug) {
           console.log("transport close terminated with an error", err);
@@ -383,7 +383,7 @@ export class NodeTransport implements Transport {
     }
 
     this.done = true;
-    this.closedNotification.resolve(err);
+    this.closedNotification.resolve(this.closeError);
   }
 
   closed(): Promise<void | Error> {

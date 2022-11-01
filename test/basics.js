@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 The NATS Authors
+ * Copyright 2018-2022 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,10 +23,12 @@ const {
 } = require(
   "../lib/src/mod",
 );
+const net = require("net");
 
 const { deferred, delay } = require("../lib/nats-base-client/internal_mod");
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
+const { jetstreamServerConf } = require("./helpers/jsutil.js");
 
 const u = "demo.nats.io:4222";
 
@@ -405,24 +407,83 @@ test("basics - request cancel rejects", async (t) => {
   await nc.close();
 });
 
-// test("basics - close promise resolves", async (t) => {
-//   const lock = Lock();
-//   const cs = new TestServer(false, (ca) => {
-//     setTimeout(() => {
-//       ca.close();
-//     }, 0);
-//   });
-//   const nc = await connect(
-//     { port: cs.getPort(), reconnect: false },
-//   );
-//   nc.closed().then(() => {
-//     lock.unlock();
-//   });
-//
-//   await lock;
-//   await cs.stop();
-//   await nc.close();
-// });
+test("basics - close promise resolves", async (t) => {
+  const ns = await NatsServer.start(jetstreamServerConf());
+  const nc = await connect({ port: ns.port, reconnect: false });
+
+  setTimeout(() => {
+    ns.stop();
+  });
+
+  await nc.closed().then(() => {
+    t.pass();
+    console.log("ok");
+  }).catch((err) => {
+    t.fail(err);
+  });
+});
+
+test("basics - initial connect error", async (t) => {
+  const pp = deferred();
+  const server = net.createServer();
+  let connects = 0;
+  server.on("connection", (conn) => {
+    let closed = false;
+    connects++;
+    const buf = Buffer.from(
+      `INFO {"server_id":"FAKE","server_name":"FAKE","version":"2.9.4","proto":1,"go":"go1.19.2","host":"127.0.0.1","port":${port},"headers":true,"max_payload":1048576,"jetstream":true,"client_id":4,"client_ip":"127.0.0.1"}\r\n`,
+    );
+    conn.write(buf);
+    setTimeout(() => {
+      closed = true;
+      conn.end();
+    });
+  });
+
+  server.listen(0, (v) => {
+    const p = server.address().port;
+    console.log(`server running on port ${p}`);
+    pp.resolve(p);
+  });
+
+  const port = await pp;
+  // we expect to die with a disconnect
+  try {
+    await connect({ port, debug: true });
+    t.fail("shouldn't have connected");
+  } catch (err) {
+    t.is(err.code, ErrorCode.Disconnect);
+  }
+  server.close();
+});
+
+test("basics - socket error", async (t) => {
+  const ns = await NatsServer.start(jetstreamServerConf());
+  const nc = await connect({ port: ns.port, debug: true, reconnect: false });
+  const closed = nc.closed();
+  nc.protocol.transport.socket.emit(
+    "error",
+    new Error("something bad happened"),
+  );
+  nc.protocol.transport.socket.emit("close");
+  const err = await closed;
+  t.is(err?.message, "something bad happened");
+  ns.stop();
+});
+
+test("basics - server gone", async (t) => {
+  const ns = await NatsServer.start(jetstreamServerConf());
+  const nc = await connect({
+    port: ns.port,
+    maxReconnectAttempts: 3,
+    reconnectTimeWait: 100,
+  });
+  const closed = nc.closed();
+  await ns.stop();
+  const err = await closed;
+  t.is(err?.code, ErrorCode.ConnectionRefused);
+});
+
 //
 // test("basics - closed returns error", async () => {
 //   const lock = Lock(1);
