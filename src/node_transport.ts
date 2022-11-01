@@ -277,7 +277,6 @@ export class NodeTransport implements Transport {
 
     this.socket.on("close", () => {
       this._closed(connError, false);
-      this.socket = undefined;
     });
   }
 
@@ -377,6 +376,7 @@ export class NodeTransport implements Transport {
       if (this.socket) {
         this.socket.removeAllListeners();
         this.socket.destroy();
+        this.socket = undefined;
       }
     } catch (err) {
       console.log(err);
