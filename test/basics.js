@@ -408,7 +408,7 @@ test("basics - request cancel rejects", async (t) => {
 });
 
 test("basics - close promise resolves", async (t) => {
-  const ns = await NatsServer.start(jetstreamServerConf());
+  const ns = await NatsServer.start();
   const nc = await connect({ port: ns.port, reconnect: false });
 
   setTimeout(() => {
@@ -417,7 +417,6 @@ test("basics - close promise resolves", async (t) => {
 
   await nc.closed().then(() => {
     t.pass();
-    console.log("ok");
   }).catch((err) => {
     t.fail(err);
   });
@@ -442,24 +441,24 @@ test("basics - initial connect error", async (t) => {
 
   server.listen(0, (v) => {
     const p = server.address().port;
-    console.log(`server running on port ${p}`);
     pp.resolve(p);
   });
 
   const port = await pp;
   // we expect to die with a disconnect
   try {
-    await connect({ port, debug: true });
+    await connect({ port });
     t.fail("shouldn't have connected");
   } catch (err) {
     t.is(err.code, ErrorCode.Disconnect);
+    t.is(err.stack, "");
   }
   server.close();
 });
 
 test("basics - socket error", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
-  const nc = await connect({ port: ns.port, debug: true, reconnect: false });
+  const nc = await connect({ port: ns.port, reconnect: false });
   const closed = nc.closed();
   nc.protocol.transport.socket.emit(
     "error",
@@ -482,6 +481,65 @@ test("basics - server gone", async (t) => {
   await ns.stop();
   const err = await closed;
   t.is(err?.code, ErrorCode.ConnectionRefused);
+});
+
+test("basics - server error", async (t) => {
+  const PING = { re: /^PING\r\n/i, out: "PONG\r\n" };
+  const CONNECT = { re: /^CONNECT\s+([^\r\n]+)\r\n/i, out: "" };
+
+  const CMDS = [PING, CONNECT];
+
+  let inbound;
+
+  const pp = deferred();
+  const server = net.createServer();
+  server.on("connection", (conn) => {
+    const buf = Buffer.from(
+      `INFO {"server_id":"FAKE","server_name":"FAKE","version":"2.9.4","proto":1,"go":"go1.19.2","host":"127.0.0.1","port":${port},"headers":true,"max_payload":1048576,"jetstream":true,"client_id":4,"client_ip":"127.0.0.1"}\r\n`,
+    );
+    conn.write(buf);
+
+    conn.on("data", (data) => {
+      if (inbound) {
+        inbound = Buffer.concat([inbound, data]);
+      } else {
+        inbound = data;
+      }
+      while (data.length > 0) {
+        let m = null;
+        for (let i = 0; i < CMDS.length; i++) {
+          m = CMDS[i].re.exec(inbound);
+          if (m) {
+            const len = m[0].length;
+            if (len <= inbound.length) {
+              inbound = inbound.slice(len);
+              conn.write(Buffer.from(CMDS[i].out));
+              if (i === 0) {
+                // fail as if the server sent an error
+                conn.write(Buffer.from("-ERR 'here'\r\n"));
+              }
+              break;
+            }
+          }
+        }
+        if (m === null) {
+          break;
+        }
+      }
+    });
+  });
+
+  server.listen(0, (v) => {
+    const p = server.address().port;
+    pp.resolve(p);
+  });
+
+  const port = await pp;
+  const nc = await connect({ port, reconnect: false });
+  const err = await nc.closed();
+  t.is(err.message, "'here'");
+
+  server.close();
 });
 
 //
