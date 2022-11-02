@@ -34,7 +34,7 @@ const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 const dns = require("dns");
 
-const VERSION = "2.8.0";
+const VERSION = "2.8.1-1";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -48,6 +48,7 @@ export class NodeTransport implements Transport {
   connected = false;
   tlsName = "";
   done = false;
+  closeError?: Error;
 
   constructor() {
     this.lang = LANG;
@@ -275,7 +276,6 @@ export class NodeTransport implements Transport {
     });
 
     this.socket.on("close", () => {
-      this.socket = undefined;
       this._closed(connError, false);
     });
   }
@@ -321,7 +321,7 @@ export class NodeTransport implements Transport {
   }
 
   _send(frame: Uint8Array): Promise<void> {
-    if (this.isClosed) {
+    if (this.isClosed || this.socket === undefined) {
       return Promise.resolve();
     }
     if (this.options.debug) {
@@ -360,11 +360,12 @@ export class NodeTransport implements Transport {
     // if this connection didn't succeed, then ignore it.
     if (!this.connected) return;
     if (this.done) return;
-    if (!err && this.socket) {
+    this.closeError = err;
+    // only try to flush the outbound buffer if we got no error and
+    // the close is internal, if the transport closed, we are done.
+    if (!err && this.socket && internal) {
       try {
-        // this is a noop for the server, but gives us a place to hang
-        // a close and ensure that we sent all before closing
-        await this._send(new TextEncoder().encode("+OK\r\n"));
+        await this._send(new TextEncoder().encode(""));
       } catch (err) {
         if (this.options.debug) {
           console.log("transport close terminated with an error", err);
@@ -375,13 +376,14 @@ export class NodeTransport implements Transport {
       if (this.socket) {
         this.socket.removeAllListeners();
         this.socket.destroy();
+        this.socket = undefined;
       }
     } catch (err) {
       console.log(err);
     }
 
     this.done = true;
-    this.closedNotification.resolve(err);
+    this.closedNotification.resolve(this.closeError);
   }
 
   closed(): Promise<void | Error> {
