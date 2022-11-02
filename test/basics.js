@@ -542,27 +542,6 @@ test("basics - server error", async (t) => {
   server.close();
 });
 
-//
-// test("basics - closed returns error", async () => {
-//   const lock = Lock(1);
-//   const cs = new TestServer(false, (ca: Connection) => {
-//     setTimeout(async () => {
-//       await ca.write(new TextEncoder().encode("-ERR 'here'\r\n"));
-//     }, 500);
-//   });
-//
-//   const nc = await connect(
-//     { servers: `127.0.0.1:${cs.getPort()}` },
-//   );
-//   await nc.closed()
-//     .then((v) => {
-//       assertEquals((v as Error).message, "'here'");
-//       lock.unlock();
-//     });
-//   assertEquals(nc.isClosed(), true);
-//   await cs.stop();
-// });
-
 test("basics - subscription with timeout", async (t) => {
   const nc = await connect({ servers: u });
   const lock = Lock(1);
