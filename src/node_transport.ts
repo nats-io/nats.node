@@ -34,7 +34,7 @@ const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 const dns = require("dns");
 
-const VERSION = "2.8.1-1";
+const VERSION = "2.8.1-2";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -361,6 +361,12 @@ export class NodeTransport implements Transport {
     if (!this.connected) return;
     if (this.done) return;
     this.closeError = err;
+
+    if(err) {
+      console.log(`transport closed with error: ${err.message}`)
+      console.log(`${err.stack}`)
+    }
+
     // only try to flush the outbound buffer if we got no error and
     // the close is internal, if the transport closed, we are done.
     if (!err && this.socket && internal) {
