@@ -201,7 +201,7 @@ simply to illustrate not only how to create responses, but how the subject
 itself is used to dispatch different behaviors.
 
 ```javascript
-import { connect, StringCodec, Subscription } from "nats";
+import { connect, StringCodec } from "nats";
 
 // create a connection
 const nc = await connect({ servers: "demo.nats.io" });
@@ -210,8 +210,8 @@ const nc = await connect({ servers: "demo.nats.io" });
 const sc = StringCodec();
 
 // this subscription listens for `time` requests and returns the current time
-const sub = nc.subscribe("time");
-(async (sub: Subscription) => {
+const subscription = nc.subscribe("time");
+(async (sub) => {
   console.log(`listening for ${sub.getSubject()} requests...`);
   for await (const m of sub) {
     if (m.respond(sc.encode(new Date().toISOString()))) {
@@ -221,7 +221,7 @@ const sub = nc.subscribe("time");
     }
   }
   console.log(`subscription ${sub.getSubject()} drained.`);
-})(sub);
+})(subscription);
 
 // this subscription listens for admin.uptime and admin.stop
 // requests to admin.uptime returns how long the service has been running
@@ -276,7 +276,7 @@ Here's a simple example of a client making a simple request from the service
 above:
 
 ```javascript
-import { connect, StringCodec } from "nats";
+import { connect, Empty, StringCodec } from "nats";
 
 // create a connection
 const nc = await connect({ servers: "demo.nats.io:4222" });
