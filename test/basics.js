@@ -20,12 +20,15 @@ const {
   StringCodec,
   Empty,
   jwtAuthenticator,
+  AckPolicy,
 } = require(
   "../lib/src/mod",
 );
 const net = require("net");
 
-const { deferred, delay } = require("../lib/nats-base-client/internal_mod");
+const { deferred, delay, nuid } = require(
+  "../lib/nats-base-client/internal_mod",
+);
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil.js");
@@ -787,4 +790,66 @@ test("basics - resolve", async (t) => {
   const srv = nc.protocol.servers.getCurrentServer();
   t.true(srv.resolves && srv.resolves.length > 1);
   await nc.close();
+});
+
+test("basics - js fetch on stopped server doesn't close", async (t) => {
+  let ns = await NatsServer.start(jetstreamServerConf());
+  const nc = await connect({
+    port: ns.port,
+    maxReconnectAttempts: -1,
+  });
+  const status = nc.status();
+  (async () => {
+    let reconnects = 0;
+    for await (const s of status) {
+      switch (s.type) {
+        case "reconnecting":
+          reconnects++;
+          if (reconnects === 2) {
+            ns.restart().then((s) => {
+              ns = s;
+            });
+          }
+          break;
+        case "reconnect":
+          setTimeout(() => {
+            loop = false;
+          });
+          break;
+        default:
+          // nothing
+      }
+    }
+  })().then();
+
+  const jsm = await nc.jetstreamManager();
+  const si = await jsm.streams.add({ name: nuid.next(), subjects: ["test"] });
+  const { name: stream } = si.config;
+  await jsm.consumers.add(stream, {
+    durable_name: "dur",
+    ack_policy: AckPolicy.Explicit,
+  });
+
+  const js = nc.jetstream();
+  setTimeout(() => {
+    ns.stop();
+  }, 2000);
+
+  let loop = true;
+  while (true) {
+    try {
+      const iter = js.fetch(stream, "dur", { batch: 1, expires: 500 });
+      for await (const m of iter) {
+        m.ack();
+      }
+      if (!loop) {
+        break;
+      }
+    } catch (err) {
+      t.fail(`shouldn't have errored: ${err.message}`);
+    }
+  }
+  t.pass();
+  await nc.close();
+  await ns.stop();
 });
