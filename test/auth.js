@@ -301,7 +301,7 @@ test("auth - custom error", async (t) => {
   ).then(() => {
     t.fail("shouldn't have connected");
   }).catch((err) => {
-    t.is(err.code, ErrorCode.BadAuthentication);
+    t.is(err.message, "user code exploded");
   });
   await ns.stop();
 });
