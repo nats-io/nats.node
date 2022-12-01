@@ -487,62 +487,15 @@ test("basics - server gone", async (t) => {
 });
 
 test("basics - server error", async (t) => {
-  const PING = { re: /^PING\r\n/i, out: "PONG\r\n" };
-  const CONNECT = { re: /^CONNECT\s+([^\r\n]+)\r\n/i, out: "" };
-
-  const CMDS = [PING, CONNECT];
-
-  let inbound;
-
-  const pp = deferred();
-  const server = net.createServer();
-  server.on("connection", (conn) => {
-    const buf = Buffer.from(
-      `INFO {"server_id":"FAKE","server_name":"FAKE","version":"2.9.4","proto":1,"go":"go1.19.2","host":"127.0.0.1","port":${port},"headers":true,"max_payload":1048576,"jetstream":true,"client_id":4,"client_ip":"127.0.0.1"}\r\n`,
-    );
-    conn.write(buf);
-
-    conn.on("data", (data) => {
-      if (inbound) {
-        inbound = Buffer.concat([inbound, data]);
-      } else {
-        inbound = data;
-      }
-      while (data.length > 0) {
-        let m = null;
-        for (let i = 0; i < CMDS.length; i++) {
-          m = CMDS[i].re.exec(inbound);
-          if (m) {
-            const len = m[0].length;
-            if (len <= inbound.length) {
-              inbound = inbound.slice(len);
-              conn.write(Buffer.from(CMDS[i].out));
-              if (i === 0) {
-                // fail as if the server sent an error
-                conn.write(Buffer.from("-ERR 'here'\r\n"));
-              }
-              break;
-            }
-          }
-        }
-        if (m === null) {
-          break;
-        }
-      }
-    });
+  const ns = await NatsServer.start();
+  t.plan(1);
+  const nc = await connect({ port: ns.port, reconnect: false });
+  setTimeout(() => {
+    nc.protocol.sendCommand("X\r\n");
   });
-
-  server.listen(0, (v) => {
-    const p = server.address().port;
-    pp.resolve(p);
-  });
-
-  const port = await pp;
-  const nc = await connect({ port, reconnect: false });
   const err = await nc.closed();
-  t.is(err.message, "'here'");
-
-  server.close();
+  t.is(err?.code, ErrorCode.ProtocolError);
+  await ns.stop();
 });
 
 test("basics - subscription with timeout", async (t) => {
