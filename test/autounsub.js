@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 The NATS Authors
+ * Copyright 2018-2023 The NATS Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -93,11 +93,11 @@ test("autounsub - request receives expected count with multiple helpers", async 
   const nc = await connect({ servers: u });
   const subj = createInbox();
 
-  const fn = (async (sub) => {
+  const fn = async (sub) => {
     for await (const m of sub) {
       m.respond();
     }
-  });
+  };
   const subs = [];
   for (let i = 0; i < 5; i++) {
     const sub = nc.subscribe(subj);
@@ -119,12 +119,12 @@ test("autounsub - manual request receives expected count with multiple helpers",
   const subj = createInbox();
   const lock = Lock(5);
 
-  const fn = (async (sub) => {
+  const fn = async (sub) => {
     for await (const m of sub) {
       m.respond();
       lock.unlock();
     }
-  });
+  };
   for (let i = 0; i < 5; i++) {
     const sub = nc.subscribe(subj);
     const _ = fn(sub);
