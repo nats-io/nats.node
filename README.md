@@ -810,6 +810,12 @@ JetStream is the NATS persistence engine providing streaming, message, and worke
 [Support for JetStream is built-in](https://github.com/nats-io/nats.deno/blob/main/jetstream.md).
 
 
+## Service API
+
+The service API allows you to [easily build NATS services](https://github.com/nats-io/nats.deno/blob/main/services.md) The
+services API is currently in beta functionality.
+
+
 ## Contributing
 
 The library shares client functionality with
