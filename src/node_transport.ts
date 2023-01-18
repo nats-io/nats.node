@@ -34,7 +34,7 @@ const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 const dns = require("dns");
 
-const VERSION = "2.10.3";
+const VERSION = "2.11.0";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
