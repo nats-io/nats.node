@@ -20,12 +20,21 @@ if (typeof TextEncoder === "undefined") {
 
 if (typeof globalThis.crypto === "undefined") {
   const c = require("crypto");
+  // this will patch to undefined if webcrypto is not available (node 14)
+  // views will toss if crypto is not available
   global.crypto = c.webcrypto;
 }
 
 if (typeof globalThis.ReadableStream === "undefined") {
-  const streams = require("web-streams-polyfill/ponyfill");
-  global.ReadableStream = streams.ReadableStream;
+  // @ts-ignore: node global
+  const chunks = process.versions.node.split(".");
+  const v = parseInt(chunks[0]);
+  if (v >= 16) {
+    // this won't mess up fetch
+    const streams = require("stream/web");
+    // views will toss if ReadableStream is not available
+    global.ReadableStream = streams.ReadableStream;
+  }
 }
 
 export { connect } from "./connect";
