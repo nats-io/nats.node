@@ -376,9 +376,9 @@ async function fromReadableStream(
 }
 
 test("jetstream - os basics", async (t) => {
-  if (process.version.startsWith("v14.")) {
+  if (parseInt(process.versions.node.split(".")[0]) < 16) {
     t.log(
-      `node ${process.version} cannot run objectstore as webcrypto is not available`,
+      `node ${process.versions.node} cannot run objectstore as webcrypto and ReadableStream are not available`,
     );
     t.pass();
     return;
