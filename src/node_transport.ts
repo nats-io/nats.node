@@ -34,7 +34,7 @@ const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");
 const dns = require("dns");
 
-const VERSION = "2.10.3";
+const VERSION = "2.14.0-1";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
@@ -270,8 +270,11 @@ export class NodeTransport implements Transport {
     });
 
     this.socket.on("end", () => {
-      this.socket.write(new Uint8Array(0), () => {
-        this.socket.end();
+      if(this.socket?.destroyed) {
+        return;
+      }
+      this.socket?.write(new Uint8Array(0), () => {
+        this.socket?.end();
       });
     });
 

@@ -13,25 +13,25 @@ jobs:
   test:
     strategy:
       matrix:
-        node-version: [19.x, 18.x, 16.x, 14.x]
+        node-version: [20.x, 19.x, 18.x, 16.x]
 
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout NATS.js
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 1
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Use Deno Version ${{ matrix.deno-version }}
-        uses: denolib/setup-deno@master
+        uses: denoland/setup-deno@v1.1.1
         with:
-          deno-version: 1.29.2
+          deno-version: 1.30.3
       - name: Set NATS Server Version
-        run: echo "NATS_VERSION=v2.9.11" >> $GITHUB_ENV
+        run: echo "NATS_VERSION=v2.9.17" >> $GITHUB_ENV
       - name: Get nats-server
         run: |
           wget "https://github.com/nats-io/nats-server/releases/download/$NATS_VERSION/nats-server-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
@@ -46,7 +46,7 @@ jobs:
         if: matrix.node-version == '18.x'
         run: npm run coveralls
       - name: Upload coverage
-        uses: coverallsapp/github-action@v1.1.2
+        uses: coverallsapp/github-action@1.1.3
         if: matrix.node-version == '18.x'
         with:
           github-token: ${{ secrets.github_token }}

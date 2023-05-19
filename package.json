@@ -1,6 +1,6 @@
 {
   "name": "nats",
-  "version": "2.10.3",
+  "version": "2.14.0-1",
   "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
     "nats",
@@ -40,7 +40,7 @@
     "build": "tsc",
     "cjs": "deno run --allow-all bin/cjs-fix-imports.ts -o nats-base-client/ ./.deps/nats.deno/nats-base-client/",
     "clean": "shx rm -Rf ./lib/* ./nats-base-client ./.deps",
-    "clone-nbc": "shx mkdir -p ./.deps && cd ./.deps && git clone --branch v1.10.3 https://github.com/nats-io/nats.deno.git",
+    "clone-nbc": "shx mkdir -p ./.deps && cd ./.deps && git clone --branch dev https://github.com/nats-io/nats.deno.git",
     "fmt": "deno fmt ./src/ ./examples/ ./test/",
     "prepack": "npm run clone-nbc && npm run cjs && npm run check-package && npm run build",
     "ava": "nyc ava --verbose -T 60000",
@@ -57,18 +57,16 @@
     "node": ">= 14.0.0"
   },
   "dependencies": {
-    "nkeys.js": "1.0.4",
-    "web-streams-polyfill": "^3.2.1"
+    "nkeys.js": "1.0.5"
   },
   "devDependencies": {
-    "@types/node": "^18.11.18",
-    "ava": "^5.1.0",
-    "minimist": "^1.2.7",
-    "nats-jwt": "^0.0.3-1",
+    "@types/node": "^20.2.1",
+    "ava": "^5.2.x",
+    "minimist": "^1.2.8",
+    "nats-jwt": "^0.0.5",
     "nyc": "^15.1.0",
     "shx": "^0.3.3",
-    "tslint": "^6.1.3",
-    "typescript": "^4.9.x"
+    "typescript": "^5.0.4"
   },
   "typings": "./lib/src/mod.d.ts",
   "ava": {

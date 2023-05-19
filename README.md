@@ -17,6 +17,20 @@ npm install nats@latest
 The nats.js@2.0.0 **is not API compatible** with previous versions of
 nats.js. For a migration guide, please see [the migration guide](migration.md).
 
+### Documentation and the NATS Base Client
+
+This repository implements the Node.js transport of the client. This transport
+depends on a common module called the _NATS Base Client_ which lives along
+the [nats.deno](https://github.com/nats-io/nats.deno/tree/main/nats-base-client).
+The NATS Base Client provides the same API and functionality
+accross all JavaScript NATS clients supported by nats.io (nats.deno, nats.js and nats.ws).
+
+While the best documentation is looking at code examples, you may want to browse
+the [JSDoc documentation](https://nats-io.github.io/nats.deno). The best entry
+point into the JS Doc is the
+[NatsConnection](https://nats-io.github.io/nats.deno/interfaces/NatsConnection.html)
+all functionality starts with a connection.
+
 ## Basics
 
 ### Connecting to a nats-server
@@ -808,6 +822,12 @@ The relationship between these are:
 
 JetStream is the NATS persistence engine providing streaming, message, and worker queues with At-Least-Once semantics.
 [Support for JetStream is built-in](https://github.com/nats-io/nats.deno/blob/main/jetstream.md).
+
+
+## Service API
+
+The service API allows you to [easily build NATS services](https://github.com/nats-io/nats.deno/blob/main/services.md) The
+services API is currently in beta functionality.
 
 
 ## Contributing
