@@ -50,6 +50,7 @@ test("jetstream - jsm", async (t) => {
   h.set("xxx", "a");
   nc.publish("hello.world", Empty, { headers: h });
   nc.publish("hello.world", Empty, { headers: h });
+  await nc.flush();
 
   si = await jsm.streams.info("stream");
   t.is(si.state.messages, 2);
