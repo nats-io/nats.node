@@ -22,6 +22,7 @@ const { delay } = require("../lib/nats-base-client/internal_mod");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil");
 const { DataBuffer } = require("../lib/nats-base-client/databuffer");
+const { setTimeout } = require("timers");
 
 test("jetstream - jsm", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
@@ -50,6 +51,7 @@ test("jetstream - jsm", async (t) => {
   h.set("xxx", "a");
   nc.publish("hello.world", Empty, { headers: h });
   nc.publish("hello.world", Empty, { headers: h });
+  await nc.flush();
 
   si = await jsm.streams.info("stream");
   t.is(si.state.messages, 2);
@@ -397,6 +399,179 @@ test("jetstream - os basics", async (t) => {
   t.is(v.info.name, "a");
   t.is(v.info.chunks, 1);
   t.is(sc.decode(await fromReadableStream(v.data)), "hello");
+
+  await nc.close();
+  await ns.stop();
+});
+
+test("jetstream - consumer basics", async (t) => {
+  const ns = await NatsServer.start(jetstreamServerConf());
+  const nc = await connect({ port: ns.port });
+  const js = nc.jetstream();
+
+  await t.throwsAsync(async () => {
+    await js.consumers.get("stream", "a");
+  }, { message: "stream not found" });
+
+  await t.throwsAsync(async () => {
+    await js.streams.get("stream");
+  }, { message: "stream not found" });
+
+  const jsm = await nc.jetstreamManager();
+  await jsm.streams.add({ name: "stream", subjects: ["hello.>"] });
+
+  const s = await js.streams.get("stream");
+  t.truthy(s);
+  t.is(s.name, "stream");
+
+  await t.throwsAsync(async () => {
+    await js.consumers.get("stream", "a");
+  }, { message: "consumer not found" });
+
+  await t.throwsAsync(async () => {
+    await s.getConsumer("a");
+  }, { message: "consumer not found" });
+
+  await jsm.consumers.add("stream", {
+    name: "a",
+    ack_policy: AckPolicy.ackExplicit,
+  });
+
+  let c = await js.consumers.get("stream", "a");
+  t.truthy(c);
+
+  c = await s.getConsumer("a");
+  t.truthy(c);
+
+  let ci = await c.info(true);
+  t.is(ci.name, "a");
+  t.is(ci.num_pending, 0);
+
+  let m = await c.next({ expires: 1000 });
+  t.is(m, null);
+
+  await js.publish("hello.a");
+  await js.publish("hello.b");
+  await js.publish("hello.c");
+  await js.publish("hello.d");
+
+  ci = await c.info();
+  t.is(ci.num_pending, 4);
+
+  m = await c.next();
+  m.ack();
+  t.is(m.subject, "hello.a");
+
+  let iter = await c.fetch({ max_messages: 2 });
+  const buf = [];
+  for await (let m of iter) {
+    buf.push(m);
+    m.ack();
+  }
+  t.is(iter.getProcessed(), 2);
+  t.is(buf.length, 2);
+  t.is(buf[0].subject, "hello.b");
+  t.is(buf[1].subject, "hello.c");
+  buf.length = 0;
+
+  iter = await c.consume();
+  const done = (async () => {
+    for await (const m of iter) {
+      buf.push(m);
+      m.ack();
+    }
+  })();
+  setTimeout(() => {
+    iter.stop();
+  }, 2000);
+
+  await done;
+  t.is(iter.getProcessed(), 1);
+  t.is(buf.length, 1);
+  t.is(buf[0].subject, "hello.d");
+
+  await nc.close();
+  await ns.stop();
+});
+
+test("jetstream - ordered consumer basics", async (t) => {
+  const ns = await NatsServer.start(jetstreamServerConf());
+  const nc = await connect({ port: ns.port });
+  const js = nc.jetstream();
+
+  const jsm = await nc.jetstreamManager();
+  await jsm.streams.add({ name: "stream", subjects: ["hello.>"] });
+
+  const s = await js.streams.get("stream");
+
+  try {
+    await js.consumers.get("stream");
+  } catch (err) {
+    if (err.message.indexOf("is only supported on") !== -1) {
+      t.log(err.message);
+      t.pass();
+      await nc.close();
+      await ns.stop();
+      return;
+    } else {
+      t.fail(err);
+    }
+  }
+
+  let c = await js.consumers.get("stream");
+  t.truthy(c);
+
+  c = await s.getConsumer();
+  t.truthy(c);
+
+  let ci = await c.info(true);
+  t.is(ci.num_pending, 0);
+
+  let m = await c.next({ expires: 1000 });
+  t.is(m, null);
+
+  await js.publish("hello.a");
+  await js.publish("hello.b");
+  await js.publish("hello.c");
+  await js.publish("hello.d");
+
+  ci = await c.info();
+  t.is(ci.num_pending, 4);
+
+  m = await c.next();
+  m.ack();
+  t.is(m.subject, "hello.a");
+
+  c = await js.consumers.get("stream");
+  let iter = await c.fetch({ max_messages: 4 });
+  const buf = [];
+  for await (let m of iter) {
+    buf.push(m);
+    m.ack();
+  }
+  t.is(iter.getProcessed(), 4);
+  t.is(buf.length, 4);
+  t.is(buf[0].subject, "hello.a");
+  t.is(buf[1].subject, "hello.b");
+  t.is(buf[2].subject, "hello.c");
+  t.is(buf[3].subject, "hello.d");
+  buf.length = 0;
+
+  c = await js.consumers.get("stream");
+  iter = await c.consume();
+  const done = (async () => {
+    for await (const m of iter) {
+      buf.push(m);
+      m.ack();
+    }
+  })();
+  setTimeout(() => {
+    iter.stop();
+  }, 2000);
+
+  await done;
+  t.is(iter.getProcessed(), 4);
+  t.is(buf.length, 4);
 
   await nc.close();
   await ns.stop();
