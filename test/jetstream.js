@@ -553,8 +553,8 @@ test("jetstream - ordered consumer basics", async (t) => {
   t.is(buf.length, 4);
   t.is(buf[0].subject, "hello.a");
   t.is(buf[1].subject, "hello.b");
-  t.is(buf[1].subject, "hello.c");
-  t.is(buf[1].subject, "hello.d");
+  t.is(buf[2].subject, "hello.c");
+  t.is(buf[3].subject, "hello.d");
   buf.length = 0;
 
   c = await js.consumers.get("stream");
