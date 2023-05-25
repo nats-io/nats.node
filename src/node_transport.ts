@@ -270,7 +270,7 @@ export class NodeTransport implements Transport {
     });
 
     this.socket.on("end", () => {
-      if(this.socket?.destroyed) {
+      if (this.socket?.destroyed) {
         return;
       }
       this.socket?.write(new Uint8Array(0), () => {
