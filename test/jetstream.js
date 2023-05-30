@@ -13,15 +13,21 @@
  * limitations under the License.
  */
 const test = require("ava");
-const { connect, Empty, headers, nuid, StringCodec } = require(
+const {
+  connect,
+  Empty,
+  headers,
+  nuid,
+  StringCodec,
+  AckPolicy,
+  consumerOpts,
+} = require(
   "../",
 );
-const { AckPolicy } = require("../lib/nats-base-client/types");
-const { consumerOpts } = require("../lib/nats-base-client/jsconsumeropts");
-const { delay } = require("../lib/nats-base-client/internal_mod");
+
+const { delay, DataBuffer } = require("../lib/nats-base-client/internal_mod");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil");
-const { DataBuffer } = require("../lib/nats-base-client/databuffer");
 const { setTimeout } = require("timers");
 
 test("jetstream - jsm", async (t) => {
