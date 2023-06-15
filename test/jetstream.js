@@ -16,8 +16,7 @@ const test = require("ava");
 const { connect, Empty, headers, nuid, StringCodec } = require(
   "../",
 );
-const { AckPolicy } = require("../lib/nats-base-client/types");
-const { consumerOpts } = require("../lib/nats-base-client/jsconsumeropts");
+const { AckPolicy, consumerOpts } = require("../lib/src/mod");
 const { delay } = require("../lib/nats-base-client/internal_mod");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil");
