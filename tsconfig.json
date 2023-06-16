@@ -10,7 +10,7 @@
     "removeComments": false
   },
   "include": [
-    "src"
+    "src",
   ],
   "exclude": [
     "test/**/*",

@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 const test = require("ava");
-const { connect, Empty, headers, nuid, StringCodec } = require(
+const {
+  connect,
+  Empty,
+  headers,
+  nuid,
+  StringCodec,
+} = require(
   "../",
 );
 const { AckPolicy, consumerOpts } = require("../lib/src/mod");

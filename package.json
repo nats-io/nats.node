@@ -1,6 +1,6 @@
 {
   "name": "nats",
-  "version": "2.15.0",
+  "version": "2.15.0-0",
   "description": "Node.js client for NATS, a lightweight, high-performance cloud native messaging system",
   "keywords": [
     "nats",
@@ -37,7 +37,7 @@
     "MAINTAINERS.md"
   ],
   "scripts": {
-    "build": "tsc",
+   "build": "tsc",
     "cjs-nbc": "deno run --allow-all ./bin/cjs-fix-imports.ts -o nats-base-client/ ./.deps/nats.deno/nats-base-client",
     "cjs-jetstream": "deno run --allow-all ./bin/cjs-fix-imports.ts -o jetstream/ ./.deps/nats.deno/jetstream/",
     "cjs": "npm run cjs-nbc && npm run cjs-jetstream",
