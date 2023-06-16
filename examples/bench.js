@@ -13,7 +13,7 @@ const defaults = {
   json: false,
   csv: false,
   csvheader: false,
-  pending: 1024 * 32,
+  pendingLimit: 32,
 };
 
 const argv = parse(
@@ -50,14 +50,15 @@ const server = argv.server;
 const count = parseInt(argv.count);
 const bytes = parseInt(argv.payload);
 const iters = parseInt(argv.iterations);
-const pl = parseInt(argv.pendingLimit) * 1024;
+const pendingLimit = parseInt(argv.pendingLimit) * 1024;
 const metrics = [];
 
 (async () => {
   for (let i = 0; i < iters; i++) {
     const nc = await connect(
-      { servers: server, debug: argv.debug, pending: argv.pending },
+      { servers: server, debug: argv.debug },
     );
+    nc.protocol.pendingLimit = pendingLimit;
     const opts = {
       msgs: count,
       size: bytes,

@@ -19,15 +19,14 @@ const {
   headers,
   nuid,
   StringCodec,
-  AckPolicy,
-  consumerOpts,
 } = require(
   "../",
 );
-
-const { delay, DataBuffer } = require("../lib/nats-base-client/internal_mod");
+const { AckPolicy, consumerOpts } = require("../lib/src/mod");
+const { delay } = require("../lib/nats-base-client/internal_mod");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil");
+const { DataBuffer } = require("../lib/nats-base-client/databuffer");
 const { setTimeout } = require("timers");
 
 test("jetstream - jsm", async (t) => {

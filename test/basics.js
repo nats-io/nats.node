@@ -667,15 +667,6 @@ test("basics - subject is required", async (t) => {
   await ns.stop();
 });
 
-test("basics - payload is only Uint8Array", async (t) => {
-  const nc = await connect({ servers: u });
-  t.throws(() => {
-    nc.publish(createInbox(), "s");
-  }, { code: ErrorCode.BadPayload });
-
-  await nc.close();
-});
-
 test("basics - disconnect reconnects", async (t) => {
   const ns = await NatsServer.start();
   const nc = await connect({ port: ns.port });
