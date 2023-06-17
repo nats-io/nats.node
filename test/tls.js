@@ -23,7 +23,7 @@ const { resolve, join } = require("path");
 const { readFileSync } = require("fs");
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
-const { buildAuthenticator } = require("../lib/nats-base-client/authenticator");
+const { buildAuthenticator } = require("../lib/nats-base-client/options");
 const { extend } = require("../lib/nats-base-client/util");
 const { Connect } = require("../lib/nats-base-client/protocol");
 
