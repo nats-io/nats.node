@@ -315,6 +315,10 @@ export class NodeTransport implements Transport {
     }
   }
 
+  discard() {
+    // ignored - this is not required, as there's no throttling
+  }
+
   disconnect(): void {
     this._closed(undefined, true).then().catch();
   }
