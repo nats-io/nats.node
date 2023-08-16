@@ -40,7 +40,7 @@ const argv = parse(
   },
 );
 
-if (argv.h || argv.help || (!argv.sub && !argv.pub && !argv.req)) {
+if (argv.h || argv.help || (!argv.sub && !argv.pub && !argv.req && !argv.rep)) {
   console.log(
     "usage: bench.ts [--json] [--callbacks] [--csv] [--csvheader] [--pub] [--sub] [--req (--asyncRequests)] [--count <#messages>=100000] [--payload <#bytes>=128] [--iterations <#loop>=1>] [--server server] [--subject <subj>]\n",
   );
@@ -67,6 +67,7 @@ const metrics = [];
       pub: argv.pub,
       sub: argv.sub,
       req: argv.req,
+      rep: argv.rep,
       subject: argv.subject,
     };
 
@@ -98,6 +99,10 @@ const metrics = [];
       reducer,
       new Metric("pubsub", 0),
     );
+    const reqrep = metrics.filter((m) => m.name === "reqrep").reduce(
+      reducer,
+      new Metric("reqrep", 0),
+    );
     const pub = metrics.filter((m) => m.name === "pub").reduce(
       reducer,
       new Metric("pub", 0),
@@ -110,9 +115,16 @@ const metrics = [];
       reducer,
       new Metric("req", 0),
     );
+    const rep = metrics.filter((m) => m.name === "rep").reduce(
+      reducer,
+      new Metric("rep", 0),
+    );
 
     if (pubsub && pubsub.msgs) {
       console.log(pubsub.toString());
+    }
+    if (reqrep && reqrep.msgs) {
+      console.log(reqrep.toString());
     }
     if (pub && pub.msgs) {
       console.log(pub.toString());
@@ -122,6 +134,9 @@ const metrics = [];
     }
     if (req && req.msgs) {
       console.log(req.toString());
+    }
+    if (rep && rep.msgs) {
+      console.log(rep.toString());
     }
   } else if (argv.json) {
     console.log(JSON.stringify(metrics, null, 2));
