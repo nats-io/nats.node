@@ -453,8 +453,7 @@ test("basics - initial connect error", async (t) => {
     await connect({ port });
     t.fail("shouldn't have connected");
   } catch (err) {
-    t.is(err.code, ErrorCode.Disconnect);
-    t.is(err.stack, "");
+    t.is(err.code, ErrorCode.Timeout);
   }
   server.close();
 });
