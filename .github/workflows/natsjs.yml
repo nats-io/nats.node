@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Use Deno Version ${{ matrix.deno-version }}
-        uses: denoland/setup-deno@v1.1.1
+        uses: denoland/setup-deno@v1
         with:
           deno-version: ${{ matrix.deno-version }}
       - name: Set NATS Server Version
