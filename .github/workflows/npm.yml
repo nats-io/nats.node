@@ -38,6 +38,7 @@ jobs:
       - name: Test tag
         run: |
           npm run check-package
+      - run: npm run clean
       - run: npm publish --provenance --access public --tag=next
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
