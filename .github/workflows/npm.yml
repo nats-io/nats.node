@@ -1,0 +1,45 @@
+name: NATS.js NPM release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        node-version: [20.x]
+        deno-version: [1.36.4]
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout NATS.js
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: "https://registry.npmjs.org"
+      - name: Use Deno Version ${{ matrix.deno-version }}
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ matrix.deno-version }}
+      - run: npm install -g npm
+      - run: npm ci
+      - run: npm run prepack
+      - name: Set tag
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Test tag
+        run: |
+          npm run check-package
+      - run: npm publish --provenance --access public --tag=next
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+
