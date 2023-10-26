@@ -56,7 +56,7 @@ const metrics = [];
 (async () => {
   for (let i = 0; i < iters; i++) {
     const nc = await connect(
-      { servers: server, debug: argv.debug },
+      { servers: server, debug: argv.debug, noAsyncTraces: true },
     );
     nc.protocol.pendingLimit = pendingLimit;
     const opts = {
