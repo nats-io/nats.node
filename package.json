@@ -53,7 +53,9 @@
     "stage": "npm run clean && npm run clone-nbc && npm run cjs && shx rm -Rf ./deps/ && npm run build",
     "cover:html": "nyc report --reporter=html && open coverage/index.html",
     "coveralls": "shx mkdir -p ./coverage && nyc report --reporter=text-lcov > ./coverage/lcov.info",
-    "check-package": "deno run --allow-all bin/check-bundle-version.ts"
+    "check-package": "deno run --allow-all bin/check-bundle-version.ts",
+    "version": "deno run -A bin/update-transport-version.ts && git add src/node_transport.ts",
+    "postversion": "git push && git push --tags"
   },
   "engines": {
     "node": ">= 14.0.0"
