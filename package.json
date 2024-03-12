@@ -66,7 +66,7 @@
     "nkeys.js": "1.1.0"
   },
   "devDependencies": {
-    "@types/node": "^20.8.x",
+    "@types/node": "^20.11.26",
     "ava": "^5.3.x",
     "minimist": "^1.2.8",
     "nats-jwt": "^0.0.7",
