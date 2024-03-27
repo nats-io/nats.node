@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         node-version: [21.x, 20.x, 18.x]
-        deno-version: [1.38.3]
+        deno-version: [1.41.3]
 
     runs-on: ubuntu-latest
 
@@ -32,7 +32,7 @@ jobs:
         with:
           deno-version: ${{ matrix.deno-version }}
       - name: Set NATS Server Version
-        run: echo "NATS_VERSION=v2.10.6" >> $GITHUB_ENV
+        run: echo "NATS_VERSION=v2.10.12" >> $GITHUB_ENV
       - name: Get nats-server
         run: |
           wget "https://github.com/nats-io/nats-server/releases/download/$NATS_VERSION/nats-server-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
