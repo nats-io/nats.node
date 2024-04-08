@@ -38,7 +38,7 @@ const VERSION = "2.21.0";
 const LANG = "nats.js";
 
 export class NodeTransport implements Transport {
-  socket: Socket;
+  socket!: Socket;
   version: string;
   lang: string;
   yields: Uint8Array[] = [];
@@ -61,15 +61,23 @@ export class NodeTransport implements Transport {
   ): Promise<void> {
     this.tlsName = hp.tlsName;
     this.options = options;
+    const { tls } = this.options;
+    const { handshakeFirst } = tls || {};
     try {
-      this.socket = await this.dial(hp);
+      if (handshakeFirst === true) {
+        this.socket = await this.tlsFirst(hp);
+      } else {
+        this.socket = await this.dial(hp);
+      }
+
       const info = await this.peekInfo();
       checkOptions(info, options);
       const { tls_required: tlsRequired, tls_available: tlsAvailable } = info;
       const desired = tlsAvailable === true && options.tls !== null;
-      if (tlsRequired || desired) {
+      if (!handshakeFirst && (tlsRequired || desired)) {
         this.socket = await this.startTLS();
       }
+
       //@ts-ignore: this is possibly a TlsSocket
       if (tlsRequired && this.socket.encrypted !== true) {
         throw new NatsError("tls", ErrorCode.ServerOptionNotAvailable);
@@ -213,6 +221,58 @@ export class NodeTransport implements Transport {
     } catch (err) {
       return Promise.reject(err);
     }
+  }
+
+  async tlsFirst(hp: { hostname: string; port: number }): Promise<TLSSocket> {
+    let tlsError: Error;
+    let tlsOpts: {
+      rejectUnauthorized: boolean;
+      servername: string;
+      socket?: Socket;
+    } = {
+      servername: this.tlsName,
+      rejectUnauthorized: true,
+    };
+    if (this.socket) {
+      tlsOpts.socket = this.socket;
+    }
+    if (typeof this.options.tls === "object") {
+      try {
+        const certOpts = await this.loadClientCerts() || {};
+        tlsOpts = extend(tlsOpts, this.options.tls, certOpts);
+      } catch (err) {
+        return Promise.reject(new NatsError(err.message, ErrorCode.Tls, err));
+      }
+    }
+    const d = deferred<TLSSocket>();
+    try {
+      const tlsSocket = tlsConnect(hp.port, hp.hostname, tlsOpts, () => {
+        tlsSocket.removeAllListeners();
+        d.resolve(tlsSocket);
+      });
+
+      tlsSocket.on("error", (err) => {
+        tlsError = err;
+      });
+      tlsSocket.on("secureConnect", () => {
+        // socket won't be authorized, if the user disabled it
+        if (tlsOpts.rejectUnauthorized === false) {
+          return;
+        }
+        if (!tlsSocket.authorized) {
+          throw tlsSocket.authorizationError;
+        }
+      });
+      tlsSocket.on("close", () => {
+        d.reject(tlsError);
+        tlsSocket.removeAllListeners();
+      });
+      tlsSocket.setNoDelay(true);
+    } catch (err) {
+      // tls throws errors on bad certs see nats.js#310
+      d.reject(NatsError.errorForCode(ErrorCode.Tls, err));
+    }
+    return d;
   }
 
   async startTLS(): Promise<TLSSocket> {
