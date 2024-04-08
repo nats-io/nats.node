@@ -28,9 +28,9 @@ const dir = process.cwd();
 const tlsConfig = {
   trace: true,
   tls: {
-    ca_file: resolve(join(dir, "./test/certs/ca.crt")),
-    cert_file: resolve(join(dir, "./test/certs/localhost_noip.crt")),
-    key_file: resolve(join(dir, "./test/certs/localhost_noip.key")),
+    ca_file: resolve(join(dir, "/test/certs/ca.pem")),
+    cert_file: resolve(join(dir, "/test/certs/server_noip.pem")),
+    key_file: resolve(join(dir, "/test/certs/key_noip.pem")),
   },
 };
 
@@ -41,20 +41,13 @@ test("tls - reconnect via tls by ip", async (t) => {
     return;
   }
 
-  const V = process.versions.node;
-  if (V.startsWith("17.")) {
-    t.log("localhost_noip.crt and localhost_noip.key need updating on node 17");
-    t.pass();
-    return;
-  }
-
   const servers = await NatsServer.startCluster(3, tlsConfig);
   const nc = await connect(
     {
       port: servers[0].port,
       reconnectTimeWait: 250,
       tls: {
-        caFile: resolve(join(dir, "./test/certs/ca.crt")),
+        caFile: resolve(join(dir, "/test/certs/ca.pem")),
       },
     },
   );

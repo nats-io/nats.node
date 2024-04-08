@@ -31,9 +31,9 @@ const dir = process.cwd();
 const tlsConfig = {
   host: "0.0.0.0",
   tls: {
-    cert_file: resolve(join(dir, "./test/certs/localhost.crt")),
-    key_file: resolve(join(dir, "./test/certs/localhost.key")),
-    ca_file: resolve(join(dir, "./test/certs/ca.crt")),
+    cert_file: resolve(join(dir, "./test/certs/server.pem")),
+    key_file: resolve(join(dir, "./test/certs/key.pem")),
+    ca_file: resolve(join(dir, "./test/certs/ca.pem")),
   },
 };
 
@@ -112,9 +112,9 @@ test("tls - client auth", async (t) => {
   const ns = await NatsServer.start(tlsConfig);
 
   const certs = {
-    keyFile: resolve(join(dir, "./test/certs/client.key")),
-    certFile: resolve(join(dir, "./test/certs/client.crt")),
-    caFile: resolve(join(dir, "./test/certs/ca.crt")),
+    keyFile: resolve(join(dir, "./test/certs/client-key.pem")),
+    certFile: resolve(join(dir, "./test/certs/client-cert.pem")),
+    caFile: resolve(join(dir, "./test/certs/ca.pem")),
   };
   const nc = await connect({
     port: ns.port,
@@ -131,9 +131,9 @@ test("tls - client auth direct", async (t) => {
   const ns = await NatsServer.start(tlsConfig);
 
   const certs = {
-    key: readFileSync(resolve(join(dir, "./test/certs/client.key"))),
-    cert: readFileSync(resolve(join(dir, "./test/certs/client.crt"))),
-    ca: readFileSync(resolve(join(dir, "./test/certs/ca.crt"))),
+    key: readFileSync(resolve(join(dir, "./test/certs/client-key.pem"))),
+    cert: readFileSync(resolve(join(dir, "./test/certs/client-cert.pem"))),
+    ca: readFileSync(resolve(join(dir, "./test/certs/ca.pem"))),
   };
   const nc = await connect({
     port: ns.port,
@@ -149,9 +149,9 @@ test("tls - client auth direct", async (t) => {
 test("tls - bad file paths", async (t) => {
   const ns = await NatsServer.start(tlsConfig);
   const certs = {
-    keyFile: "./test/certs/client.key",
-    certFile: "./x/certs/client.crt",
-    caFile: "./test/certs/ca.crt",
+    keyFile: "./test/certs/client-key.pem",
+    certFile: "./x/certs/client-cert.pem",
+    caFile: "./test/certs/ca.pem",
   };
   try {
     await connect({
@@ -160,7 +160,7 @@ test("tls - bad file paths", async (t) => {
     });
     t.fail("should have not connected");
   } catch (err) {
-    t.true(err.message.indexOf("/x/certs/client.crt doesn't exist") > -1);
+    t.true(err.message.indexOf("/x/certs/client-cert.pem doesn't exist") > -1);
   }
 
   await ns.stop();
@@ -169,9 +169,9 @@ test("tls - bad file paths", async (t) => {
 
 test("tls - shouldn't leak tls config", (t) => {
   const tlsOptions = {
-    keyFile: resolve(join(dir, "./test/certs/client.key")),
-    certFile: resolve(join(dir, "./test/certs/client.crt")),
-    caFile: resolve(join(dir, "./test/certs/ca.crt")),
+    keyFile: resolve(join(dir, "./test/certs/client-key.pem")),
+    certFile: resolve(join(dir, "./test/certs/client-cert.pem")),
+    caFile: resolve(join(dir, "./test/certs/ca.pem")),
   };
 
   let opts = { tls: tlsOptions, cert: "another" };
@@ -206,9 +206,9 @@ test(
   "tls - invalid cert",
   tlsInvalidCertMacro,
   {
-    keyFile: resolve(join(dir, "./test/certs/client.key")),
-    certFile: resolve(join(dir, "./test/certs/ca.crt")),
-    caFile: resolve(join(dir, "./test/certs/localhost.crt")),
+    keyFile: resolve(join(dir, "./test/certs/client-key.pem")),
+    certFile: resolve(join(dir, "./test/certs/ca.pem")),
+    caFile: resolve(join(dir, "./test/certs/server.pem")),
   },
   "ERR_OSSL_X509_KEY_VALUES_MISMATCH",
   /key values mismatch/i,
@@ -218,9 +218,9 @@ test(
   "tls - invalid pem no start",
   tlsInvalidCertMacro,
   {
-    keyFile: resolve(join(dir, "./test/certs/client.crt")),
-    certFile: resolve(join(dir, "./test/certs/client.key")),
-    caFile: resolve(join(dir, "./test/certs/ca.crt")),
+    keyFile: resolve(join(dir, "./test/certs/client-cert.pem")),
+    certFile: resolve(join(dir, "./test/certs/client-key.pem")),
+    caFile: resolve(join(dir, "./test/certs/ca.pem")),
   },
   "ERR_OSSL_PEM_NO_START_LINE",
   /no start line/i,
@@ -272,7 +272,7 @@ test("tls - available connects with or without", async (t) => {
   const a = connect({
     servers: `localhost:${ns.port}`,
     tls: {
-      caFile: resolve(join(dir, "./test/certs/ca.crt")),
+      caFile: resolve(join(dir, "./test/certs/ca.pem")),
     },
   });
   // will NOT upgrade to tls
@@ -287,6 +287,31 @@ test("tls - available connects with or without", async (t) => {
   t.is(conns[0].protocol.transport.isEncrypted(), true);
   t.is(conns[1].protocol.transport.isEncrypted(), false);
 
+  await ns.stop();
+  t.pass();
+});
+
+test("tls - tls first", async (t) => {
+  const ns = await NatsServer.start({
+    host: "0.0.0.0",
+    tls: {
+      handshake_first: true,
+      cert_file: resolve(join(dir, "./test/certs/server.pem")),
+      key_file: resolve(join(dir, "./test/certs/key.pem")),
+      ca_file: resolve(join(dir, "./test/certs/ca.pem")),
+    },
+  });
+
+  const nc = await connect({
+    port: ns.port,
+    tls: {
+      handshakeFirst: true,
+      ca: readFileSync(resolve(join(dir, "./test/certs/ca.pem"))),
+    },
+  });
+
+  await nc.flush();
+  await nc.close();
   await ns.stop();
   t.pass();
 });
