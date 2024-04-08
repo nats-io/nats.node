@@ -22,7 +22,7 @@ For a migration guide, please see [the migration guide](migration.md).
 This repository implements the Node.js transport of the client. This transport
 depends on a common module called the _NATS Base Client_ which lives along the
 [nats.deno](https://github.com/nats-io/nats.deno/tree/main/nats-base-client).
-The NATS Base Client provides the same API and functionality accross all
+The NATS Base Client provides the same API and functionality across all
 JavaScript NATS clients supported by nats.io (nats.deno, nats.js and nats.ws).
 
 While the best documentation is looking at code examples, you may want to browse
