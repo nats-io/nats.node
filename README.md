@@ -14,16 +14,16 @@ A Node.js client for the [NATS messaging system](https://nats.io).
 npm install nats@latest
 ```
 
-The nats.js@2.0.0 **is not API compatible** with previous versions of
-nats.js. For a migration guide, please see [the migration guide](migration.md).
+The nats.js@2.0.0 **is not API compatible** with previous versions of nats.js.
+For a migration guide, please see [the migration guide](migration.md).
 
 ### Documentation and the NATS Base Client
 
 This repository implements the Node.js transport of the client. This transport
-depends on a common module called the _NATS Base Client_ which lives along
-the [nats.deno](https://github.com/nats-io/nats.deno/tree/main/nats-base-client).
-The NATS Base Client provides the same API and functionality
-accross all JavaScript NATS clients supported by nats.io (nats.deno, nats.js and nats.ws).
+depends on a common module called the _NATS Base Client_ which lives along the
+[nats.deno](https://github.com/nats-io/nats.deno/tree/main/nats-base-client).
+The NATS Base Client provides the same API and functionality accross all
+JavaScript NATS clients supported by nats.io (nats.deno, nats.js and nats.ws).
 
 While the best documentation is looking at code examples, you may want to browse
 the [JSDoc documentation](https://nats-io.github.io/nats.deno). The best entry
@@ -177,7 +177,7 @@ const s3 = nc.subscribe("help.>");
 async function printMsgs(s) {
   let subj = s.getSubject();
   console.log(`listening for ${subj}`);
-  const c = (13 - subj.length);
+  const c = 13 - subj.length;
   const pad = "".padEnd(c);
   for await (const m of s) {
     console.log(
@@ -557,7 +557,7 @@ certificates are specified as ConnectionOptions:
 tlsOptions = {
   keyFile: "./test/certs/client-key.pem",
   certFile: "./test/certs/client-cert.pem",
-  caFile: "./test/certs/ca.pem"
+  caFile: "./test/certs/ca.pem",
 };
 nc = await connect({ tls: tlsOptions });
 ```
@@ -580,8 +580,8 @@ await nc.flush();
 
 When you publish a message you can specify some options:
 
-- `reply` - this is a subject to receive a reply (you must set up a subscription)
-  before you publish.
+- `reply` - this is a subject to receive a reply (you must set up a
+  subscription) before you publish.
 - `headers` - a set of headers to decorate the message.
 
 ### `SubscriptionOptions`
@@ -757,46 +757,47 @@ more performant or appropriate.
 
 The following is the list of connection options and default values.
 
-| Option                  | Default            | Description                                                                                                                                                                                                                                                                                                                                                                        |
-| ----------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `authenticator`         | none               | Specifies the authenticator function that sets the client credentials.                                                                                                                                                                                                                                                                                                             |
-| `debug`                 | `false`            | If `true`, the client prints protocol interactions to the console. Useful for debugging.                                                                                                                                                                                                                                                                                           |
-| `ignoreClusterUpdates`  | `false`            | If `true` the client will ignore any cluster updates provided by the server.                                                                                                                                                                                                                                                                                                       |
-| `ignoreAuthErrorAbort`  | `false`            | Prevents client connection aborts if the client fails more than twice in a row with an authentication error                                                                                                                                                                                                                                                                        |
-| `inboxPrefix`           | `"_INBOX"`         | Sets de prefix for automatically created inboxes - `createInbox(prefix)`                                                                                                                                                                                                                                                                                                           |
-| `maxPingOut`            | `2`                | Max number of pings the client will allow unanswered before raising a stale connection error.                                                                                                                                                                                                                                                                                      |
-| `maxReconnectAttempts`  | `10`               | Sets the maximum number of reconnect attempts. The value of `-1` specifies no limit.                                                                                                                                                                                                                                                                                               |
-| `name`                  |                    | Optional client name - recommended to be set to a unique client name.                                                                                                                                                                                                                                                                                                              |
-| `noAsyncTraces`         | `false`            | When `true` the client will not add additional context to errors associated with request operations. Setting this option to `true` will greatly improve performance of request/reply and JetStream publishers.                                                                                                                                                              |
+| Option                  | Default            | Description                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `authenticator`         | none               | Specifies the authenticator function that sets the client credentials.                                                                                                                                                                                                                                                                                                                   |
+| `debug`                 | `false`            | If `true`, the client prints protocol interactions to the console. Useful for debugging.                                                                                                                                                                                                                                                                                                 |
+| `ignoreClusterUpdates`  | `false`            | If `true` the client will ignore any cluster updates provided by the server.                                                                                                                                                                                                                                                                                                             |
+| `ignoreAuthErrorAbort`  | `false`            | Prevents client connection aborts if the client fails more than twice in a row with an authentication error                                                                                                                                                                                                                                                                              |
+| `inboxPrefix`           | `"_INBOX"`         | Sets de prefix for automatically created inboxes - `createInbox(prefix)`                                                                                                                                                                                                                                                                                                                 |
+| `maxPingOut`            | `2`                | Max number of pings the client will allow unanswered before raising a stale connection error.                                                                                                                                                                                                                                                                                            |
+| `maxReconnectAttempts`  | `10`               | Sets the maximum number of reconnect attempts. The value of `-1` specifies no limit.                                                                                                                                                                                                                                                                                                     |
+| `name`                  |                    | Optional client name - recommended to be set to a unique client name.                                                                                                                                                                                                                                                                                                                    |
+| `noAsyncTraces`         | `false`            | When `true` the client will not add additional context to errors associated with request operations. Setting this option to `true` will greatly improve performance of request/reply and JetStream publishers.                                                                                                                                                                           |
 | `noEcho`                | `false`            | Subscriptions receive messages published by the client. Requires server support (1.2.0). If set to true, and the server does not support the feature, an error with code `NO_ECHO_NOT_SUPPORTED` is emitted, and the connection is aborted. Note that it is possible for this error to be emitted on reconnect when the server reconnects to a server that does not support the feature. |
-| `noRandomize`           | `false`            | If set, the order of user-specified servers is randomized.                                                                                                                                                                                                                                                                                                                         |
-| `pass`                  |                    | Sets the password for a connection.                                                                                                                                                                                                                                                                                                                                                |
-| `pedantic`              | `false`            | Turns on strict subject format checks.                                                                                                                                                                                                                                                                                                                                             |
-| `pingInterval`          | `120000`           | Number of milliseconds between client-sent pings.                                                                                                                                                                                                                                                                                                                                  |
-| `port`                  | `4222`             | Port to connect to (only used if `servers` is not specified).                                                                                                                                                                                                                                                                                                                      |
-| `reconnect`             | `true`             | If false, client will not attempt reconnecting.                                                                                                                                                                                                                                                                                                                                    |
-| `reconnectDelayHandler` | Generated function | A function that returns the number of millis to wait before the next connection to a server it connected to `()=>number`.                                                                                                                                                                                                                                                          |
-| `reconnectJitter`       | `100`              | Number of millis to randomize after `reconnectTimeWait`.                                                                                                                                                                                                                                                                                                                           |
-| `reconnectJitterTLS`    | `1000`             | Number of millis to randomize after `reconnectTimeWait` when TLS options are specified.                                                                                                                                                                                                                                                                                            |
-| `reconnectTimeWait`     | `2000`             | If disconnected, the client will wait the specified number of milliseconds between reconnect attempts.                                                                                                                                                                                                                                                                             |
-| `servers`               | `"localhost:4222"` | String or Array of hostport for servers.                                                                                                                                                                                                                                                                                                                                           |
-| `timeout`               | 20000              | Number of milliseconds the client will wait for a connection to be established. If it fails it will emit a `connection_timeout` event with a NatsError that provides the hostport of the server where the connection was attempted.                                                                                                                                                |
-| `tls`                   | TlsOptions         | A configuration object for requiring a TLS connection (not applicable to nats.ws).                                                                                                                                                                                                                                                                                                 |
-| `token`                 |                    | Sets a authorization token for a connection.                                                                                                                                                                                                                                                                                                                                       |
-| `user`                  |                    | Sets the username for a connection.                                                                                                                                                                                                                                                                                                                                                |
-| `verbose`               | `false`            | Turns on `+OK` protocol acknowledgements.                                                                                                                                                                                                                                                                                                                                          |
-| `waitOnFirstConnect`    | `false`            | If `true` the client will fall back to a reconnect mode if it fails its first connection attempt.                                                                                                                                                                                                                                                                                  |
+| `noRandomize`           | `false`            | If set, the order of user-specified servers is randomized.                                                                                                                                                                                                                                                                                                                               |
+| `pass`                  |                    | Sets the password for a connection.                                                                                                                                                                                                                                                                                                                                                      |
+| `pedantic`              | `false`            | Turns on strict subject format checks.                                                                                                                                                                                                                                                                                                                                                   |
+| `pingInterval`          | `120000`           | Number of milliseconds between client-sent pings.                                                                                                                                                                                                                                                                                                                                        |
+| `port`                  | `4222`             | Port to connect to (only used if `servers` is not specified).                                                                                                                                                                                                                                                                                                                            |
+| `reconnect`             | `true`             | If false, client will not attempt reconnecting.                                                                                                                                                                                                                                                                                                                                          |
+| `reconnectDelayHandler` | Generated function | A function that returns the number of millis to wait before the next connection to a server it connected to `()=>number`.                                                                                                                                                                                                                                                                |
+| `reconnectJitter`       | `100`              | Number of millis to randomize after `reconnectTimeWait`.                                                                                                                                                                                                                                                                                                                                 |
+| `reconnectJitterTLS`    | `1000`             | Number of millis to randomize after `reconnectTimeWait` when TLS options are specified.                                                                                                                                                                                                                                                                                                  |
+| `reconnectTimeWait`     | `2000`             | If disconnected, the client will wait the specified number of milliseconds between reconnect attempts.                                                                                                                                                                                                                                                                                   |
+| `servers`               | `"localhost:4222"` | String or Array of hostport for servers.                                                                                                                                                                                                                                                                                                                                                 |
+| `timeout`               | 20000              | Number of milliseconds the client will wait for a connection to be established. If it fails it will emit a `connection_timeout` event with a NatsError that provides the hostport of the server where the connection was attempted.                                                                                                                                                      |
+| `tls`                   | TlsOptions         | A configuration object for requiring a TLS connection (not applicable to nats.ws).                                                                                                                                                                                                                                                                                                       |
+| `token`                 |                    | Sets a authorization token for a connection.                                                                                                                                                                                                                                                                                                                                             |
+| `user`                  |                    | Sets the username for a connection.                                                                                                                                                                                                                                                                                                                                                      |
+| `verbose`               | `false`            | Turns on `+OK` protocol acknowledgements.                                                                                                                                                                                                                                                                                                                                                |
+| `waitOnFirstConnect`    | `false`            | If `true` the client will fall back to a reconnect mode if it fails its first connection attempt.                                                                                                                                                                                                                                                                                        |
 
 ### TlsOptions
 
-| Option     | Default | Description                  |
-| ---------- | ------- | ---------------------------- |
-| `caFile`   |         | CA certificate filepath      |
-| `ca`       |         | CA certificate               |
-| `certFile` |         | Client certificate file path |
-| `cert`     |         | Client certificate           |
-| `keyFile`  |         | Client key file path         |
-| `key`      |         | Client key                   |
+| Option           | Default | Description                                                                                                                     |
+| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `caFile`         |         | CA certificate filepath                                                                                                         |
+| `ca`             |         | CA certificate                                                                                                                  |
+| `certFile`       |         | Client certificate file path                                                                                                    |
+| `cert`           |         | Client certificate                                                                                                              |
+| `keyFile`        |         | Client key file path                                                                                                            |
+| `key`            |         | Client key                                                                                                                      |
+| `handshakeFirst` | false   | Connects to the server directly as TLS rather than upgrade the connection. Note that the server must be configured accordingly. |
 
 In some Node and Deno clients, having the option set to an empty option,
 requires the client have a secured connection.
@@ -822,15 +823,15 @@ The relationship between these are:
 
 ## JetStream
 
-JetStream is the NATS persistence engine providing streaming, message, and worker queues with At-Least-Once semantics.
+JetStream is the NATS persistence engine providing streaming, message, and
+worker queues with At-Least-Once semantics.
 [Support for JetStream is built-in](https://github.com/nats-io/nats.deno/blob/main/jetstream.md).
-
 
 ## Service API
 
-The service API allows you to [easily build NATS services](https://github.com/nats-io/nats.deno/blob/main/services.md) The
-services API is currently in beta functionality.
-
+The service API allows you to
+[easily build NATS services](https://github.com/nats-io/nats.deno/blob/main/services.md)
+The services API is currently in beta functionality.
 
 ## Contributing
 
