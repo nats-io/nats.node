@@ -39,7 +39,7 @@ jobs:
         run: |
           npm run check-package
       - run: npm run clean
-      - run: npm publish --provenance --access public --tag=next
+      - run: npm publish --provenance --access public --tag=latest
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
