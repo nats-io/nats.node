@@ -8,8 +8,8 @@ jobs:
   test:
     strategy:
       matrix:
-        node-version: [21.x]
-        deno-version: [1.43.1]
+        node-version: [22.x]
+        deno-version: [1.43.5]
 
     runs-on: ubuntu-latest
     permissions:
