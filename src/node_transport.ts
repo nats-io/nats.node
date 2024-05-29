@@ -24,11 +24,11 @@ import {
   render,
   ServerInfo,
   Transport,
+    extend,
 } from "./nats-base-client";
 
 import type { ConnectionOptions } from "./nats-base-client";
 import { createConnection, Socket } from "net";
-import { extend } from "../nats-base-client/util";
 import { connect as tlsConnect, TlsOptions, TLSSocket } from "tls";
 const { resolve } = require("path");
 const { readFile, existsSync } = require("fs");

@@ -38,19 +38,14 @@
   ],
   "scripts": {
     "build": "tsc",
-    "cjs-nbc": "deno run --allow-all ./bin/cjs-fix-imports.ts -o nats-base-client/ ./.deps/nats.deno/nats-base-client",
-    "cjs-jetstream": "deno run --allow-all ./bin/cjs-fix-imports.ts -o jetstream/ ./.deps/nats.deno/jetstream/",
-    "cjs": "npm run cjs-nbc && npm run cjs-jetstream",
-    "clean": "shx rm -Rf ./lib/* ./nats-base-client ./.deps",
-    "clone-nbc": "shx mkdir -p ./.deps && cd ./.deps && git clone --branch v1.26.0 https://github.com/nats-io/nats.deno.git",
+    "clean": "shx rm -Rf ./lib/*",
     "fmt": "deno fmt ./src/ ./examples/ ./test/",
-    "prepack": "npm run clone-nbc && npm run cjs && npm run check-package && npm run build",
+    "prepack": "npm run check-package && npm run build",
     "ava": "nyc ava --verbose -T 60000",
     "test": "npm run check-package && npm run build && npm run ava",
     "debug-test": "node node_modules/.bin/ava --verbose -T 6500000 --match",
     "setup": "curl -fsSL https://deno.land/x/install/install.sh | sh",
     "setup_win": "choco install deno",
-    "stage": "npm run clean && npm run clone-nbc && npm run cjs && shx rm -Rf ./deps/ && npm run build",
     "cover:html": "nyc report --reporter=html && open coverage/index.html",
     "coveralls": "shx mkdir -p ./coverage && nyc report --reporter=text-lcov > ./coverage/lcov.info",
     "check-package": "deno run --allow-all bin/check-bundle-version.ts",
@@ -60,10 +55,12 @@
     "bump-release": "npm version patch --no-commit-hooks --no-git-tag-version"
   },
   "engines": {
-    "node": ">= 14.0.0"
+    "node": ">= 16.0.0"
   },
   "dependencies": {
-    "nkeys.js": "1.1.0"
+    "@nats-io/nats-core": "^3.0.0-16",
+    "nkeys.js": "1.1.0",
+    "nuid": "^2.0.1-1"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
