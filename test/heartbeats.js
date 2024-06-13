@@ -16,7 +16,7 @@ const test = require("ava");
 // install globals
 require("../");
 const { deferred, delay, DebugEvents, Heartbeat } = require(
-  "../lib/nats-base-client/internal_mod",
+  "@nats-io/nats-core/internal",
 );
 
 function pm(

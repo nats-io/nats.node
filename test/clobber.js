@@ -18,7 +18,7 @@ const {
 } = require("../");
 const { NatsServer } = require("./helpers/launcher");
 const { connect } = require("../");
-const { DataBuffer } = require("../lib/nats-base-client/internal_mod");
+const { DataBuffer } = require("@nats-io/nats-core/internal");
 
 function makeBuffer(N) {
   const buf = new Uint8Array(N);

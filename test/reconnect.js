@@ -23,7 +23,7 @@ const {
   ErrorCode,
   deferred,
   DebugEvents,
-} = require("../lib/nats-base-client/internal_mod");
+} = require("@nats-io/nats-core/internal");
 const { Lock } = require("./helpers/lock");
 
 test("reconnect - should receive when some servers are invalid", async (t) => {

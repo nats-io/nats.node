@@ -13,10 +13,8 @@
  * limitations under the License.
  */
 const test = require("ava");
-// install globals
-require("../lib/src/mod");
 const { NatsError, MsgHdrsImpl, canonicalMIMEHeaderKey } = require(
-  "../lib/nats-base-client/internal_mod",
+  "@nats-io/nats-core/internal",
 );
 
 test("msgheaders - basics", (t) => {

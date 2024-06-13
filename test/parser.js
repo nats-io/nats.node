@@ -13,14 +13,12 @@
  * limitations under the License.
  */
 const test = require("ava");
-// install globals
-require("../lib/src/mod");
 
 const {
   Kind,
   Parser,
   State,
-} = require("../lib/nats-base-client/internal_mod");
+} = require("@nats-io/nats-core/internal");
 
 let te = new TextEncoder();
 const td = new TextDecoder();

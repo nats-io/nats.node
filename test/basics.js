@@ -27,7 +27,7 @@ const {
 const net = require("net");
 
 const { deferred, delay, nuid } = require(
-  "../lib/nats-base-client/internal_mod",
+  "@nats-io/nats-core/internal",
 );
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");

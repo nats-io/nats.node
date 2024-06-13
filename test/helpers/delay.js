@@ -1,6 +1,6 @@
 const {
   deferred,
-} = require("../../lib/nats-base-client/internal_mod");
+} = require("@nats-io/nats-core/internal");
 
 exports.check = function check(
   fn,

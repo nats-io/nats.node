@@ -55,12 +55,12 @@
     "bump-release": "npm version patch --no-commit-hooks --no-git-tag-version"
   },
   "engines": {
-    "node": ">= 16.0.0"
+    "node": ">= 18.0.0"
   },
   "dependencies": {
-    "@nats-io/nats-core": "^3.0.0-16",
-    "nkeys.js": "1.1.0",
-    "nuid": "^2.0.1-1"
+    "@nats-io/nats-core": "^3.0.0-17",
+    "nkeys.js": "^1.2.0-4",
+    "nuid": "^2.0.1-2"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",

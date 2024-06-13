@@ -14,7 +14,6 @@
  */
 const test = require("ava");
 const {
-  connect,
   credsAuthenticator,
   deferred,
   ErrorCode,
@@ -22,9 +21,11 @@ const {
   jwtAuthenticator,
   nkeyAuthenticator,
 } = require(
-  "../",
+  "@nats-io/nats-core/internal",
 );
-const { nkeys } = require("../lib/nats-base-client/internal_mod");
+
+const {connect} = require("../src/mod.ts");
+const { nkeys } = require("nkeys.js");
 const { NatsServer } = require("./helpers/launcher");
 const {
   createOperator,

@@ -20,7 +20,7 @@ const {
   delay,
   timeout,
   nuid,
-} = require("../../lib/nats-base-client/internal_mod");
+} = require("@nats-io/nats-core/internal");
 
 const { spawn } = require("child_process");
 
