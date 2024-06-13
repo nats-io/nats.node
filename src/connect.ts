@@ -27,7 +27,7 @@ export function connect(opts: ConnectionOptions = {}): Promise<NatsConnection> {
     factory: (): Transport => {
       return new NodeTransport();
     },
-    dnsResolveFn: nodeResolveHost,
+    dnsResolveFn: opts.noResolve === true ? undefined : nodeResolveHost,
   } as TransportFactory);
   return NatsConnectionImpl.connect(opts);
 }

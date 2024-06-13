@@ -32,6 +32,7 @@ const { deferred, delay, nuid } = require(
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil.js");
+const {getResolveFn} = require("../nats-base-client/transport");
 
 const u = "demo.nats.io:4222";
 
@@ -796,3 +797,12 @@ test("basics - js fetch on stopped server doesn't close", async (t) => {
   await nc.close();
   await ns.stop();
 });
+
+test("basics - noResolve", async (t) => {
+  const ns = await NatsServer.start();
+  const nc = await connect({port: ns.port, noResolve: true});
+  t.plan(1);
+  t.is(getResolveFn(), undefined);
+  await nc.close();
+  await ns.stop();
+})
