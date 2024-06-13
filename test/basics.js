@@ -26,13 +26,12 @@ const {
 );
 const net = require("net");
 
-const { deferred, delay, nuid } = require(
+const { deferred, delay, nuid, getResolveFn } = require(
   "../lib/nats-base-client/internal_mod",
 );
 const { Lock } = require("./helpers/lock");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil.js");
-const {getResolveFn} = require("../nats-base-client/transport");
 
 const u = "demo.nats.io:4222";
 
