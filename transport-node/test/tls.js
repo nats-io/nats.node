@@ -17,7 +17,7 @@ const {
   connect,
   ErrorCode,
 } = require(
-  "../",
+  "../index",
 );
 const { resolve, join } = require("path");
 const { readFileSync } = require("fs");

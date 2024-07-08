@@ -15,9 +15,9 @@
 const test = require("ava");
 const {
   createInbox,
-} = require("../");
+} = require("../index");
 const { NatsServer } = require("./helpers/launcher");
-const { connect } = require("../");
+const { connect } = require("../index");
 const { DataBuffer } = require("@nats-io/nats-core/internal");
 
 function makeBuffer(N) {

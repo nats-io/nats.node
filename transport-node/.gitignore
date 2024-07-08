@@ -1,6 +1,6 @@
 .deps/
 .DS_Store
-.idea
+../.idea
 .nyc_output/
 benchmark/
 coverage/

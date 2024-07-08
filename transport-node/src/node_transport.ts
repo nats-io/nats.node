@@ -18,13 +18,13 @@ import {
   Deferred,
   deferred,
   ErrorCode,
+  extend,
   extractProtocolMessage,
   INFO,
   NatsError,
   render,
   ServerInfo,
   Transport,
-    extend,
 } from "./nats-base-client";
 
 import type { ConnectionOptions } from "./nats-base-client";

@@ -17,7 +17,7 @@ const {
   connect,
   Events,
 } = require(
-  "../",
+  "../index",
 );
 
 const { resolve, join } = require("path");

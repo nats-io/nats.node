@@ -14,7 +14,7 @@
  */
 const test = require("ava");
 // install globals
-require("../");
+require("../index");
 const { deferred, delay, DebugEvents, Heartbeat } = require(
   "@nats-io/nats-core/internal",
 );

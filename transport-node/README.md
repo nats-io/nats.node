@@ -2,7 +2,7 @@
 
 A Node.js client for the [NATS messaging system](https://nats.io).
 
-[![License](https://img.shields.io/badge/Licence-Apache%202.0-blue.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/Licence-Apache%202.0-blue.svg)](LICENSE)
 ![NATS.js CI](https://github.com/nats-io/nats.js/workflows/NATS.js%20CI/badge.svg)
 [![npm](https://img.shields.io/npm/v/nats.svg)](https://www.npmjs.com/package/nats)
 [![npm](https://img.shields.io/npm/dt/nats.svg)](https://www.npmjs.com/package/nats)
@@ -137,7 +137,7 @@ const sub = nc.subscribe("hello");
 nc.publish("hello", sc.encode("world"));
 nc.publish("hello", sc.encode("again"));
 
-// we want to insure that messages that are in flight
+// we want to ensure that messages that are in flight
 // get processed, so we are going to drain the
 // connection. Drain is the same as close, but makes
 // sure that all messages in flight get seen

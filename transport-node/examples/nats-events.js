@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { connect } = require("../");
+const { connect } = require("../index");
 
 const argv = parse(
   process.argv.slice(2),

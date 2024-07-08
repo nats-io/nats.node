@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 const test = require("ava");
+
 const {
   credsAuthenticator,
   deferred,
@@ -20,12 +21,9 @@ const {
   Events,
   jwtAuthenticator,
   nkeyAuthenticator,
-} = require(
-  "@nats-io/nats-core/internal",
-);
-
-const {connect} = require("../src/mod.ts");
-const { nkeys } = require("nkeys.js");
+  nkeys,
+} = require("@nats-io/nats-core");
+const { connect } = require("../index")
 const { NatsServer } = require("./helpers/launcher");
 const {
   createOperator,

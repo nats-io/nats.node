@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { Nuid, connect } = require("../");
+const { Nuid, connect } = require("../index");
 const { Bench, Metric } = require("../lib/nats-base-client/bench");
 
 const defaults = {

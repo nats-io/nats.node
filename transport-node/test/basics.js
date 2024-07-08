@@ -20,10 +20,12 @@ const {
   StringCodec,
   Empty,
   jwtAuthenticator,
-  AckPolicy,
 } = require(
-  "../lib/src/mod",
+  "../lib/mod",
 );
+
+const {AckPolicy, jetstream, jetstreamManager} = require("@nats-io/jetstream");
+
 const net = require("net");
 
 const { deferred, delay, nuid } = require(
@@ -765,7 +767,7 @@ test("basics - js fetch on stopped server doesn't close", async (t) => {
     }
   })().then();
 
-  const jsm = await nc.jetstreamManager();
+  const jsm = await jetstreamManager(nc);
   const si = await jsm.streams.add({ name: nuid.next(), subjects: ["test"] });
   const { name: stream } = si.config;
   await jsm.consumers.add(stream, {
@@ -773,7 +775,7 @@ test("basics - js fetch on stopped server doesn't close", async (t) => {
     ack_policy: AckPolicy.Explicit,
   });
 
-  const js = nc.jetstream();
+  const js = jetstream(nc);
   setTimeout(() => {
     ns.stop();
   }, 2000);

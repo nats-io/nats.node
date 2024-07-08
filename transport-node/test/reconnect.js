@@ -15,7 +15,7 @@
 const test = require("ava");
 const {
   connect,
-} = require("../");
+} = require("../index");
 const { NatsServer } = require("./helpers/launcher");
 const {
   createInbox,

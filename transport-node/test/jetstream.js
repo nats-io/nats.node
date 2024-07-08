@@ -20,20 +20,21 @@ const {
   nuid,
   StringCodec,
 } = require(
-  "../",
+  "../index",
 );
-const { AckPolicy, consumerOpts } = require("../lib/src/mod");
-const { delay } = require("../lib/nats-base-client/internal_mod");
+const { AckPolicy, consumerOpts, jetstream, jetstreamManager } = require("@nats-io/jetstream");
+const { delay, DataBuffer } = require("@nats-io/nats-core/internal");
 const { NatsServer } = require("./helpers/launcher");
 const { jetstreamServerConf } = require("./helpers/jsutil");
-const { DataBuffer } = require("../lib/nats-base-client/databuffer");
 const { setTimeout } = require("timers");
+const { Kvm } = require("@nats-io/kv");
+const { Objm } = require("@nats-io/obj");
 
 test("jetstream - jsm", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   const nc = await connect({ port: ns.port });
 
-  const jsm = await nc.jetstreamManager();
+  const jsm = await jetstreamManager(nc);
   const ai = await jsm.getAccountInfo();
   // we made one api call, so
   t.is(ai.api.total, 1);
@@ -126,14 +127,14 @@ test("jetstream - pull", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   const nc = await connect({ port: ns.port });
 
-  const jsm = await nc.jetstreamManager();
+  const jsm = await jetstreamManager(nc);
   await jsm.streams.add({ name: "stream", subjects: ["hello.>"] });
   await jsm.consumers.add("stream", {
     durable_name: "me",
     ack_policy: AckPolicy.Explicit,
   });
 
-  const js = nc.jetstream();
+  const js = jetstream(nc);
   await t.throwsAsync(async () => {
     await js.pull("stream", "me");
   }, { message: /no messages$/ });
@@ -164,14 +165,14 @@ test("jetstream - fetch", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   const nc = await connect({ port: ns.port });
 
-  const jsm = await nc.jetstreamManager();
+  const jsm = await jetstreamManager(nc);
   await jsm.streams.add({ name: "stream", subjects: ["hello.>"] });
   await jsm.consumers.add("stream", {
     durable_name: "me",
     ack_policy: AckPolicy.Explicit,
   });
 
-  const js = nc.jetstream();
+  const js = jetstream(nc);
   let iter = await js.fetch("stream", "me", { no_wait: true });
   await (async () => {
     for await (const m of iter) {
@@ -222,10 +223,10 @@ test("jetstream - jetstream sub", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   const nc = await connect({ port: ns.port });
 
-  const jsm = await nc.jetstreamManager();
+  const jsm = await jetstreamManager(nc);
   await jsm.streams.add({ name: "stream", subjects: ["hello.>"] });
 
-  const js = nc.jetstream();
+  const js = jetstream(nc);
   let pa = await js.publish("hello.world", Empty, {
     expect: { lastSequence: 0 },
   });
@@ -257,10 +258,10 @@ test("jetstream - jetstream pullsub", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   let nc = await connect({ port: ns.port });
 
-  const jsm = await nc.jetstreamManager();
+  const jsm = await jetstreamManager(nc);
   await jsm.streams.add({ name: "stream", subjects: ["hello.>"] });
 
-  let js = nc.jetstream();
+  let js = jetstream(nc);
   let pa = await js.publish("hello.world", Empty);
   t.is(pa.seq, 1);
   pa = await js.publish("hello.world", Empty);
@@ -302,12 +303,12 @@ test("jetstream - jetstream pullsub", async (t) => {
 test("jetstream - qsub ackall", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   let nc = await connect({ port: ns.port });
-  const jsm = await nc.jetstreamManager();
+  const jsm = await jetstreamManager(nc);
   const stream = nuid.next();
   const subj = nuid.next();
   await jsm.streams.add({ name: stream, subjects: [subj] });
 
-  const js = nc.jetstream();
+  const js = jetstream(nc);
 
   const opts = consumerOpts();
   opts.queue("q");
@@ -342,9 +343,9 @@ test("jetstream - qsub ackall", async (t) => {
 test("jetstream - kv basics", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   const nc = await connect({ port: ns.port });
-  const js = nc.jetstream();
+  const kvm = new Kvm(nc);
 
-  const kv = await js.views.kv("test");
+  const kv = await kvm.create("test");
   const sc = StringCodec();
   await kv.put("a", sc.encode("hello"));
   const v = await kv.get("a");
@@ -392,9 +393,9 @@ test("jetstream - os basics", async (t) => {
   }
   const ns = await NatsServer.start(jetstreamServerConf());
   const nc = await connect({ port: ns.port });
-  const js = nc.jetstream();
 
-  const os = await js.views.os("test");
+  const objm = new Objm(nc);
+  const os = await objm.create("test");
   const sc = StringCodec();
 
   await os.put({ name: "a" }, readableStreamFrom(sc.encode("hello")));
@@ -412,7 +413,7 @@ test("jetstream - os basics", async (t) => {
 test("jetstream - consumer basics", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   const nc = await connect({ port: ns.port });
-  const js = nc.jetstream();
+  const js = jetstream(nc);
 
   await t.throwsAsync(async () => {
     await js.consumers.get("stream", "a");
@@ -422,7 +423,7 @@ test("jetstream - consumer basics", async (t) => {
     await js.streams.get("stream");
   }, { message: "stream not found" });
 
-  const jsm = await nc.jetstreamManager();
+  const jsm = await jetstreamManager(nc);
   await jsm.streams.add({ name: "stream", subjects: ["hello.>"] });
 
   const s = await js.streams.get("stream");
@@ -502,9 +503,9 @@ test("jetstream - consumer basics", async (t) => {
 test("jetstream - ordered consumer basics", async (t) => {
   const ns = await NatsServer.start(jetstreamServerConf());
   const nc = await connect({ port: ns.port });
-  const js = nc.jetstream();
+  const js = jetstream(nc);
 
-  const jsm = await nc.jetstreamManager();
+  const jsm = await jetstreamManager(nc);
   await jsm.streams.add({ name: "stream", subjects: ["hello.>"] });
 
   const s = await js.streams.get("stream");

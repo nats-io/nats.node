@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const parse = require("minimist");
-const { connect, StringCodec, credsAuthenticator } = require("../");
+const { connect, StringCodec, credsAuthenticator } = require("../index");
 const fs = require("fs");
 
 const argv = parse(
