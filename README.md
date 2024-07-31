@@ -1,11 +1,10 @@
 # NATS.js - A [NATS](http://nats.io) client for [Node.Js](https://nodejs.org/en/)
 
-
 > [!IMPORTANT]
 >
-> This repository was renamed from nats.js to nats.node.
-> A new [nats.js](https://github.com/nats-io/nats.js) repository houses all nats clients for JavaScript
-> Please visit the above link for more information.
+> This repository was renamed from nats.js to nats.node. A new
+> [nats.js](https://github.com/nats-io/nats.js) repository houses all nats
+> clients for JavaScript Please visit the above link for more information.
 
 A Node.js client for the [NATS messaging system](https://nats.io).
 
@@ -765,7 +764,7 @@ more performant or appropriate.
 The following is the list of connection options and default values.
 
 | Option                  | Default            | Description                                                                                                                                                                                                                                                                                                                                                                              |
-|-------------------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ----------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `authenticator`         | none               | Specifies the authenticator function that sets the client credentials.                                                                                                                                                                                                                                                                                                                   |
 | `debug`                 | `false`            | If `true`, the client prints protocol interactions to the console. Useful for debugging.                                                                                                                                                                                                                                                                                                 |
 | `ignoreClusterUpdates`  | `false`            | If `true` the client will ignore any cluster updates provided by the server.                                                                                                                                                                                                                                                                                                             |
