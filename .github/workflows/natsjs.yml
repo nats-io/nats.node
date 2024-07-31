@@ -31,13 +31,12 @@ jobs:
         uses: denoland/setup-deno@v1
         with:
           deno-version: ${{ matrix.deno-version }}
-      - name: Set NATS Server Version
-        run: echo "NATS_VERSION=v2.10.17" >> $GITHUB_ENV
-      - name: Get nats-server
-        run: |
-          wget "https://github.com/nats-io/nats-server/releases/download/$NATS_VERSION/nats-server-$NATS_VERSION-linux-amd64.zip" -O tmp.zip
-          unzip tmp.zip
-          mv nats-server-$NATS_VERSION-linux-amd64 nats-server
+      - name: Install nats-server
+        uses: aricart/install-binary@v1.0.0
+        with:
+          repo: nats-io/nats-server
+          name: nats-server
+          cache: true
       - run: npm ci
       - run: npm run prepack
       - run: npm test
