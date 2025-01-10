@@ -2,9 +2,10 @@
 
 > [!IMPORTANT]
 >
-> This repository was renamed from nats.js to nats.node. A new
-> [nats.js](https://github.com/nats-io/nats.js) repository houses all nats
-> clients for JavaScript Please visit the above link for more information.
+> This repository was renamed from nats.js to nats.node. A new [nats.js](https://github.com/nats-io/nats.js) 
+> repository houses all nats clients for JavaScript.  
+> Changes are well documented and should be easy to locate and implement, and
+> are all described in [migration.md](https://github.com/nats-io/nats.js/blob/main/migration.md) 
 
 A Node.js client for the [NATS messaging system](https://nats.io).
 
