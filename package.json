@@ -71,8 +71,8 @@
     "minimist": "^1.2.8",
     "nats-jwt": "^0.0.9",
     "nyc": "^17.1.0",
-    "shx": "^0.3.3",
-    "typescript": "5.7.3"
+    "shx": "^0.4.0",
+    "typescript": "^5.8.3"
   },
   "typings": "./lib/src/mod.d.ts",
   "ava": {
