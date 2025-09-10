@@ -265,7 +265,7 @@ test("tls - available connects with or without", async (t) => {
     });
     t.fail("shouldn't have connected");
   } catch (err) {
-    t.is(err.message, "unable to verify the first certificate");
+    t.true(err.message.startsWith("unable to verify the first certificate"));
   }
 
   // will upgrade to tls as tls is required

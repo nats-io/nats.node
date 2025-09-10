@@ -13,8 +13,8 @@ jobs:
   test:
     strategy:
       matrix:
-        node-version: [22.x, 20.x, 18.x]
-        deno-version: [1.44.4]
+        node-version: [24.x, 22.x, 20.x]
+        deno-version: [1.46.3]
 
     runs-on: ubuntu-latest
 
@@ -43,11 +43,11 @@ jobs:
         env:
           CI: true
       - name: Gather coverage
-        if: matrix.node-version == '21.x'
+        if: matrix.node-version == '24.x'
         run: npm run coveralls
       - name: Upload coverage
         uses: coverallsapp/github-action@v1.2.5
-        if: matrix.node-version == '21.x'
+        if: matrix.node-version == '24.x'
         with:
           github-token: ${{ secrets.github_token }}
           path-to-lcov: ./coverage/lcov.info
