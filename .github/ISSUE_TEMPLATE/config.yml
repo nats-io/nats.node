@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: ⚠️ This repository has been superseded
+    url: https://github.com/nats-io/nats.js/blob/main/migration.md
+    about: Please migrate to @nats-io/transport-node from the nats.js monorepo. If the issue persists after migrating, file an issue there.
   - name: Discussion
     url: https://github.com/nats-io/nats.js/discussions
     about: Ideal for ideas, feedback, or longer form questions.
